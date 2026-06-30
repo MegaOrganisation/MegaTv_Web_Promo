@@ -14,10 +14,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MegaCompagnon — Dashboard MegaTv",
-  description: "Dashboard officiel MegaTv pour vos statistiques, profils, appareils et monitoring.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://megatv-neo.vercel.app"),
+  title: {
+    default: "MegaTv — Site officiel & MegaCompagnon",
+    template: "%s — MegaTv"
+  },
+  description: "Site promo MegaTv et accès sécurisé MegaCompagnon pour vos statistiques, profils, appareils et données cloud.",
   icons: {
     icon: "/assets/mark.png"
+  },
+  openGraph: {
+    title: "MegaTv — Site officiel & MegaCompagnon",
+    description: "Découvrez MegaTv puis connectez-vous avec votre ID MegaTv pour ouvrir le Companion web.",
+    siteName: "MegaTv",
+    images: ["/assets/logo.png"]
   }
 };
 

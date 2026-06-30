@@ -4,3 +4,4 @@ README.md
 !.env.vercel.import.example
 node_modules
 .next
+/assets

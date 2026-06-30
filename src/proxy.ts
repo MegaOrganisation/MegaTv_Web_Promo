@@ -10,6 +10,11 @@ type CookieToSet = {
 };
 
 export async function proxy(request: NextRequest) {
+  const isCompanionRoute = request.nextUrl.pathname.startsWith("/companion");
+  if (!isCompanionRoute) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
   const { supabaseUrl, supabaseAnonKey } = getPublicSupabaseEnv();
 
@@ -32,8 +37,7 @@ export async function proxy(request: NextRequest) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const isCompanionRoute = request.nextUrl.pathname.startsWith("/companion");
-  if (isCompanionRoute && !user) {
+  if (!user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);

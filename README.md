@@ -1,6 +1,13 @@
-# MegaCompagnon — Dashboard MegaTv
+# MegaTv Web — Promo + MegaCompagnon
 
-Application web Next.js du dashboard officiel MegaTv.
+Application web officielle MegaTv déployée sur Vercel.
+
+Elle combine :
+
+- le site promo public MegaTv (`/`) ;
+- la sélection MegaCompagnon depuis le site public ;
+- la connexion **ID MegaTv** via Supabase Auth (`/login`) ;
+- l'application web Companion protégée (`/companion`, `/companion/settings`, `/companion/admin`).
 
 ## Stack
 
@@ -15,8 +22,8 @@ Application web Next.js du dashboard officiel MegaTv.
 
 | Route | Rôle |
 |---|---|
-| `/` | Landing publique MegaCompagnon |
-| `/login` | Connexion MegaTv Cloud |
+| `/` | Site promo public MegaTv + sélection MegaCompagnon |
+| `/login` | Connexion ID MegaTv / MegaTv Cloud |
 | `/auth/callback` | Callback Supabase SSR |
 | `/companion` | Dashboard utilisateur |
 | `/companion/settings` | Profils, compte, appareils |
@@ -51,7 +58,7 @@ SENTRY_ENVIRONMENT=production
 ## Commandes
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm run lint
 npm run typecheck
@@ -67,7 +74,7 @@ Appliquer la migration côté repo principal MegaTv :
 supabase db push
 ```
 
-Migration ajoutée :
+Migration :
 
 `supabase/migrations/20260630_megacompanion_dashboard.sql`
 
@@ -82,10 +89,24 @@ Elle crée :
 
 ## Vercel
 
-Root Directory recommandé :
+Le fichier `vercel.json` force les paramètres critiques pour éviter qu'un déploiement serve uniquement `public/` et renvoie `404 NOT_FOUND` sur les routes Next.js :
 
-`MegaTv - app/MegaTv - web/promo`
+```json
+{
+  "framework": "nextjs",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": null
+}
+```
 
-Framework preset : **Next.js**.
+Configuration projet recommandée :
 
-Le build Vercel doit avoir les variables `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` configurées. Les tokens Sentry restent serveur uniquement.
+- Repository : `MegaOrganisation/MegaTv_Web_Promo`
+- Root Directory : vide / racine du repo
+- Framework Preset : **Next.js**
+- Build Command : `npm run build`
+- Output Directory : automatique / vide
+- Variables obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
+
+Les tokens Sentry restent serveur uniquement.
