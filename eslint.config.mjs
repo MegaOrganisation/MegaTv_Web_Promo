@@ -9,7 +9,10 @@ const eslintConfig = [
       "next-env.d.ts",
       "app.js",
       "tweaks-app.jsx",
-      "tweaks-panel.jsx"
+      "tweaks-panel.jsx",
+      "public/app.js",
+      "public/tweaks-app.jsx",
+      "public/tweaks-panel.jsx"
     ]
   },
   ...nextVitals,
