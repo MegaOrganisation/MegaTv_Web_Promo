@@ -1,2 +1,6 @@
-# Fichiers de travail à ne pas déployer (aucun ici par défaut)
 README.md
+.env*
+!.env.example
+!.env.vercel.import.example
+node_modules
+.next
