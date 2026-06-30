@@ -3,8 +3,8 @@ import { LockKeyhole, Settings, UserRound } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { SignOutButton } from "@/features/auth/SignOutButton";
-import { DeviceList } from "@/features/dashboard/DeviceList";
-import { ProfileSwitcher } from "@/features/dashboard/ProfileSwitcher";
+import { DeviceManagementPanel } from "@/features/dashboard/DeviceManagementPanel";
+import { ProfileManagementPanel } from "@/features/dashboard/ProfileManagementPanel";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDashboardData } from "@/lib/dashboard/queries";
 
@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export default async function CompanionSettingsPage() {
   const user = await requireUser("/companion/settings");
-  const { profiles, devices, isAdmin } = await getDashboardData();
+  const { profiles, profileAvatarUrlsById, devices, isAdmin } = await getDashboardData(null, { deviceLimit: 50 });
 
   return (
-    <ResponsiveShell title="Profils & réglages" subtitle="Gestion légère côté web : consultation sécurisée du compte, des profils et des appareils MegaTv Cloud.">
+    <ResponsiveShell title="Profils & réglages" subtitle="Gestion web sécurisée des profils et appareils synchronisés avec MegaTv Cloud." isAdmin={isAdmin}>
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <GlassCard as="section">
           <UserRound className="mb-4 h-6 w-6 text-white/70" />
@@ -33,14 +33,10 @@ export default async function CompanionSettingsPage() {
           <LockKeyhole className="mb-4 h-6 w-6 text-white/70" />
           <h2 className="text-2xl font-bold text-white">Sécurité des données</h2>
           <p className="mt-3 text-sm leading-7 text-white/52">
-            MegaCompagnon ne transmet pas de user_id choisi par le client pour lire les données. Les requêtes s'appuient sur la session Supabase et les politiques RLS existantes.
+            Les modifications passent par des routes serveur authentifiées : aucun user_id n'est accepté depuis le client et les écritures restent filtrées par votre session Supabase.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {[
-              "RLS user_id",
-              "profile_id strict",
-              "Admin agrégé"
-            ].map((item) => (
+            {["RLS user_id", "profile_id strict", "payload synchronisé"].map((item) => (
               <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center text-xs font-semibold text-white/60">
                 {item}
               </div>
@@ -49,23 +45,24 @@ export default async function CompanionSettingsPage() {
         </GlassCard>
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <GlassCard as="section">
-          <Settings className="mb-4 h-6 w-6 text-white/70" />
-          <h2 className="text-2xl font-bold text-white">Profils</h2>
-          <p className="mt-2 text-sm text-white/45">Sélecteur réutilisable par le dashboard.</p>
-          <div className="mt-5">
-            <ProfileSwitcher profiles={profiles} />
+      <GlassCard as="section" className="mt-6 scroll-mt-28" id="profiles">
+        <div className="mb-5 flex items-center gap-3">
+          <Settings className="h-6 w-6 text-white/70" />
+          <div>
+            <h2 className="text-2xl font-bold text-white">Profils</h2>
+            <p className="mt-1 text-sm text-white/45">Affichage, avatar par défaut ou photo importée, comme dans l'app MegaTv.</p>
           </div>
-        </GlassCard>
-        <GlassCard as="section">
-          <h2 className="text-2xl font-bold text-white">Appareils cloud</h2>
-          <p className="mt-2 text-sm text-white/45">Liste filtrée automatiquement par RLS.</p>
-          <div className="mt-5">
-            <DeviceList devices={devices} />
-          </div>
-        </GlassCard>
-      </div>
+        </div>
+        <ProfileManagementPanel profiles={profiles} profileAvatarUrlsById={profileAvatarUrlsById} />
+      </GlassCard>
+
+      <GlassCard as="section" className="mt-6 scroll-mt-28" id="devices">
+        <h2 className="text-2xl font-bold text-white">Appareils cloud</h2>
+        <p className="mt-2 text-sm text-white/45">Renommez les appareils connectés au compte. Les couleurs/photos appareil ne sont pas encore présentes dans le schéma MegaTv Cloud.</p>
+        <div className="mt-5">
+          <DeviceManagementPanel devices={devices} />
+        </div>
+      </GlassCard>
     </ResponsiveShell>
   );
 }

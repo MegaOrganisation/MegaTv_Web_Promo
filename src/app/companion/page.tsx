@@ -11,6 +11,7 @@ import { DeviceList } from "@/features/dashboard/DeviceList";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import { PosterMetricRow } from "@/features/dashboard/PosterMetricRow";
 import { ProfileSwitcher } from "@/features/dashboard/ProfileSwitcher";
+import { SelectedProfileBanner } from "@/features/dashboard/SelectedProfileBanner";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDate, formatDuration, formatNumber } from "@/lib/format";
 import { getDashboardData } from "@/lib/dashboard/queries";
@@ -20,8 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function CompanionPage({ searchParams }: { searchParams: Promise<{ profile?: string }> }) {
   const params = await searchParams;
   await requireUser("/companion");
-  const activeProfileId = params.profile || null;
-  const { summary, topContent, profiles, devices, continueWatching, isAdmin, errors } = await getDashboardData(activeProfileId);
+  const { summary, topContent, profiles, profileAvatarUrlsById, devices, continueWatching, isAdmin, errors, activeProfile, activeProfileId } = await getDashboardData(params.profile || null);
 
   const chartRows = topContent.slice(0, 5).map((item) => ({
     label: item.title || item.episode_title || `TMDB ${item.tmdb_id}`,
@@ -30,15 +30,17 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
   }));
 
   return (
-    <ResponsiveShell title="Dashboard" subtitle="Vos métriques MegaTv, isolées par compte et profil grâce à Supabase RLS.">
+    <ResponsiveShell title="Dashboard" subtitle="Vos métriques MegaTv, isolées par compte et profil grâce à Supabase RLS." isAdmin={isAdmin}>
       <PageEventTracker page="Companion Dashboard" />
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} />
-        <div className="flex gap-2">
+      <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} profileAvatarUrlsById={profileAvatarUrlsById} />
+        <div className="flex shrink-0 flex-wrap gap-2">
           {isAdmin ? <MegaLink href="/companion/admin" variant="ghost">Vue admin</MegaLink> : null}
           <SignOutButton />
         </div>
       </div>
+
+      <SelectedProfileBanner activeProfile={activeProfile} avatarUrl={activeProfile ? profileAvatarUrlsById[activeProfile.profile_id] : null} summary={summary} />
 
       {errors.length > 0 ? (
         <GlassCard className="mb-6 border-yellow-300/20 bg-yellow-300/8">
@@ -54,7 +56,7 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
         <KpiCard label="Reprises" value={formatNumber(summary.continue_watching_count)} hint="Continue Watching" icon={PlayCircle} tone="pink" />
       </section>
 
-      <section className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+      <section className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <GlassCard as="section">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
@@ -110,7 +112,7 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
               <p className="text-sm text-white/45">{formatNumber(summary.profile_count)} profils cloud.</p>
             </div>
           </div>
-          <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} />
+          <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} profileAvatarUrlsById={profileAvatarUrlsById} />
         </GlassCard>
         <GlassCard as="section">
           <div className="mb-5 flex items-center gap-3">

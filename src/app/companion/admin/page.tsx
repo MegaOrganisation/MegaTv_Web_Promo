@@ -26,7 +26,7 @@ export default async function AdminPage() {
   }));
 
   return (
-    <ResponsiveShell title="Vue Admin" subtitle="Agrégats d'infrastructure, analytics Companion et monitoring Sentry. Aucun accès brut cross-user n'est exposé à l'UI.">
+    <ResponsiveShell title="Vue Admin" subtitle="Agrégats d'infrastructure, analytics Companion et monitoring Sentry. Aucun accès brut cross-user n'est exposé à l'UI." isAdmin>
       {dashboard.errors.length > 0 ? (
         <GlassCard className="mb-6 border-red-300/20 bg-red-500/8">
           <p className="text-sm font-semibold text-red-100">Certaines RPC admin ont échoué.</p>
