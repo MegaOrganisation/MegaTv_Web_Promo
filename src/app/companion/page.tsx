@@ -1,6 +1,7 @@
 import { Clock3, Film, MonitorSmartphone, PlayCircle, Tv, UsersRound } from "lucide-react";
 
-import { BarRankingChart, DonutChart, MiniLineChart } from "@/components/ui/Charts";
+import { BarRankingChart, DonutChart } from "@/components/ui/Charts";
+import { ActivitySparkline } from "@/features/dashboard/ActivitySparkline";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MegaLink } from "@/components/ui/MegaButton";
 import { KpiCard } from "@/components/ui/KpiCard";
@@ -95,9 +96,9 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
 
         <GlassCard as="section">
           <h2 className="text-xl font-bold text-white">Progression récente</h2>
-          <p className="mt-1 text-sm text-white/45">Un aperçu visuel mobile-first, prêt pour données temporelles.</p>
+          <p className="mt-1 text-sm text-white/45">Activité quotidienne (reprises + pages Companion).</p>
           <div className="mt-5">
-            <MiniLineChart points={[12, 22, 18, 38, 30, 46, 36, 54, 48, 62, 72]} />
+            <ActivitySparkline profileId={activeProfileId} />
           </div>
           <BarRankingChart rows={chartRows.length ? chartRows : [{ label: "En attente de données", value: 1, sublabel: "Migration/API" }]} />
         </GlassCard>

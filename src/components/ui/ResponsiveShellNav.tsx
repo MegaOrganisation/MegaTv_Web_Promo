@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { clsx } from "clsx";
-import { BarChart3, Home, MonitorCog, MonitorSmartphone, Settings, ShieldCheck, UserRound, type LucideIcon } from "lucide-react";
+import { BarChart3, Home, LayoutGrid, MonitorCog, MonitorSmartphone, Settings, ShieldCheck, UserRound, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +17,7 @@ type NavItem = {
 
 const baseItems: NavItem[] = [
   { href: "/companion", label: "Dashboard", shortLabel: "Home", icon: Home, exact: true },
+  { href: "/companion/manage", label: "Gérer", shortLabel: "Gérer", icon: LayoutGrid },
   { href: "/companion/settings#profiles", label: "Profils", shortLabel: "Profils", icon: UserRound },
   { href: "/companion/settings#devices", label: "Appareils", shortLabel: "App.", icon: MonitorSmartphone },
   { href: "/companion/settings", label: "Réglages", shortLabel: "Régl.", icon: Settings, exact: true }
@@ -85,7 +86,7 @@ export function MobileCompanionChrome({ isAdmin = false }: { isAdmin?: boolean }
         </div>
       </header>
 
-      <nav className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-2 right-2 z-50 mx-auto grid w-[calc(100%-1rem)] max-w-md grid-cols-4 gap-1 rounded-[24px] border border-white/10 bg-black/72 p-1.5 backdrop-blur-2xl lg:hidden">
+      <nav className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-2 right-2 z-50 mx-auto grid w-[calc(100%-1rem)] max-w-md grid-cols-5 gap-1 rounded-[24px] border border-white/10 bg-black/72 p-1.5 backdrop-blur-2xl lg:hidden">
         {baseItems.map((item) => (
           <NavLink key={`${item.href}-mobile`} item={item} active={isActive(pathname, activeHash, item)} variant="mobile" />
         ))}

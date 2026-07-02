@@ -62,10 +62,10 @@ export async function getDashboardData(profileId?: string | null, options: { dev
   };
 }
 
-export async function getAdminDashboardData() {
+export async function getAdminDashboardData(fromInput?: Date, toInput?: Date) {
   const supabase = await createClient();
-  const to = new Date();
-  const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const to = toInput ?? new Date();
+  const from = fromInput ?? new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const [overview, topContent, pageAnalytics] = await Promise.all([
     supabase.rpc("megacompanion_admin_overview", { from_ts: from.toISOString(), to_ts: to.toISOString() }).maybeSingle(),

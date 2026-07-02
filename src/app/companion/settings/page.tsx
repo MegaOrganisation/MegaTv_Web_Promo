@@ -1,9 +1,11 @@
-import { LockKeyhole, Settings, UserRound } from "lucide-react";
+import { LockKeyhole, Settings, SlidersHorizontal, UserRound } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/GlassCard";
+import { MegaLink } from "@/components/ui/MegaButton";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { SignOutButton } from "@/features/auth/SignOutButton";
 import { DeviceManagementPanel } from "@/features/dashboard/DeviceManagementPanel";
+import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import { ProfileManagementPanel } from "@/features/dashboard/ProfileManagementPanel";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDashboardData } from "@/lib/dashboard/queries";
@@ -16,6 +18,7 @@ export default async function CompanionSettingsPage() {
 
   return (
     <ResponsiveShell title="Profils & réglages" subtitle="Gestion web sécurisée des profils et appareils synchronisés avec MegaTv Cloud." isAdmin={isAdmin}>
+      <PageEventTracker page="Companion Settings" />
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <GlassCard as="section">
           <UserRound className="mb-4 h-6 w-6 text-white/70" />
@@ -26,6 +29,12 @@ export default async function CompanionSettingsPage() {
           </div>
           <div className="mt-5">
             <SignOutButton />
+          </div>
+          <div className="mt-5">
+            <MegaLink href="/companion/manage" variant="ghost" className="w-full">
+              <SlidersHorizontal className="h-4 w-4" />
+              Gestion cloud (IPTV, addons, catalogues)
+            </MegaLink>
           </div>
         </GlassCard>
 

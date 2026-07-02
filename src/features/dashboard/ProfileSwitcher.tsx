@@ -8,9 +8,10 @@ type Props = {
   profiles: ProfileRow[];
   activeProfileId?: string | null;
   profileAvatarUrlsById?: Record<string, string>;
+  basePath?: string;
 };
 
-export function ProfileSwitcher({ profiles, activeProfileId, profileAvatarUrlsById = {} }: Props) {
+export function ProfileSwitcher({ profiles, activeProfileId, profileAvatarUrlsById = {}, basePath = "/companion" }: Props) {
   if (profiles.length === 0) {
     return (
       <div className="rounded-[22px] border border-white/10 bg-white/[0.045] p-4 text-sm text-white/48">
@@ -19,13 +20,16 @@ export function ProfileSwitcher({ profiles, activeProfileId, profileAvatarUrlsBy
     );
   }
 
+  const allHref = basePath;
+  const showAll = basePath === "/companion";
+
   return (
     <div className="flex max-w-full snap-x gap-3 overflow-x-auto pb-2">
-      <ProfilePill href="/companion" label="Tous" active={!activeProfileId} />
+      {showAll ? <ProfilePill href={allHref} label="Tous" active={!activeProfileId} /> : null}
       {profiles.map((profile) => (
         <ProfilePill
           key={profile.profile_id}
-          href={`/companion?profile=${encodeURIComponent(profile.profile_id)}`}
+          href={`${basePath}?profile=${encodeURIComponent(profile.profile_id)}`}
           label={profile.name || "Profil"}
           active={activeProfileId === profile.profile_id}
           profile={profile}

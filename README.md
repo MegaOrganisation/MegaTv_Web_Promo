@@ -27,7 +27,12 @@ Elle combine :
 | `/auth/callback` | Callback Supabase SSR |
 | `/companion` | Dashboard utilisateur |
 | `/companion/settings` | Profils, compte, appareils |
-| `/companion/admin` | Dashboard admin agrégé |
+| `/companion/manage/iptv` | Gestion playlists IPTV (par profil) |
+| `/companion/manage/addons` | Gestion addons Stremio |
+| `/companion/manage/catalogs` | Gestion catalogues |
+| `/companion/admin` | Dashboard admin (périodes, CSV, graphiques) |
+| `/companion/admin/releases` | Console OTA `version.json` |
+| `/companion/admin/platform` | Config plateforme (révisions) |
 
 ## Configuration locale
 
@@ -45,7 +50,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Variables admin Sentry côté serveur uniquement :
+Variables serveur (OTA publish, jamais `NEXT_PUBLIC_`) :
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
 ```env
 SENTRY_AUTH_TOKEN=
@@ -74,9 +83,11 @@ Appliquer la migration côté repo principal MegaTv :
 supabase db push
 ```
 
-Migration :
+Migrations MegaCompagnon (repo `MegaTV`, projet Supabase `lciimaytmryruyooktkd`) :
 
-`supabase/migrations/20260630_megacompanion_dashboard.sql`
+- `20260630_megacompanion_dashboard.sql`
+- `20260702_megacompanion_p0.sql`
+- `20260702_megacompanion_p1_p2.sql`
 
 Elle crée :
 
