@@ -119,5 +119,6 @@ Configuration projet recommandée :
 - Build Command : `npm run build`
 - Output Directory : automatique / vide
 - Variables obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
+- Variable serveur OTA : `SUPABASE_SERVICE_ROLE_KEY` (Production + Preview)
 
 Les tokens Sentry restent serveur uniquement.
