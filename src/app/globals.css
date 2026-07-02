@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-:root {
+:root,
+html[data-theme="dark"] {
   --mega-black: #000000;
   --mega-background: #10191c;
   --mega-background-deep: #06070a;
@@ -13,6 +14,9 @@
   --mega-border: rgba(237, 237, 237, 0.12);
   --mega-border-strong: rgba(237, 237, 237, 0.3);
   --mega-focus: #ffffff;
+  --mega-shell-nav: rgba(0, 0, 0, 0.38);
+  --mega-input-bg: rgba(0, 0, 0, 0.22);
+  --mega-card-bg: rgba(255, 255, 255, 0.035);
   --mega-red: #e53935;
   --mega-green: #00d588;
   --mega-yellow: #ffcd3c;
@@ -25,6 +29,23 @@
   --brand-coral: #ee6a54;
   --brand-magenta: #d8497f;
   --grad-spectrum: linear-gradient(110deg, #3f9ae6 0%, #1fa8a0 19%, #5fbf5a 35%, #f2b43c 55%, #ee6a54 76%, #d8497f 100%);
+}
+
+html[data-theme="light"] {
+  --mega-background: #f4f7f8;
+  --mega-background-deep: #e8eef0;
+  --mega-surface: #ffffff;
+  --mega-surface-raised: #f8fbfc;
+  --mega-row: #edf3f5;
+  --mega-text: #10191c;
+  --mega-text-muted: rgba(16, 25, 28, 0.72);
+  --mega-text-faint: rgba(16, 25, 28, 0.5);
+  --mega-border: rgba(16, 25, 28, 0.12);
+  --mega-border-strong: rgba(16, 25, 28, 0.24);
+  --mega-focus: #10191c;
+  --mega-shell-nav: rgba(255, 255, 255, 0.82);
+  --mega-input-bg: rgba(255, 255, 255, 0.92);
+  --mega-card-bg: rgba(255, 255, 255, 0.72);
 }
 
 * {
@@ -48,6 +69,13 @@ body {
   font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% -10%, rgba(63, 154, 230, 0.12), transparent 34rem),
+    radial-gradient(circle at 95% 2%, rgba(216, 73, 127, 0.08), transparent 32rem),
+    var(--mega-background-deep);
 }
 
 body::before {

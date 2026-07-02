@@ -1,26 +1,35 @@
 import { createClient } from "@/lib/supabase/server";
 import { normalizePlaylistEntry, type IptvPlaylistEntry, type IptvProfileState } from "@/lib/iptv/types";
 
-export async function getIptvPlaylistsForProfile(profileId: string) {
-  const supabase = await createClient();
-  const normalizedProfileId = profileId.trim();
-
-  const { data, error } = await supabase
-    .from("v_account_sync_iptv")
-    .select("iptv_by_profile, updated_at, payload_updated_at")
-    .maybeSingle();
-
-  if (error) {
-    return { playlists: [] as IptvPlaylistEntry[], updatedAt: null as string | null, error: error.message };
+function parsePayload(value: unknown): Record<string, unknown> {
+  if (!value) return {};
+  if (typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value !== "string") return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
   }
+}
 
-  const iptvByProfile = (data?.iptv_by_profile || {}) as Record<string, IptvProfileState>;
-  const profileState = iptvByProfile[normalizedProfileId] || {};
+function resolveProfileState(iptvByProfile: Record<string, IptvProfileState>, profileId: string) {
+  const direct = iptvByProfile[profileId];
+  if (direct) return direct;
+
+  const lowered = profileId.toLowerCase();
+  const match = Object.entries(iptvByProfile).find(([key]) => key.toLowerCase() === lowered);
+  if (match) return match[1];
+
+  const withPlaylists = Object.values(iptvByProfile).find((state) => Array.isArray(state?.playlists) && state.playlists.length > 0);
+  if (withPlaylists) return withPlaylists;
+
+  return Object.values(iptvByProfile).find((state) => Boolean(state?.m3uUrl)) || {};
+}
+
+function playlistsFromState(profileState: IptvProfileState) {
   const rawPlaylists = Array.isArray(profileState.playlists) ? profileState.playlists : [];
-
-  const playlists = rawPlaylists.map((entry, index) =>
-    normalizePlaylistEntry(entry as Record<string, unknown>, index)
-  );
+  const playlists = rawPlaylists.map((entry, index) => normalizePlaylistEntry(entry as Record<string, unknown>, index));
 
   if (playlists.length === 0 && profileState.m3uUrl) {
     playlists.push(
@@ -37,9 +46,33 @@ export async function getIptvPlaylistsForProfile(profileId: string) {
     );
   }
 
+  return playlists;
+}
+
+export async function getIptvPlaylistsForProfile(profileId: string) {
+  const supabase = await createClient();
+  const normalizedProfileId = profileId.trim();
+
+  const [sliceResult, payloadResult] = await Promise.all([
+    supabase.from("v_account_sync_iptv").select("iptv_by_profile, updated_at, payload_updated_at").maybeSingle(),
+    supabase.from("account_sync_state").select("payload, updated_at").maybeSingle()
+  ]);
+
+  const sliceError = sliceResult.error;
+  const payload = parsePayload(payloadResult.data?.payload);
+  const payloadIptv = (payload.iptvByProfile || payload.iptv_by_profile || {}) as Record<string, IptvProfileState>;
+  const sliceIptv = (sliceResult.data?.iptv_by_profile || {}) as Record<string, IptvProfileState>;
+  const iptvByProfile = { ...payloadIptv, ...sliceIptv };
+  const profileState = resolveProfileState(iptvByProfile, normalizedProfileId);
+  const playlists = playlistsFromState(profileState);
+
+  if (playlists.length === 0 && sliceError) {
+    return { playlists: [] as IptvPlaylistEntry[], updatedAt: null as string | null, error: sliceError.message };
+  }
+
   return {
     playlists,
-    updatedAt: (data?.updated_at as string | null) || null,
+    updatedAt: (sliceResult.data?.updated_at as string | null) || (payloadResult.data?.updated_at as string | null) || null,
     error: null as string | null
   };
 }

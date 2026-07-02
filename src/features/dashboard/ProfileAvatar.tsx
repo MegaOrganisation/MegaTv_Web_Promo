@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { clsx } from "clsx";
 
-import { avatarAssetPath, avatarGradientCss, isLightProfileColor, profileColorToCss, profileInitial } from "@/lib/profiles/avatars";
+import { avatarAssetPath, avatarGradientCss } from "@/lib/profiles/avatars";
 import type { ProfileRow } from "@/lib/supabase/types";
 
 type Props = {
@@ -51,15 +51,14 @@ export function ProfileAvatar({ profile, avatarUrl, size = "md", className, labe
     );
   }
 
-  const color = profileColorToCss(profile?.avatar_color);
-  const darkText = isLightProfileColor(profile?.avatar_color);
+  const fallbackAvatarId = profile?.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1;
   return (
     <span
-      className={clsx("inline-grid shrink-0 place-items-center rounded-full border border-white/15 font-black", sizeClasses[size], className, darkText ? "text-black" : "text-white")}
-      style={{ background: color }}
+      className={clsx("relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border border-white/15 p-0.5", sizeClasses[size], className)}
+      style={{ background: avatarGradientCss(fallbackAvatarId) }}
       aria-label={resolvedLabel}
     >
-      {profileInitial(profile)}
+      <Image src={avatarAssetPath(fallbackAvatarId)} alt={resolvedLabel} width={avatarPixelSizes[size]} height={avatarPixelSizes[size]} className="h-full w-full rounded-full object-cover" />
     </span>
   );
 }

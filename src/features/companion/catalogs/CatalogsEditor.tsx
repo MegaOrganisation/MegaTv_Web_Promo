@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, Eye, Plus, Save, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MegaButton } from "@/components/ui/MegaButton";
 import type { CompanionCatalog } from "@/lib/companion/sync-types";
+import { catalogsForSettingsPanel, isHiddenFromSettingsPanel, isPreinstalledSourceLocked } from "@/lib/catalogs/visibility";
 
 type Props = {
   profileId: string;
@@ -19,13 +20,25 @@ function emptyCatalog(): CompanionCatalog {
   return {
     id: `catalog_${Date.now()}`,
     title: "Nouveau catalogue",
-    sourceType: "ADDON",
+    sourceType: "MDBLIST",
     kind: "STANDARD"
   };
 }
 
+function visibleCatalogsFromAll(catalogs: CompanionCatalog[]) {
+  return catalogsForSettingsPanel(catalogs);
+}
+
+function mergeVisibleCatalogsBack(fullCatalogs: CompanionCatalog[], visibleCatalogs: CompanionCatalog[]) {
+  const hidden = fullCatalogs.filter((catalog) => isHiddenFromSettingsPanel(catalog));
+  const visibleIds = new Set(visibleCatalogs.map((catalog) => catalog.id));
+  const untouchedHidden = hidden.filter((catalog) => !visibleIds.has(catalog.id));
+  return [...visibleCatalogs, ...untouchedHidden];
+}
+
 export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreinstalled, initialDeletedIds }: Props) {
-  const [catalogs, setCatalogs] = useState(initialCatalogs);
+  const [allCatalogs, setAllCatalogs] = useState(initialCatalogs);
+  const [catalogs, setCatalogs] = useState(() => visibleCatalogsFromAll(initialCatalogs));
   const [hiddenPreinstalled, setHiddenPreinstalled] = useState(initialHiddenPreinstalled);
   const [deletedIds, setDeletedIds] = useState(initialDeletedIds);
   const [dirty, setDirty] = useState(false);
@@ -35,7 +48,8 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
   const [preview, setPreview] = useState<{ title: string; posterUrl: string | null } | null>(null);
 
   useEffect(() => {
-    setCatalogs(initialCatalogs);
+    setAllCatalogs(initialCatalogs);
+    setCatalogs(visibleCatalogsFromAll(initialCatalogs));
     setHiddenPreinstalled(initialHiddenPreinstalled);
     setDeletedIds(initialDeletedIds);
     setDirty(false);
@@ -94,10 +108,11 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
     setSaving(true);
     setStatus(null);
     try {
+      const mergedCatalogs = mergeVisibleCatalogsBack(allCatalogs, catalogs);
       const res = await fetch("/api/companion/sync/catalogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId, catalogs, hiddenPreinstalled, deletedCatalogIds: deletedIds })
+        body: JSON.stringify({ profileId, catalogs: mergedCatalogs, hiddenPreinstalled, deletedCatalogIds: deletedIds })
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Échec de sauvegarde");
@@ -118,7 +133,7 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-bold text-white">Catalogues</h2>
-            <p className="mt-1 text-sm text-white/45">Ordre local-first — respecte localCatalogsUpdatedAt côté Android.</p>
+            <p className="mt-1 text-sm text-white/45">Ordre local-first — sous-catalogues franchise/service/genre masqués comme dans l&apos;app.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <MegaButton variant="ghost" onClick={() => setCatalogs((p) => [...p, emptyCatalog()])}>
@@ -144,7 +159,9 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
               <p className="text-sm text-white/45">Aucun catalogue pour ce profil.</p>
             </GlassCard>
           ) : (
-            catalogs.map((catalog, index) => (
+            catalogs.map((catalog, index) => {
+              const locked = isPreinstalledSourceLocked(catalog);
+              return (
               <GlassCard key={`${catalog.id}-${index}`} className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="grid flex-1 gap-3 sm:grid-cols-2">
@@ -159,8 +176,9 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
                     <label className="text-xs text-white/45">
                       Source
                       <select
-                        className="focus-ring mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                        className="focus-ring mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white disabled:opacity-50"
                         value={catalog.sourceType}
+                        disabled={locked}
                         onChange={(e) => updateCatalog(index, { sourceType: e.target.value as CompanionCatalog["sourceType"] })}
                       >
                         {["PREINSTALLED", "TRAKT", "MDBLIST", "ADDON", "HOME_SERVER"].map((v) => (
@@ -173,11 +191,25 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
                     <label className="text-xs text-white/45 sm:col-span-2">
                       ID
                       <input
-                        className="focus-ring mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                        className="focus-ring mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white disabled:opacity-50"
                         value={catalog.id}
+                        disabled={locked}
                         onChange={(e) => updateCatalog(index, { id: e.target.value })}
                       />
                     </label>
+                    {!locked ? (
+                      <label className="text-xs text-white/45 sm:col-span-2">
+                        URL / référence source
+                        <input
+                          className="focus-ring mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                          value={catalog.sourceUrl || catalog.sourceRef || ""}
+                          onChange={(e) => updateCatalog(index, { sourceUrl: e.target.value, sourceRef: e.target.value })}
+                          placeholder="https://… ou tmdb:movie:123"
+                        />
+                      </label>
+                    ) : (
+                      <p className="text-xs text-white/40 sm:col-span-2">Catalogue préinstallé — source verrouillée comme dans l&apos;app MegaTv.</p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-1">
                     <button type="button" className="focus-ring rounded-lg p-2 text-white/50 hover:bg-white/10" onClick={() => move(index, -1)}>
@@ -189,13 +221,16 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
                     <button type="button" className="focus-ring rounded-lg p-2 text-white/50 hover:bg-white/10" onClick={() => loadPreview(catalog)}>
                       <Eye className="h-4 w-4" />
                     </button>
-                    <button type="button" className="focus-ring rounded-lg p-2 text-red-200/70 hover:bg-red-500/10" onClick={() => removeCatalog(index)}>
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {!locked ? (
+                      <button type="button" className="focus-ring rounded-lg p-2 text-red-200/70 hover:bg-red-500/10" onClick={() => removeCatalog(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </GlassCard>
-            ))
+            );
+            })
           )}
         </div>
 

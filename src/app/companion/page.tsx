@@ -1,4 +1,4 @@
-import { Clock3, Film, MonitorSmartphone, PlayCircle, Tv, UsersRound } from "lucide-react";
+import { Clock3, Film, PlayCircle, Tv } from "lucide-react";
 
 import { BarRankingChart, DonutChart } from "@/components/ui/Charts";
 import { ActivitySparkline } from "@/features/dashboard/ActivitySparkline";
@@ -8,7 +8,6 @@ import { KpiCard } from "@/components/ui/KpiCard";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { SignOutButton } from "@/features/auth/SignOutButton";
 import { ContinueWatchingRail } from "@/features/dashboard/ContinueWatchingRail";
-import { DeviceList } from "@/features/dashboard/DeviceList";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import { PosterMetricRow } from "@/features/dashboard/PosterMetricRow";
 import { ProfileSwitcher } from "@/features/dashboard/ProfileSwitcher";
@@ -22,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function CompanionPage({ searchParams }: { searchParams: Promise<{ profile?: string }> }) {
   const params = await searchParams;
   await requireUser("/companion");
-  const { summary, topContent, profiles, profileAvatarUrlsById, devices, continueWatching, isAdmin, errors, activeProfile, activeProfileId } = await getDashboardData(params.profile || null);
+  const { summary, topContent, profiles, profileAvatarUrlsById, continueWatching, isAdmin, errors, activeProfile, activeProfileId } = await getDashboardData(params.profile || null);
 
   const chartRows = topContent.slice(0, 5).map((item) => ({
     label: item.title || item.episode_title || `TMDB ${item.tmdb_id}`,
@@ -102,29 +101,6 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
             <ActivitySparkline profileId={activeProfileId} />
           </div>
           <BarRankingChart rows={chartRows.length ? chartRows : [{ label: "En attente de données", value: 1, sublabel: "Migration/API" }]} />
-        </GlassCard>
-      </section>
-
-      <section className="mt-6 grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-        <GlassCard as="section">
-          <div className="mb-5 flex items-center gap-3">
-            <UsersRound className="h-5 w-5 text-white/70" />
-            <div>
-              <h2 className="text-xl font-bold text-white">Profils</h2>
-              <p className="text-sm text-white/45">{formatNumber(summary.profile_count)} profils cloud.</p>
-            </div>
-          </div>
-          <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} profileAvatarUrlsById={profileAvatarUrlsById} />
-        </GlassCard>
-        <GlassCard as="section">
-          <div className="mb-5 flex items-center gap-3">
-            <MonitorSmartphone className="h-5 w-5 text-white/70" />
-            <div>
-              <h2 className="text-xl font-bold text-white">Appareils</h2>
-              <p className="text-sm text-white/45">{formatNumber(summary.device_count)} appareils liés au compte.</p>
-            </div>
-          </div>
-          <DeviceList devices={devices} />
         </GlassCard>
       </section>
     </ResponsiveShell>

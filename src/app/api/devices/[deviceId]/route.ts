@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
-import { updateDeviceInSyncPayload } from "@/lib/companion/sync-payload";
+import { removeDeviceFromSyncPayload, updateDeviceInSyncPayload } from "@/lib/companion/sync-payload";
 import type { DeviceRow } from "@/lib/supabase/types";
 
 type Body = {
@@ -53,6 +53,30 @@ export async function PATCH(request: Request, context: { params: Promise<{ devic
   }
 
   return NextResponse.json({ ok: true, device: data });
+}
+
+export async function DELETE(request: Request, context: { params: Promise<{ deviceId: string }> }) {
+  const { deviceId } = await context.params;
+  const cleanDeviceId = sanitizeId(deviceId);
+  if (!cleanDeviceId) return NextResponse.json({ error: "Appareil invalide" }, { status: 400 });
+
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { error: deleteError } = await supabase.from("account_devices").delete().eq("user_id", user.id).eq("id", cleanDeviceId);
+  if (deleteError) return NextResponse.json({ error: "Suppression de l'appareil impossible" }, { status: 500 });
+
+  try {
+    await removeDeviceFromSyncPayload(supabase, user.id, cleanDeviceId);
+  } catch {
+    return NextResponse.json({ error: "Appareil supprimé, mais synchronisation payload incomplète" }, { status: 202 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 function sanitizeId(value: string) {

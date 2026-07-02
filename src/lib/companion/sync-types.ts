@@ -28,6 +28,7 @@ export type CompanionCatalog = {
   addonCatalogId?: string | null;
   addonName?: string | null;
   kind?: CatalogKind;
+  collectionGroup?: string | null;
 };
 
 export type AddonsSliceData = {

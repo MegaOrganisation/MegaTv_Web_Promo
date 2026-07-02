@@ -8,11 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ManageLayout({ children }: { children: ReactNode }) {
   await requireUser("/companion/manage");
-  const { profiles } = await getDashboardData(null);
+  const { profiles, profileAvatarUrlsById } = await getDashboardData(null);
 
   return (
     <Suspense fallback={<div className="p-6 text-sm text-white/45">Chargement…</div>}>
-      <ManageLayoutChrome profiles={profiles}>{children}</ManageLayoutChrome>
+      <ManageLayoutChrome profiles={profiles} profileAvatarUrlsById={profileAvatarUrlsById}>
+        {children}
+      </ManageLayoutChrome>
     </Suspense>
   );
 }

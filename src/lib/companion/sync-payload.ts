@@ -10,6 +10,8 @@ type ProfilePayloadPatch = {
   avatarId?: number;
   avatarImageVersion?: number;
   avatarImageStoragePath?: string | null;
+  isKidsProfile?: boolean;
+  isLocked?: boolean;
   lastUsedAt?: number;
 };
 
@@ -50,6 +52,8 @@ export async function updateProfileInSyncPayload(
       ...(patch.avatarId !== undefined ? { avatarId: patch.avatarId } : {}),
       ...(patch.avatarImageVersion !== undefined ? { avatarImageVersion: patch.avatarImageVersion } : {}),
       ...(patch.avatarImageStoragePath !== undefined ? { avatarImageStoragePath: patch.avatarImageStoragePath } : {}),
+      ...(patch.isKidsProfile !== undefined ? { isKidsProfile: patch.isKidsProfile } : {}),
+      ...(patch.isLocked !== undefined ? { isLocked: patch.isLocked } : {}),
       lastUsedAt
     };
 
@@ -75,6 +79,38 @@ export async function updateDeviceInSyncPayload(
     };
 
     payload.registeredDevicesById = devices;
+  });
+}
+
+export async function removeDeviceFromSyncPayload(supabase: SupabaseClient, userId: string, deviceId: string) {
+  await mutatePayload(supabase, userId, (payload) => {
+    const devices = isObject(payload.registeredDevicesById) ? { ...payload.registeredDevicesById } : {};
+    delete devices[deviceId];
+    payload.registeredDevicesById = devices;
+
+    const inbox = isObject(payload.remotePlaybackInboxByDeviceId) ? { ...payload.remotePlaybackInboxByDeviceId } : null;
+    if (inbox && deviceId in inbox) {
+      delete inbox[deviceId];
+      if (Object.keys(inbox).length === 0) delete payload.remotePlaybackInboxByDeviceId;
+      else payload.remotePlaybackInboxByDeviceId = inbox;
+    }
+  });
+}
+
+export async function removeDuplicateDevicesFromCloud(supabase: SupabaseClient, userId: string, duplicateIds: string[]) {
+  if (duplicateIds.length === 0) return;
+  await supabase.from("account_devices").delete().eq("user_id", userId).in("id", duplicateIds);
+  await mutatePayload(supabase, userId, (payload) => {
+    const devices = isObject(payload.registeredDevicesById) ? { ...payload.registeredDevicesById } : {};
+    duplicateIds.forEach((deviceId) => delete devices[deviceId]);
+    payload.registeredDevicesById = devices;
+
+    const inbox = isObject(payload.remotePlaybackInboxByDeviceId) ? { ...payload.remotePlaybackInboxByDeviceId } : null;
+    if (inbox) {
+      duplicateIds.forEach((deviceId) => delete inbox[deviceId]);
+      if (Object.keys(inbox).length === 0) delete payload.remotePlaybackInboxByDeviceId;
+      else payload.remotePlaybackInboxByDeviceId = inbox;
+    }
   });
 }
 

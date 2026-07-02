@@ -18,8 +18,8 @@ type NavItem = {
 const baseItems: NavItem[] = [
   { href: "/companion", label: "Dashboard", shortLabel: "Home", icon: Home, exact: true },
   { href: "/companion/manage", label: "Gérer", shortLabel: "Gérer", icon: LayoutGrid },
-  { href: "/companion/settings#profiles", label: "Profils", shortLabel: "Profils", icon: UserRound },
-  { href: "/companion/settings#devices", label: "Appareils", shortLabel: "App.", icon: MonitorSmartphone },
+  { href: "/companion/profiles", label: "Profils", shortLabel: "Profils", icon: UserRound },
+  { href: "/companion/devices", label: "Appareils", shortLabel: "App.", icon: MonitorSmartphone },
   { href: "/companion/settings", label: "Réglages", shortLabel: "Régl.", icon: Settings, exact: true }
 ];
 

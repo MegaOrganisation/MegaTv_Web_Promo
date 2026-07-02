@@ -1,12 +1,10 @@
-import { LockKeyhole, Settings, SlidersHorizontal, UserRound } from "lucide-react";
+import { LockKeyhole, Palette, UserRound } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/GlassCard";
-import { MegaLink } from "@/components/ui/MegaButton";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { SignOutButton } from "@/features/auth/SignOutButton";
-import { DeviceManagementPanel } from "@/features/dashboard/DeviceManagementPanel";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
-import { ProfileManagementPanel } from "@/features/dashboard/ProfileManagementPanel";
+import { ThemeSelector } from "@/features/theme/ThemeSelector";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDashboardData } from "@/lib/dashboard/queries";
 
@@ -14,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export default async function CompanionSettingsPage() {
   const user = await requireUser("/companion/settings");
-  const { profiles, profileAvatarUrlsById, devices, isAdmin } = await getDashboardData(null, { deviceLimit: 50 });
+  const { isAdmin } = await getDashboardData(null);
 
   return (
-    <ResponsiveShell title="Profils & réglages" subtitle="Gestion web sécurisée des profils et appareils synchronisés avec MegaTv Cloud." isAdmin={isAdmin}>
+    <ResponsiveShell title="Réglages" subtitle="Compte connecté, sécurité et apparence du MegaCompagnon." isAdmin={isAdmin}>
       <PageEventTracker page="Companion Settings" />
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <GlassCard as="section">
@@ -30,19 +28,13 @@ export default async function CompanionSettingsPage() {
           <div className="mt-5">
             <SignOutButton />
           </div>
-          <div className="mt-5">
-            <MegaLink href="/companion/manage" variant="ghost" className="w-full">
-              <SlidersHorizontal className="h-4 w-4" />
-              Gestion cloud (IPTV, addons, catalogues)
-            </MegaLink>
-          </div>
         </GlassCard>
 
         <GlassCard as="section">
           <LockKeyhole className="mb-4 h-6 w-6 text-white/70" />
           <h2 className="text-2xl font-bold text-white">Sécurité des données</h2>
           <p className="mt-3 text-sm leading-7 text-white/52">
-            Les modifications passent par des routes serveur authentifiées : aucun user_id n'est accepté depuis le client et les écritures restent filtrées par votre session Supabase.
+            Les modifications passent par des routes serveur authentifiées : aucun user_id n&apos;est accepté depuis le client et les écritures restent filtrées par votre session Supabase.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {["RLS user_id", "profile_id strict", "payload synchronisé"].map((item) => (
@@ -54,23 +46,15 @@ export default async function CompanionSettingsPage() {
         </GlassCard>
       </div>
 
-      <GlassCard as="section" className="mt-6 scroll-mt-28" id="profiles">
-        <div className="mb-5 flex items-center gap-3">
-          <Settings className="h-6 w-6 text-white/70" />
+      <GlassCard as="section" className="mt-6">
+        <div className="mb-4 flex items-center gap-3">
+          <Palette className="h-6 w-6 text-white/70" />
           <div>
-            <h2 className="text-2xl font-bold text-white">Profils</h2>
-            <p className="mt-1 text-sm text-white/45">Affichage, avatar par défaut ou photo importée, comme dans l'app MegaTv.</p>
+            <h2 className="text-2xl font-bold text-white">Apparence</h2>
+            <p className="mt-1 text-sm text-white/45">Thème clair, sombre ou automatique selon le système.</p>
           </div>
         </div>
-        <ProfileManagementPanel profiles={profiles} profileAvatarUrlsById={profileAvatarUrlsById} />
-      </GlassCard>
-
-      <GlassCard as="section" className="mt-6 scroll-mt-28" id="devices">
-        <h2 className="text-2xl font-bold text-white">Appareils cloud</h2>
-        <p className="mt-2 text-sm text-white/45">Renommez les appareils connectés au compte. Les couleurs/photos appareil ne sont pas encore présentes dans le schéma MegaTv Cloud.</p>
-        <div className="mt-5">
-          <DeviceManagementPanel devices={devices} />
-        </div>
+        <ThemeSelector />
       </GlassCard>
     </ResponsiveShell>
   );

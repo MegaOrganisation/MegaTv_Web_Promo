@@ -1,14 +1,15 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Camera, Check, Loader2, Palette, RotateCcw, Save, Sparkles } from "lucide-react";
+import { Baby, Camera, Check, KeyRound, Loader2, RotateCcw, Save, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { MegaButton } from "@/components/ui/MegaButton";
 import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
-import { avatarAssetPath, avatarGradientCss, PROFILE_COLORS, profileColorToCss, TOTAL_AVATARS } from "@/lib/profiles/avatars";
+import { AVATAR_REGISTRY, avatarAssetPath, avatarGradientCss } from "@/lib/profiles/avatars";
+import { formatPinInput } from "@/lib/profiles/pin";
 import type { ProfileRow } from "@/lib/supabase/types";
 
 type Props = {
@@ -18,18 +19,20 @@ type Props = {
 
 type ProfileFormState = {
   name: string;
-  avatarColor: number;
   avatarId: number;
-  usePresetAvatar: boolean;
+  isKidsProfile: boolean;
+  pin: string;
+  currentPin: string;
+  removePin: boolean;
 };
-
-const colorLabels = ["Blanc", "Rouge", "Orange", "Jaune", "Vert", "Bleu", "Indigo", "Rose"];
 
 export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }: Props) {
   const router = useRouter();
   const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.profile_id || "");
   const selectedProfile = profiles.find((profile) => profile.profile_id === selectedProfileId) || profiles[0] || null;
-  const [formByProfileId, setFormByProfileId] = useState<Record<string, ProfileFormState>>(() => Object.fromEntries(profiles.map((profile) => [profile.profile_id, profileToForm(profile)])));
+  const [formByProfileId, setFormByProfileId] = useState<Record<string, ProfileFormState>>(() =>
+    Object.fromEntries(profiles.map((profile) => [profile.profile_id, profileToForm(profile)]))
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,11 +66,20 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
     setError(null);
     setMessage(null);
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       name: form.name,
-      avatarColor: form.avatarColor,
-      ...(form.usePresetAvatar ? { avatarId: form.avatarId, usePresetAvatar: true } : {})
+      avatarId: form.avatarId,
+      usePresetAvatar: true,
+      isKidsProfile: form.isKidsProfile
     };
+
+    if (form.removePin) {
+      payload.removePin = true;
+      if (selectedProfile.is_locked) payload.currentPin = form.currentPin;
+    } else if (form.pin) {
+      payload.pin = form.pin;
+      if (selectedProfile.is_locked) payload.currentPin = form.currentPin;
+    }
 
     const response = await fetch(`/api/profiles/${encodeURIComponent(selectedProfile.profile_id)}`, {
       method: "PATCH",
@@ -167,7 +179,10 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
               <ProfileAvatar profile={profile} avatarUrl={profileAvatarUrlsById[profile.profile_id]} size="lg" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold text-white">{profile.name || "Profil MegaTv"}</span>
-                <span className="mt-1 block truncate text-xs text-white/42">{profile.is_kids_profile ? "Profil enfant" : "Profil adulte"}{profile.is_locked ? " · verrouillé" : ""}</span>
+                <span className="mt-1 block truncate text-xs text-white/42">
+                  {profile.is_kids_profile ? "Profil enfant" : "Profil adulte"}
+                  {profile.is_locked ? " · PIN actif" : ""}
+                </span>
               </span>
               {active ? <Check className="h-5 w-5 text-white" /> : null}
             </button>
@@ -181,7 +196,7 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Profil sélectionné</p>
             <h3 className="mt-1 truncate text-2xl font-black text-white">{selectedProfile.name || "Profil MegaTv"}</h3>
-            <p className="mt-1 text-sm text-white/45">Nom, couleur, avatar preset ou photo personnalisée synchronisés avec MegaTv.</p>
+            <p className="mt-1 text-sm text-white/45">Avatars MegaTv, mode Kids et PIN synchronisés avec l&apos;application.</p>
           </div>
         </div>
 
@@ -196,58 +211,98 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
           />
         </label>
 
-        <div className="mt-6">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
-            <Palette className="h-4 w-4" />
-            Couleur
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {PROFILE_COLORS.map((color, index) => {
-              const active = form.avatarColor === color;
-              return (
-                <button
-                  key={color}
-                  type="button"
-                  aria-label={colorLabels[index] || `Couleur ${index + 1}`}
-                  onClick={() => updateForm({ avatarColor: color })}
-                  className={clsx("focus-ring grid h-10 w-10 place-items-center rounded-full border transition", active ? "border-white scale-105" : "border-white/12 hover:border-white/35")}
-                  style={{ background: profileColorToCss(color) }}
-                >
-                  {active ? <Check className={clsx("h-4 w-4", color === 0xffffffff ? "text-black" : "text-white")} /> : null}
-                </button>
-              );
-            })}
-          </div>
+        <div className="mt-6 rounded-2xl border border-white/10 bg-black/18 p-4">
+          <label className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-semibold text-white/70">
+              <Baby className="h-4 w-4" />
+              Profil Kids
+            </span>
+            <input
+              type="checkbox"
+              checked={form.isKidsProfile}
+              onChange={(event) => updateForm({ isKidsProfile: event.target.checked })}
+              className="h-5 w-5 rounded border-white/20 bg-black/30"
+            />
+          </label>
+          <p className="mt-2 text-xs leading-5 text-white/42">Active le filtrage contenu enfant côté MegaTv, comme dans l&apos;app Android.</p>
         </div>
 
         <div className="mt-6">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
             <Sparkles className="h-4 w-4" />
-            Avatar par défaut
+            Avatars MegaTv
           </div>
-          <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
-            {Array.from({ length: TOTAL_AVATARS }, (_, index) => index + 1).map((avatarId) => {
-              const active = form.avatarId === avatarId;
-              return (
-                <button
-                  key={avatarId}
-                  type="button"
-                  onClick={() => updateForm({ avatarId, usePresetAvatar: true })}
-                  className={clsx("focus-ring relative aspect-square overflow-hidden rounded-full border p-0.5 transition", active ? "border-white scale-105" : "border-white/10 hover:border-white/35")}
-                  style={{ background: avatarGradientCss(avatarId) }}
-                  aria-label={`Avatar ${avatarId}`}
-                >
-                  <NextImage src={avatarAssetPath(avatarId)} alt="" width={64} height={64} className="h-full w-full rounded-full object-cover" />
-                  {active ? <span className="absolute inset-0 grid place-items-center rounded-full bg-black/32"><Check className="h-4 w-4 text-white" /></span> : null}
-                </button>
-              );
-            })}
+          {AVATAR_REGISTRY.categories.map((category) => (
+            <div key={category.label} className="mb-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/35">{category.label}</p>
+              <div className="grid grid-cols-5 gap-2">
+                {category.ids.map((avatarId) => {
+                  const active = form.avatarId === avatarId;
+                  return (
+                    <button
+                      key={avatarId}
+                      type="button"
+                      onClick={() => updateForm({ avatarId })}
+                      className={clsx(
+                        "focus-ring relative aspect-square overflow-hidden rounded-full border p-0.5 transition",
+                        active ? "border-white scale-105" : "border-white/10 hover:border-white/35"
+                      )}
+                      style={{ background: avatarGradientCss(avatarId) }}
+                      aria-label={`Avatar ${avatarId}`}
+                    >
+                      <NextImage src={avatarAssetPath(avatarId)} alt="" width={64} height={64} className="h-full w-full rounded-full object-cover" />
+                      {active ? (
+                        <span className="absolute inset-0 grid place-items-center rounded-full bg-black/32">
+                          <Check className="h-4 w-4 text-white" />
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-black/18 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white/70">
+            <KeyRound className="h-4 w-4" />
+            Code PIN
           </div>
+          <p className="mt-1 text-xs leading-5 text-white/42">4 ou 5 chiffres, identique au format MegaTv Android.</p>
+          {selectedProfile.is_locked ? (
+            <label className="mt-3 block">
+              <span className="text-xs text-white/45">PIN actuel</span>
+              <input
+                value={form.currentPin}
+                onChange={(event) => updateForm({ currentPin: formatPinInput(event.target.value) })}
+                inputMode="numeric"
+                className="focus-ring mt-1 min-h-11 w-full rounded-2xl border border-white/10 bg-black/22 px-4 text-sm font-semibold text-white outline-none"
+                placeholder="••••"
+              />
+            </label>
+          ) : null}
+          <label className="mt-3 block">
+            <span className="text-xs text-white/45">{selectedProfile.is_locked ? "Nouveau PIN" : "Définir un PIN"}</span>
+            <input
+              value={form.pin}
+              onChange={(event) => updateForm({ pin: formatPinInput(event.target.value), removePin: false })}
+              inputMode="numeric"
+              className="focus-ring mt-1 min-h-11 w-full rounded-2xl border border-white/10 bg-black/22 px-4 text-sm font-semibold text-white outline-none"
+              placeholder="1234"
+            />
+          </label>
+          {selectedProfile.is_locked ? (
+            <label className="mt-3 flex items-center gap-2 text-sm text-white/60">
+              <input type="checkbox" checked={form.removePin} onChange={(event) => updateForm({ removePin: event.target.checked, pin: "" })} />
+              Supprimer le PIN
+            </label>
+          ) : null}
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-black/18 p-4">
           <p className="text-sm font-semibold text-white/70">Photo personnalisée</p>
-          <p className="mt-1 text-xs leading-5 text-white/42">Import JPG, PNG ou WebP. L'image est recadrée en carré 512×512 avant stockage dans le bucket privé Supabase.</p>
+          <p className="mt-1 text-xs leading-5 text-white/42">Import JPG, PNG ou WebP. Recadrage carré 512×512 avant stockage Supabase.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <label className="focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-white inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.055] px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/24 hover:bg-white/[0.09]">
               <Camera className="h-4 w-4" />
@@ -280,9 +335,11 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
 function profileToForm(profile: ProfileRow): ProfileFormState {
   return {
     name: profile.name || "Profil",
-    avatarColor: normalizeColor(profile.avatar_color),
-    avatarId: profile.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1,
-    usePresetAvatar: false
+    avatarId: profile.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : AVATAR_REGISTRY.allIds[0] || 1,
+    isKidsProfile: Boolean(profile.is_kids_profile),
+    pin: "",
+    currentPin: "",
+    removePin: false
   };
 }
 
@@ -317,8 +374,4 @@ function loadImage(src: string) {
     image.onerror = () => reject(new Error("Impossible de lire l'image"));
     image.src = src;
   });
-}
-
-function normalizeColor(value: number | null | undefined): number {
-  return typeof value === "number" && PROFILE_COLORS.some((color) => color === value) ? value : PROFILE_COLORS[0];
 }

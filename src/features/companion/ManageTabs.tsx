@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
 import { Layers3, Puzzle, Tv } from "lucide-react";
 
@@ -13,6 +13,9 @@ const tabs = [
 
 export function ManageTabs() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const profile = searchParams.get("profile");
+  const query = profile ? `?profile=${encodeURIComponent(profile)}` : "";
 
   return (
     <nav className="mb-6 flex gap-2 overflow-x-auto pb-1">
@@ -21,12 +24,10 @@ export function ManageTabs() {
         return (
           <Link
             key={href}
-            href={href}
+            href={`${href}${query}`}
             className={clsx(
               "focus-ring flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition",
-              active
-                ? "border-white/30 bg-white/14 text-white"
-                : "border-white/10 bg-white/[0.045] text-white/55 hover:text-white"
+              active ? "border-white/30 bg-white/14 text-white" : "border-white/10 bg-white/[0.045] text-white/55 hover:text-white"
             )}
           >
             <Icon className="h-4 w-4" />

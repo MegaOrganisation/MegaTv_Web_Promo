@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "source": "MegaTv/app/src/main/res/drawable-nodpi",
+  "categories": [
+    { "label": "Mega-Héros", "ids": [1, 2, 3, 4, 5] },
+    { "label": "Mega Kids", "ids": [6, 7, 8, 9, 10] },
+    { "label": "Mega extraterrestre", "ids": [11, 12, 13, 14, 15] },
+    { "label": "Mega animaux", "ids": [16, 17, 18, 19, 20] }
+  ]
+}
