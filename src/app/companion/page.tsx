@@ -36,6 +36,7 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
       <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} profileAvatarUrlsById={profileAvatarUrlsById} />
         <div className="flex shrink-0 flex-wrap gap-2">
+          <MegaLink href="/companion/manage" variant="ghost">Gestion cloud</MegaLink>
           {isAdmin ? <MegaLink href="/companion/admin" variant="ghost">Vue admin</MegaLink> : null}
           <SignOutButton />
         </div>
