@@ -192,7 +192,10 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
 
       <form onSubmit={submit} className="rounded-[26px] border border-white/10 bg-white/[0.035] p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <ProfileAvatar profile={selectedProfile} avatarUrl={profileAvatarUrlsById[selectedProfile.profile_id]} size="xl" />
+          <ProfileAvatar
+            profile={{ ...selectedProfile, avatar_id: form.avatarId, avatar_image_version: 0, avatar_image_storage_path: null }}
+            size="xl"
+          />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Profil sélectionné</p>
             <h3 className="mt-1 truncate text-2xl font-black text-white">{selectedProfile.name || "Profil MegaTv"}</h3>
@@ -235,7 +238,7 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
           {AVATAR_REGISTRY.categories.map((category) => (
             <div key={category.label} className="mb-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/35">{category.label}</p>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
                 {category.ids.map((avatarId) => {
                   const active = form.avatarId === avatarId;
                   return (
@@ -244,13 +247,13 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
                       type="button"
                       onClick={() => updateForm({ avatarId })}
                       className={clsx(
-                        "focus-ring relative aspect-square overflow-hidden rounded-full border p-0.5 transition",
+                        "focus-ring relative aspect-square max-h-12 max-w-12 overflow-hidden rounded-full border p-0.5 transition sm:max-h-14 sm:max-w-14",
                         active ? "border-white scale-105" : "border-white/10 hover:border-white/35"
                       )}
                       style={{ background: avatarGradientCss(avatarId) }}
                       aria-label={`Avatar ${avatarId}`}
                     >
-                      <NextImage src={avatarAssetPath(avatarId)} alt="" width={64} height={64} className="h-full w-full rounded-full object-cover" />
+                      <NextImage src={avatarAssetPath(avatarId)} alt="" width={48} height={48} className="h-full w-full rounded-full object-cover" />
                       {active ? (
                         <span className="absolute inset-0 grid place-items-center rounded-full bg-black/32">
                           <Check className="h-4 w-4 text-white" />

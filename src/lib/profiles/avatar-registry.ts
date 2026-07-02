@@ -25,7 +25,7 @@ export function loadAvatarRegistry(): AvatarRegistry {
 
 export function resolveAvatarIdFromRegistry(avatarId: number | null | undefined, registry: AvatarRegistry) {
   if (!avatarId || !Number.isFinite(avatarId)) return registry.allIds[0] || 1;
-  const normalized = migrateLegacyAvatarId(Math.trunc(avatarId));
+  const normalized = Math.trunc(avatarId);
   if (registry.allIds.includes(normalized)) return normalized;
   if (normalized > 0 && registry.totalAvatars > 0) {
     return registry.allIds[((normalized - 1) % registry.allIds.length)] || registry.allIds[0] || 1;
@@ -33,7 +33,7 @@ export function resolveAvatarIdFromRegistry(avatarId: number | null | undefined,
   return registry.allIds[0] || 1;
 }
 
-/** Maps pre–juillet 2026 slots to Mega categories (same index within old row). */
+/** Maps pre–juillet 2026 slots — use only when explicitly migrating stored profile rows, not for display. */
 export function migrateLegacyAvatarId(avatarId: number) {
   if (avatarId >= 1 && avatarId <= 5) return avatarId + 15;
   if (avatarId >= 6 && avatarId <= 10) return avatarId - 5;

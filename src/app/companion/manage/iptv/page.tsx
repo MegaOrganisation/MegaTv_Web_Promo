@@ -15,10 +15,17 @@ export default async function ManageIptvPage({ searchParams }: { searchParams: P
     );
   }
 
-  const { playlists, error } = await getIptvPlaylistsForProfile(profileId);
+  const { playlists, error, scope } = await getIptvPlaylistsForProfile(profileId);
 
   return (
     <div className="space-y-4">
+      {scope === "account" ? (
+        <GlassCard className="border-blue-300/20 bg-blue-300/8">
+          <p className="text-sm text-blue-100">
+            Playlist chargée au niveau <strong>compte</strong> (champ legacy `iptvM3uUrl` ou autre profil). Elle est affichée ici pour édition sur ce profil.
+          </p>
+        </GlassCard>
+      ) : null}
       {error ? (
         <GlassCard className="border-yellow-300/20 bg-yellow-300/8">
           <p className="text-sm text-yellow-100">{error}</p>

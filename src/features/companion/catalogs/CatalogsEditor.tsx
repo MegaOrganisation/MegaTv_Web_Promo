@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowDown, ArrowUp, Eye, Plus, Save, Trash2 } from "lucide-react";
 
+import { CatalogDiscoveryModal } from "@/features/companion/catalogs/CatalogDiscoveryModal";
+import type { CatalogDiscoveryResult } from "@/app/api/catalogs/discover/route";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MegaButton } from "@/components/ui/MegaButton";
 import type { CompanionCatalog } from "@/lib/companion/sync-types";
@@ -15,15 +17,6 @@ type Props = {
   initialHiddenPreinstalled: string[];
   initialDeletedIds: string[];
 };
-
-function emptyCatalog(): CompanionCatalog {
-  return {
-    id: `catalog_${Date.now()}`,
-    title: "Nouveau catalogue",
-    sourceType: "MDBLIST",
-    kind: "STANDARD"
-  };
-}
 
 function visibleCatalogsFromAll(catalogs: CompanionCatalog[]) {
   return catalogsForSettingsPanel(catalogs);
@@ -45,7 +38,8 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [preview, setPreview] = useState<{ title: string; posterUrl: string | null } | null>(null);
+  const [preview, setPreview] = useState<{ title: string; posterUrl: string | null; hint?: string } | null>(null);
+  const [discoveryOpen, setDiscoveryOpen] = useState(false);
 
   useEffect(() => {
     setAllCatalogs(initialCatalogs);
@@ -88,20 +82,51 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
   const loadPreview = async (catalog: CompanionCatalog) => {
     setPreviewId(catalog.id);
     setPreview(null);
-    const tmdbMatch = catalog.sourceRef?.match(/tmdb:(movie|tv):(\d+)/i) || catalog.id.match(/tmdb[_-]?(movie|tv)[_-]?(\d+)/i);
-    if (!tmdbMatch) {
-      setPreview({ title: catalog.title, posterUrl: null });
+    const tmdbMatch =
+      catalog.sourceRef?.match(/tmdb:(movie|tv):(\d+)/i) ||
+      catalog.sourceUrl?.match(/tmdb:(movie|tv):(\d+)/i) ||
+      catalog.id.match(/tmdb[_-]?(movie|tv)[_-]?(\d+)/i);
+    if (tmdbMatch) {
+      const mediaType = tmdbMatch[1].toLowerCase() === "tv" ? "tv" : "movie";
+      const tmdbId = Number(tmdbMatch[2]);
+      const res = await fetch(`/api/tmdb/enrich?media_type=${mediaType}&tmdb_id=${tmdbId}`);
+      if (res.ok) {
+        const json = await res.json();
+        setPreview({ title: json.title || catalog.title, posterUrl: json.posterUrl });
+        return;
+      }
+    }
+
+    if (catalog.sourceType === "TRAKT" || catalog.sourceType === "MDBLIST") {
+      setPreview({
+        title: catalog.title,
+        posterUrl: null,
+        hint: `Liste ${catalog.sourceType} — aperçu posters disponible à l'ajout via recherche. URL : ${catalog.sourceUrl || catalog.sourceRef || "—"}`
+      });
       return;
     }
-    const mediaType = tmdbMatch[1].toLowerCase() === "tv" ? "tv" : "movie";
-    const tmdbId = Number(tmdbMatch[2]);
-    const res = await fetch(`/api/tmdb/enrich?media_type=${mediaType}&tmdb_id=${tmdbId}`);
-    if (!res.ok) {
-      setPreview({ title: catalog.title, posterUrl: null });
-      return;
-    }
-    const json = await res.json();
-    setPreview({ title: json.title || catalog.title, posterUrl: json.posterUrl });
+
+    setPreview({
+      title: catalog.title,
+      posterUrl: null,
+      hint: catalog.isPreinstalled
+        ? "Catalogue préinstallé MegaTv — le rail reprend le flux TMDB/addons configuré dans l'app."
+        : "Pas de référence TMDB directe sur ce catalogue."
+    });
+  };
+
+  const addDiscoveredCatalog = (result: CatalogDiscoveryResult) => {
+    const catalog: CompanionCatalog = {
+      id: result.id.replace(/[^a-zA-Z0-9:_-]/g, "_"),
+      title: result.title,
+      sourceType: result.sourceType,
+      sourceUrl: result.sourceUrl,
+      sourceRef: result.sourceUrl,
+      kind: "STANDARD"
+    };
+    setCatalogs((prev) => [...prev, catalog]);
+    setDirty(true);
+    setStatus(`« ${result.title} » ajouté — pensez à sauvegarder.`);
   };
 
   const save = async () => {
@@ -136,7 +161,7 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
             <p className="mt-1 text-sm text-white/45">Ordre local-first — sous-catalogues franchise/service/genre masqués comme dans l&apos;app.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <MegaButton variant="ghost" onClick={() => setCatalogs((p) => [...p, emptyCatalog()])}>
+            <MegaButton variant="ghost" onClick={() => setDiscoveryOpen(true)}>
               <Plus className="h-4 w-4" />
               Ajouter
             </MegaButton>
@@ -236,7 +261,7 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
 
         <GlassCard>
           <h3 className="text-lg font-semibold text-white">Aperçu rail</h3>
-          <p className="mt-1 text-sm text-white/45">TMDB via /api/tmdb/enrich quand sourceRef le permet.</p>
+          <p className="mt-1 text-sm text-white/45">TMDB si sourceRef/id TMDB ; listes Trakt/MDBList via recherche à l&apos;ajout.</p>
           {previewId ? (
             <div className="mt-4">
               {preview?.posterUrl ? (
@@ -245,6 +270,7 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
                 <div className="grid h-48 place-items-center rounded-2xl border border-dashed border-white/15 text-sm text-white/40">Pas d&apos;aperçu TMDB</div>
               )}
               <p className="mt-3 font-semibold text-white">{preview?.title || "Chargement…"}</p>
+              {preview?.hint ? <p className="mt-2 text-xs leading-5 text-white/45">{preview.hint}</p> : null}
             </div>
           ) : (
             <p className="mt-4 text-sm text-white/40">Cliquez sur l&apos;œil d&apos;un catalogue.</p>
@@ -273,6 +299,13 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
           ) : null}
         </GlassCard>
       </div>
+
+      <CatalogDiscoveryModal
+        open={discoveryOpen}
+        existingUrls={catalogs.map((catalog) => catalog.sourceUrl || catalog.sourceRef || "").filter(Boolean)}
+        onClose={() => setDiscoveryOpen(false)}
+        onConfirmAdd={addDiscoveredCatalog}
+      />
     </div>
   );
 }

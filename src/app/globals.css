@@ -43,9 +43,35 @@ html[data-theme="light"] {
   --mega-border: rgba(16, 25, 28, 0.12);
   --mega-border-strong: rgba(16, 25, 28, 0.24);
   --mega-focus: #10191c;
-  --mega-shell-nav: rgba(255, 255, 255, 0.82);
-  --mega-input-bg: rgba(255, 255, 255, 0.92);
-  --mega-card-bg: rgba(255, 255, 255, 0.72);
+  --mega-shell-nav: rgba(255, 255, 255, 0.92);
+  --mega-input-bg: rgba(255, 255, 255, 0.96);
+  --mega-card-bg: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme="light"] body::before {
+  opacity: 0.35;
+}
+
+html[data-theme="light"] .mega-glass {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 252, 0.88));
+  box-shadow: 0 18px 50px -34px rgba(16, 25, 28, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .companion-shell .text-white,
+html[data-theme="light"] .companion-shell [class*="text-white"] {
+  color: var(--mega-text);
+}
+
+html[data-theme="light"] .companion-shell [class*="border-white"] {
+  border-color: var(--mega-border) !important;
+}
+
+html[data-theme="light"] .companion-shell [class*="bg-white"] {
+  background-color: var(--mega-card-bg) !important;
+}
+
+html[data-theme="light"] .companion-shell [class*="bg-black"] {
+  background-color: var(--mega-input-bg) !important;
 }
 
 * {

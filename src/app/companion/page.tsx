@@ -3,10 +3,8 @@ import { Clock3, Film, PlayCircle, Tv } from "lucide-react";
 import { BarRankingChart, DonutChart } from "@/components/ui/Charts";
 import { ActivitySparkline } from "@/features/dashboard/ActivitySparkline";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { MegaLink } from "@/components/ui/MegaButton";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
-import { SignOutButton } from "@/features/auth/SignOutButton";
 import { ContinueWatchingRail } from "@/features/dashboard/ContinueWatchingRail";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import { PosterMetricRow } from "@/features/dashboard/PosterMetricRow";
@@ -32,13 +30,8 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
   return (
     <ResponsiveShell title="Dashboard" subtitle="Vos métriques MegaTv, isolées par compte et profil grâce à Supabase RLS." isAdmin={isAdmin}>
       <PageEventTracker page="Companion Dashboard" />
-      <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="mb-6">
         <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} profileAvatarUrlsById={profileAvatarUrlsById} />
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <MegaLink href="/companion/manage" variant="ghost">Gestion cloud</MegaLink>
-          {isAdmin ? <MegaLink href="/companion/admin" variant="ghost">Vue admin</MegaLink> : null}
-          <SignOutButton />
-        </div>
       </div>
 
       <SelectedProfileBanner activeProfile={activeProfile} avatarUrl={activeProfile ? profileAvatarUrlsById[activeProfile.profile_id] : null} summary={summary} />
