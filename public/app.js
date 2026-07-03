@@ -14,10 +14,10 @@ window.MegaMotion = { parallax: 0.7, tilt: 0.7 };
 /* ---------- I18N ---------- */
 const i18n = {
   fr: {
-    "nav.features":"Fonctionnalités","nav.pricing":"Tarifs","nav.account":"Connexion MegaCompagnon","nav.login":"Se connecter","nav.pro":"Passer Pro",
+    "nav.features":"Fonctionnalités","nav.pricing":"Tarifs","nav.account":"Connexion MegaCompagnon","nav.web":"Application Web","nav.login":"Se connecter","nav.pro":"Passer Pro",
     "hero.badge":"Disponible sur Android TV · Mobile · Fire TV",
     "hero.sub":"Une application, toutes vos sources. Regardez ce que vous voulez, où que vous soyez, sur tous vos écrans.",
-    "hero.cta1":"Télécharger gratuitement","hero.cta2":"Découvrir",
+    "hero.cta1":"Télécharger gratuitement","hero.cta2":"Découvrir","hero.ctaWeb":"Ouvrir l'app web",
     "m.films":"Films & Séries","m.iptv":"TV en Direct IPTV","m.android":"Android TV","m.firetv":"Fire TV Stick","m.mobile":"Mobile","m.sync":"Sync Multi-Appareils","m.profiles":"Profils Familiaux","m.ai":"Sous-titres IA",
     "platforms.label":"Disponible sur",
     "feat.eyebrow":"Tout ce qu'il vous faut","feat.title":"Une app.\nUn univers complet.","feat.sub":"Du contenu à la demande jusqu'aux chaînes live, tout est centralisé dans une interface premium.",
@@ -44,10 +44,10 @@ const i18n = {
     "footer.desc":"Films, séries et TV en direct. Une seule app, toutes vos sources.","footer.app":"Application","footer.download":"Télécharger","footer.legal":"Légal","footer.privacy":"Politique de confidentialité","footer.terms":"CGU","footer.contact":"Contact","footer.copy":"© 2026 MegaTv. Tous droits réservés.",
   },
   en: {
-    "nav.features":"Features","nav.pricing":"Pricing","nav.account":"MegaCompanion Login","nav.login":"Log in","nav.pro":"Go Pro",
+    "nav.features":"Features","nav.pricing":"Pricing","nav.account":"MegaCompanion Login","nav.web":"Web App","nav.login":"Log in","nav.pro":"Go Pro",
     "hero.badge":"Available on Android TV · Mobile · Fire TV",
     "hero.sub":"One app, all your sources. Watch what you want, wherever you are, on all your screens.",
-    "hero.cta1":"Download free","hero.cta2":"Explore",
+    "hero.cta1":"Download free","hero.cta2":"Explore","hero.ctaWeb":"Open web app",
     "m.films":"Movies & TV Shows","m.iptv":"Live TV / IPTV","m.android":"Android TV","m.firetv":"Fire TV Stick","m.mobile":"Mobile","m.sync":"Multi-Device Sync","m.profiles":"Family Profiles","m.ai":"AI Subtitles",
     "platforms.label":"Available on",
     "feat.eyebrow":"Everything you need","feat.title":"One app.\nA complete universe.","feat.sub":"From on-demand content to live channels, everything is centralized in a premium interface.",

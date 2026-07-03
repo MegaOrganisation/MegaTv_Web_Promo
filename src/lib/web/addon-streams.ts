@@ -166,6 +166,7 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
     const text = `${stream.name || ""} ${stream.title || ""} ${stream.description || ""} ${
       stream.behaviorHints?.filename || ""
     }`;
+    const streamTitle = (stream.name || stream.title || stream.behaviorHints?.filename || "").trim() || provider;
     const { resolution, label } = detectQuality(text);
     const kind: AddonStreamSource["kind"] = /\.m3u8(\?|$)/i.test(url) ? "hls" : "mp4";
     const detail = detectDetail(text);
@@ -176,7 +177,7 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
       resolution,
       qualityLabel: label,
       detail,
-      label: `${provider} · ${label}${detail ? ` · ${detail}` : ""}`,
+      label: streamTitle,
       addonId: addon.id
     });
   }

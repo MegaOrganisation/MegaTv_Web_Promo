@@ -8,7 +8,7 @@ import { requireUser } from "@/lib/auth/require-user";
  * `/web/details`. Trakt + direct TMDB refs expose ids; MDBList scraping does not
  * (posters only) → `mediaId` stays null and those tiles remain visual.
  */
-type PreviewItem = { posterUrl: string; mediaId: string | null };
+type PreviewItem = { posterUrl: string; mediaId: string | null; title: string | null };
 type PreviewResult = {
   title: string;
   posterUrl: string | null;
@@ -20,7 +20,7 @@ type PreviewResult = {
 /** Ensures `items` always exists (falls back to posterUrls without identity). */
 function withItems(result: PreviewResult): PreviewResult {
   if (result.items) return result;
-  return { ...result, items: result.posterUrls.map((posterUrl) => ({ posterUrl, mediaId: null })) };
+  return { ...result, items: result.posterUrls.map((posterUrl) => ({ posterUrl, mediaId: null, title: null })) };
 }
 
 export async function GET(request: Request) {
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         title: json.title || title,
         posterUrl: json.posterUrl,
         posterUrls: json.posterUrl ? [json.posterUrl] : [],
-        items: json.posterUrl ? [{ posterUrl: json.posterUrl, mediaId }] : [],
+        items: json.posterUrl ? [{ posterUrl: json.posterUrl, mediaId, title: json.title || null }] : [],
         hint: null
       } satisfies PreviewResult);
     }
@@ -114,13 +114,56 @@ async function previewMdblist(sourceUrl: string, title: string) {
   }
 
   const pageTitle = html.match(/class="header movie-title"[^>]*title="([^"]+)"/i)?.[1]?.trim();
+  const items = buildMdblistItems(html, posterUrls);
 
   return {
     title: pageTitle || title,
     posterUrl: posterUrls[0] || null,
     posterUrls,
+    items,
     hint: posterUrls.length ? null : "Liste MDBList détectée — posters non exposés sur cette page."
   };
+}
+
+/** Pair TMDB refs + optional titles with poster URLs (same order). */
+function buildMdblistItems(html: string, posterUrls: string[]): PreviewItem[] {
+  const refs: Array<{ mediaType: "movie" | "tv"; tmdbId: number }> = [];
+  const seen = new Set<string>();
+  for (const match of html.matchAll(/(?:mdblist\.com\/title\/|themoviedb\.org\/)(movie|tv)\/(\d+)/gi)) {
+    const mediaType = match[1].toLowerCase() === "tv" ? "tv" : "movie";
+    const tmdbId = Number(match[2]);
+    const key = `${mediaType}-${tmdbId}`;
+    if (!Number.isInteger(tmdbId) || seen.has(key)) continue;
+    seen.add(key);
+    refs.push({ mediaType, tmdbId });
+  }
+
+  const titlesByPoster = extractMdblistPosterTitles(html);
+
+  return posterUrls.map((posterUrl, index) => {
+    const ref = refs[index];
+    return {
+      posterUrl,
+      mediaId: ref ? `${ref.mediaType}-${ref.tmdbId}` : null,
+      title: titlesByPoster.get(posterUrl) || null
+    };
+  });
+}
+
+/** Reads `alt` on poster-card images when MDBList exposes a title. */
+function extractMdblistPosterTitles(html: string): Map<string, string> {
+  const titles = new Map<string, string>();
+  for (const match of html.matchAll(
+    /<img[^>]*class="[^"]*poster-card[^"]*"[^>]*>/gi
+  )) {
+    const tag = match[0];
+    const src = tag.match(/\bsrc="([^"]+)"/i)?.[1];
+    const alt = tag.match(/\balt="([^"]+)"/i)?.[1]?.trim();
+    if (!src || !alt || /^(poster|backdrop)$/i.test(alt)) continue;
+    const posterUrl = normalizePosterUrl(src);
+    if (posterUrl && !titles.has(posterUrl)) titles.set(posterUrl, alt);
+  }
+  return titles;
 }
 
 async function previewTrakt(sourceUrl: string, title: string) {
@@ -166,7 +209,8 @@ async function previewTrakt(sourceUrl: string, title: string) {
       const tmdb = entry?.ids?.tmdb;
       return {
         posterUrl: normalizePosterUrl(poster),
-        mediaId: tmdb ? `${isShow ? "tv" : "movie"}-${tmdb}` : null
+        mediaId: tmdb ? `${isShow ? "tv" : "movie"}-${tmdb}` : null,
+        title: entry?.title?.trim() || null
       } satisfies PreviewItem;
     })
     .filter((item): item is PreviewItem => item != null)

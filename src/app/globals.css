@@ -29,6 +29,8 @@ html[data-theme="dark"] {
   --brand-coral: #ee6a54;
   --brand-magenta: #d8497f;
   --grad-spectrum: linear-gradient(110deg, #3f9ae6 0%, #1fa8a0 19%, #5fbf5a 35%, #f2b43c 55%, #ee6a54 76%, #d8497f 100%);
+  /* Poster/card corner radius — mirrors Android MegaTvSkin.radius.md (28dp). */
+  --mega-poster-radius: 28px;
   --companion-mobile-header: calc(3.75rem + max(0.65rem, env(safe-area-inset-top)));
   --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
@@ -160,9 +162,15 @@ a {
   color: #fff;
 }
 
+/* Modern slim rounded scrollbar (page + rails). Subtle, themed, hover-reveal. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mega-border-strong) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -170,8 +178,20 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(237, 237, 237, 0.16);
+  background: var(--mega-border);
   border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mega-border-strong);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .mega-glass {
@@ -180,6 +200,113 @@ a {
   box-shadow: 0 26px 80px -36px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(22px) saturate(165%);
   -webkit-backdrop-filter: blur(22px) saturate(165%);
+}
+
+/* Glass navigation pill — shared by horizontal top bar + vertical rail (AppTopBar / Sidebar parity). */
+.mega-nav-glass {
+  border: 1px solid var(--mega-border);
+  background: color-mix(in srgb, var(--mega-shell-nav) 88%, transparent);
+  box-shadow: 0 24px 80px -40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px) saturate(165%);
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+}
+
+.mega-nav-chip {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mega-text-muted);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    padding 0.25s ease,
+    min-width 0.25s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mega-nav-chip-expand:not(:hover):not(:focus-visible) {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  padding-inline: 0;
+}
+
+.mega-nav-chip:hover,
+.mega-nav-chip:focus-visible {
+  background: rgba(0, 0, 0, 0.38);
+  color: var(--mega-text);
+}
+
+.mega-nav-chip-active {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--mega-text);
+}
+
+.mega-nav-chip-active:hover,
+.mega-nav-chip-active:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Horizontal top bar: label expands on hover/focus (AppTopBar chip animation). */
+.mega-nav-chip-expand .mega-nav-chip-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    max-width 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+}
+
+.mega-nav-chip-expand:hover .mega-nav-chip-label,
+.mega-nav-chip-expand:focus-visible .mega-nav-chip-label {
+  max-width: 8rem;
+  opacity: 1;
+}
+
+.mega-nav-chip-expand:hover,
+.mega-nav-chip-expand:focus-visible {
+  padding-inline: 1rem;
+}
+
+/* Vertical rail: labels appear when the rail expands (group-hover/nav). */
+.mega-nav-chip-rail .mega-nav-chip-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    max-width 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+}
+
+.group\/nav:hover .mega-nav-chip-rail .mega-nav-chip-label,
+.group\/nav:focus-within .mega-nav-chip-rail .mega-nav-chip-label {
+  max-width: 9rem;
+  opacity: 1;
+}
+
+.group\/nav:hover .mega-nav-chip-rail,
+.group\/nav:focus-within .mega-nav-chip-rail {
+  justify-content: flex-start;
+  padding-inline: 0.75rem;
+}
+
+.mega-nav-chip-rail {
+  justify-content: center;
+  width: 100%;
+}
+
+.group\/nav:hover .mega-nav-chip-rail > svg,
+.group\/nav:focus-within .mega-nav-chip-rail > svg {
+  margin-inline: 0;
 }
 
 .spectrum-text {
@@ -281,9 +408,165 @@ a {
   animation: web-spin 0.7s linear infinite;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Rails (P2 visual parity) — focus-zoom clipping fix + slim scrollbar
+   Posters scale up on hover; a plain `overflow-x:auto` container would clip
+   the top/bottom of the scaled card. We pad the track vertically and pull it
+   back with a negative margin so scaled posters + shadow stay visible while
+   horizontal scrolling is preserved.
+   ───────────────────────────────────────────────────────────── */
+.mega-rail-track {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 1.75rem;
+  margin-block: -1.25rem;
+  padding-inline: 0.25rem;
+  scroll-padding-inline: 0.25rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mega-rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Poster corner radius token applied everywhere. */
+.mega-poster-radius {
+  border-radius: var(--mega-poster-radius);
+}
+
+/* White focus/hover glow — posters + CW cards. */
+.mega-poster-hover-glow {
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+.group\/poster:hover .mega-poster-hover-glow,
+.group\/poster:focus-within .mega-poster-hover-glow,
+.group\/cw:hover .mega-cw-shell,
+.group\/cw:focus-within .mega-cw-shell {
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 22px 56px -28px rgba(255, 255, 255, 0.28);
+}
+
+/* Title logo overlay fade-in (landscape cards + hero). */
+@keyframes web-logo-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.web-logo-in {
+  animation: web-logo-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hero trending-loop crossfade. */
+@keyframes web-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.web-fade-in {
+  animation: web-fade 0.7s ease both;
+}
+
+/* Top 10 rank glyph — MobileTop10RankGlyph parity (130×195 poster, 30px gutter, 10px overlap). */
+.top10-rail-cell {
+  --top10-poster-w: 130px;
+  --top10-poster-h: calc(var(--top10-poster-w) * 3 / 2);
+}
+
+@media (min-width: 640px) {
+  .top10-rail-cell {
+    --top10-poster-w: 150px;
+  }
+}
+
+.top10-number {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  width: auto;
+  min-width: 1.875rem;
+  height: var(--top10-poster-h);
+  flex-shrink: 0;
+  overflow: visible;
+  margin-left: 0.125rem;
+  margin-right: -0.35rem;
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  font-weight: 900;
+  font-size: calc(var(--top10-poster-h) * 0.48);
+  line-height: 0.82;
+  letter-spacing: -0.05em;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(210, 210, 215, 0.25) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+  position: relative;
+  z-index: 30;
+}
+
+.top10-number[data-rank="10"] {
+  min-width: 2.125rem;
+  font-size: calc(var(--top10-poster-h) * 0.36);
+  letter-spacing: -0.1em;
+}
+
+.top10-poster-slot {
+  margin-left: -0.625rem;
+  position: relative;
+  z-index: 10;
+}
+
+/* Horizontal top bar: strong blur + fade when the page scrolls. */
+.mega-topnav-scrolled .mega-topnav-scrim {
+  opacity: 1;
+}
+
+.mega-topnav-scrim {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: linear-gradient(180deg, rgba(6, 7, 10, 0.94) 0%, rgba(6, 7, 10, 0.72) 45%, transparent 100%);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+.mega-profile-ring {
+  border-radius: 9999px;
+  padding: 1.5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.mega-profile-ring:hover {
+  border-color: rgba(255, 255, 255, 0.92);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .web-route-enter,
-  .web-poster-in {
+  .web-poster-in,
+  .web-logo-in,
+  .web-fade-in {
     animation: none;
+  }
+  .mega-rail-track > * {
+    transition: none !important;
   }
 }

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { WebPlayerExperience } from "@/features/web/player/WebPlayerExperience";
 import type { PlayerSubtitle } from "@/features/web/WebPlayer";
 import { getAddonsSlice } from "@/lib/companion/sync-queries";
+import { getIptvPlaylistsForProfile } from "@/lib/iptv/queries";
 import { withProfileQuery } from "@/lib/companion/profile-scope";
 import { fetchTmdbDetails } from "@/lib/tmdb";
 import { resolveAddonSubtitles } from "@/lib/web/addon-streams";
@@ -27,10 +28,14 @@ export default async function WebPlayerPage({
   const ref = decodeMediaId(mediaId);
   if (!ref) notFound();
 
-  const [details, addonsSlice] = await Promise.all([
+  const [details, addonsSlice, iptv] = await Promise.all([
     fetchTmdbDetails(ref.mediaType, ref.tmdbId),
-    getAddonsSlice(profileId)
+    getAddonsSlice(profileId),
+    getIptvPlaylistsForProfile(profileId)
   ]);
+
+  const title = details?.title || details?.name || "Lecture MegaTv";
+  const year = Number((details?.release_date || details?.first_air_date || "").slice(0, 4)) || null;
 
   const resolution = await resolveStreamSources(
     {
@@ -40,7 +45,8 @@ export default async function WebPlayerPage({
       episode: ref.episode,
       overrideUrl: src || null
     },
-    addonsSlice.addons
+    addonsSlice.addons,
+    { iptvPlaylists: iptv.playlists, title, year }
   );
 
   // External subtitle tracks from subtitle-capable Stremio addons (proxied +
@@ -61,7 +67,6 @@ export default async function WebPlayerPage({
     }));
   }
 
-  const title = details?.title || details?.name || "Lecture MegaTv";
   const backHref = withProfileQuery(`/web/details/${mediaId}`, profileId);
   const resumeKey = `megatv_web_resume_${profileId}_${mediaId}`;
 

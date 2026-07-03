@@ -38,7 +38,8 @@ export async function GET(request: Request) {
     const upstream = await safeFetch(target, {
       signal: controller.signal,
       headers: {
-        "user-agent": "MegaTvWeb/1.0",
+        // Present as VLC: many IPTV/Xtream panels reject non-player UAs (HTTP 884).
+        "user-agent": "VLC/3.0.20 LibVLC/3.0.20",
         accept: "*/*",
         ...(range ? { range } : {})
       },

@@ -37,12 +37,8 @@ export const metadata: Metadata = {
     title: "Compagnon"
   },
   icons: {
-    icon: [
-      { url: "/assets/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/assets/companion-icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/assets/companion-icon-512.png", sizes: "512x512", type: "image/png" }
-    ],
-    apple: [{ url: "/assets/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
+    icon: [{ url: "/assets/favicon-32.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/assets/mark.png", sizes: "180x180", type: "image/png" }]
   },
   openGraph: {
     title: "MegaTv — Site officiel & MegaCompagnon",

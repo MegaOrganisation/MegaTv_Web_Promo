@@ -6,7 +6,7 @@ import { WebHero } from "@/features/web/WebHero";
 import { catalogsForSettingsPanel } from "@/lib/catalogs/visibility";
 import { getCatalogsSlice } from "@/lib/companion/sync-queries";
 import { getDashboardData } from "@/lib/dashboard/queries";
-import { fetchTmdbMediaFull, pickTrailerKey } from "@/lib/tmdb";
+import { fetchTmdbImages, fetchTmdbMediaFull, pickTitleLogo, pickTrailerKey, tmdbImageUrl } from "@/lib/tmdb";
 import { continueWatchingToItem, decodeMediaId, topContentToItem, type WebMediaItem } from "@/lib/web/media";
 
 export const dynamic = "force-dynamic";
@@ -23,15 +23,35 @@ export default async function WebHomePage({ searchParams }: { searchParams: Prom
     .filter((item): item is WebMediaItem => Boolean(item));
   const topItems = dashboard.topContent.map(topContentToItem).filter((item): item is WebMediaItem => Boolean(item));
 
-  const hero = topItems.find((item) => item.backdropUrl) || continueItems[0] || topItems[0] || null;
+  // Trending hero loop: up to 6 distinct backdrop-capable titles (movies + series).
+  const heroPool = [...topItems, ...continueItems].filter((item) => item.backdropUrl);
+  const seen = new Set<string>();
+  const heroItems: WebMediaItem[] = [];
+  for (const item of heroPool) {
+    if (seen.has(item.mediaId)) continue;
+    seen.add(item.mediaId);
+    heroItems.push(item);
+    if (heroItems.length >= 6) break;
+  }
+  if (heroItems.length === 0) {
+    const fallback = continueItems[0] || topItems[0];
+    if (fallback) heroItems.push(fallback);
+  }
+  const hero = heroItems[0] || null;
 
-  // Single cached TMDB read for the hero trailer (12h proxy revalidate) — no fan-out.
+  // Single cached TMDB read set for the FIRST hero item only (trailer + logo) —
+  // no fan-out. Remaining slides fetch their logo/trailer lazily on the client.
   let heroTrailerKey: string | null = null;
+  let heroLogo: string | null = null;
   if (hero) {
     const ref = decodeMediaId(hero.mediaId);
     if (ref) {
-      const full = await fetchTmdbMediaFull(ref.mediaType, ref.tmdbId);
+      const [full, images] = await Promise.all([
+        fetchTmdbMediaFull(ref.mediaType, ref.tmdbId),
+        fetchTmdbImages(ref.mediaType, ref.tmdbId)
+      ]);
       heroTrailerKey = pickTrailerKey(full);
+      heroLogo = tmdbImageUrl(pickTitleLogo(images), "w500");
     }
   }
 
@@ -41,11 +61,15 @@ export default async function WebHomePage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-8">
-      {hero ? <WebHero item={hero} trailerKey={heroTrailerKey} /> : null}
-      <MediaRail title="Reprendre" items={continueItems} layout="landscape" showPlay />
-      <MediaRail title="Tendances pour vous" items={topItems} />
+      {heroItems.length ? <WebHero items={heroItems} initialTrailerKey={heroTrailerKey} initialLogo={heroLogo} /> : null}
+      <MediaRail title="Reprendre" items={continueItems} layout="landscape" variant="continue" />
       {catalogRails.map((catalog) => (
-        <CatalogRail key={catalog.id} title={catalog.title} sourceUrl={catalog.sourceUrl as string} />
+        <CatalogRail
+          key={catalog.id}
+          catalogId={catalog.id}
+          title={catalog.title}
+          sourceUrl={catalog.sourceUrl as string}
+        />
       ))}
       {!hero && continueItems.length === 0 && topItems.length === 0 && catalogRails.length === 0 ? (
         <div className="mega-glass mt-10 rounded-[28px] p-10 text-center text-[var(--mega-text-muted)]">

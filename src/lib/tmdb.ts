@@ -68,6 +68,41 @@ export type TmdbEpisodeDetails = {
   air_date?: string;
 };
 
+export type TmdbLogo = {
+  file_path: string;
+  iso_639_1?: string | null;
+  vote_average?: number;
+  aspect_ratio?: number;
+};
+
+export type TmdbImages = { logos?: TmdbLogo[]; backdrops?: TmdbLogo[] };
+
+export type TmdbPersonCredit = {
+  id: number;
+  media_type?: string;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  character?: string;
+  release_date?: string;
+  first_air_date?: string;
+  vote_average?: number;
+  popularity?: number;
+};
+
+export type TmdbPerson = {
+  id: number;
+  name?: string;
+  biography?: string;
+  birthday?: string | null;
+  deathday?: string | null;
+  place_of_birth?: string | null;
+  profile_path?: string | null;
+  known_for_department?: string;
+  combined_credits?: { cast?: TmdbPersonCredit[] };
+};
+
 export function tmdbImageUrl(path: string | null | undefined, size: "w185" | "w342" | "w500" | "w780" | "original" = "w342") {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -141,6 +176,43 @@ export function pickTrailerKey(details: TmdbDetails | null | undefined) {
   const youtube = videos.filter((video) => (video.site || "").toLowerCase() === "youtube" && video.key);
   const trailer = youtube.find((video) => (video.type || "").toLowerCase() === "trailer") || youtube[0];
   return trailer?.key || null;
+}
+
+/**
+ * Title logos + backdrops for a TMDB title (`/images`). Used to overlay the
+ * TMDB title logo on landscape cards / hero, matching the Android app.
+ * `include_image_language=fr,en,null` so we get a localized logo when it exists.
+ * Cached 24h via the proxy — call at most once per title, never per rail render.
+ */
+export async function fetchTmdbImages(mediaType: TmdbMediaType, tmdbId: number) {
+  if (!tmdbId) return null;
+  return (await fetchTmdbProxy(
+    `/${mediaType}/${tmdbId}/images`,
+    "",
+    { include_image_language: "fr,en,null" },
+    60 * 60 * 24
+  )) as TmdbImages | null;
+}
+
+/** Best title logo path from a TMDB images block (prefers fr, then en, then any). */
+export function pickTitleLogo(images: TmdbImages | null | undefined, preferLang: "fr" | "en" = "fr"): string | null {
+  const logos = (images?.logos || []).filter((logo) => logo.file_path);
+  if (logos.length === 0) return null;
+  const byLang = (lang: string) => logos.filter((logo) => (logo.iso_639_1 || "").toLowerCase() === lang);
+  const pool =
+    byLang(preferLang).length > 0
+      ? byLang(preferLang)
+      : byLang("en").length > 0
+        ? byLang("en")
+        : logos;
+  const best = [...pool].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))[0];
+  return best?.file_path || null;
+}
+
+/** Person bio + filmography for the actor modal (`/person/{id}` + combined_credits). Cached 24h. */
+export async function fetchTmdbPerson(personId: number) {
+  if (!personId) return null;
+  return (await fetchTmdbProxy(`/person/${personId}`, "combined_credits", undefined, 60 * 60 * 24)) as TmdbPerson | null;
 }
 
 export async function fetchTmdbEpisodeDetails(showTmdbId: number, season: number, episode: number) {

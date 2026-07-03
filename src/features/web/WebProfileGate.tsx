@@ -3,7 +3,7 @@
 import { clsx } from "clsx";
 import { Lock, PlayCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { MegaButton } from "@/components/ui/MegaButton";
 import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
@@ -13,6 +13,10 @@ import type { ProfileRow } from "@/lib/supabase/types";
 
 export function WebProfileGate({ profiles }: { profiles: ProfileRow[] }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // When the user explicitly comes to switch profile (`/web?switch=1`, e.g. the
+  // nav avatar), never auto-resume the last profile — always show the chooser.
+  const isSwitching = Boolean(searchParams.get("switch"));
   const [pinProfile, setPinProfile] = useState<ProfileRow | null>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +27,10 @@ export function WebProfileGate({ profiles }: { profiles: ProfileRow[] }) {
     router.replace(withProfileQuery("/web/home", profileId));
   };
 
-  // Auto-resume: a previously chosen, unlocked profile skips the gate.
+  // Auto-resume: a previously chosen, unlocked profile skips the gate on a fresh
+  // entry. Skipped when the user intentionally navigated here to switch profile.
   useEffect(() => {
+    if (isSwitching) return;
     const stored = readStoredProfileId();
     if (!stored) return;
     const match = profiles.find((profile) => profile.profile_id === stored);

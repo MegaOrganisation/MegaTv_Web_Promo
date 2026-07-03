@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { clsx } from "clsx";
-import { Info, Play, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { fetchTitleLogo, fetchTrailerKey, seedTitleLogo, seedTrailerKey } from "@/features/web/mediaClient";
+import { MegaTvIcon } from "@/features/web/icons/MegaTvIcon";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
 import { useWebPrefs } from "@/lib/web/prefs";
 import type { WebMediaItem } from "@/lib/web/media";
@@ -15,33 +17,56 @@ const HOVER_STABLE_MS = 650;
 const HERO_REVEAL_DELAY_MS = 1200;
 /** Inactivity before chrome (rails/topbar/metadata gradients) hides in playback. */
 const CHROME_HIDE_MS = 5000;
+/** Trending auto-advance interval when idle (paused on hover / during playback). */
+const ROTATE_MS = 9000;
 
 type Phase = "idle" | "armed" | "playing";
 
 /**
- * Immersive hero (P1): mirrors the Android home hero trailer contract
- * (see `page_accueil_et_hero` / `moteur_de_lecture_video`):
- *  - pre-buffer the trailer on *stable* hover/focus (debounced, not micro-moves)
- *  - reveal the video after `HERO_REVEAL_DELAY_MS`
- *  - hide chrome after ~5s of inactivity during playback, restore on move/key
- *  - sound driven by the persisted `trailerSound` preference
+ * Immersive hero (P2): trending loop of movies + series that auto-advances with
+ * a crossfade and mirrors the Android home hero trailer contract:
+ *  - rotate through `items` every ~9s (paused while hovered or playing)
+ *  - pre-buffer the trailer on *stable* hover/focus (debounced) for the CURRENT
+ *    item only — trailer + logo are fetched lazily per shown slide (Free Tier:
+ *    no upfront fan-out), the first item is seeded from the server.
+ *  - reveal the video after `HERO_REVEAL_DELAY_MS`, hide chrome after inactivity
+ *  - show the TMDB title logo instead of the H1 text when available
  */
-export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?: string | null }) {
+export function WebHero({
+  items,
+  initialTrailerKey = null,
+  initialLogo = null
+}: {
+  items: WebMediaItem[];
+  initialTrailerKey?: string | null;
+  initialLogo?: string | null;
+}) {
   const { withProfile, activeProfileId } = useWebProfile();
   const { prefs, update } = useWebPrefs(activeProfileId);
-  const backdrop = item.backdropUrl || item.posterUrl;
+
+  const slides = items.filter((item) => item.backdropUrl || item.posterUrl);
+  const [index, setIndex] = useState(0);
+  const safeIndex = slides.length ? index % slides.length : 0;
+  const item = slides[safeIndex];
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [chromeHidden, setChromeHidden] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(initialTrailerKey);
+  const [logo, setLogo] = useState<string | null>(initialLogo);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const canPlay = Boolean(trailerKey) && prefs.trailerAutoplay;
-
-  const post = useCallback((func: "mute" | "unMute") => {
-    iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "*");
+  // Seed the shared client caches with the server-fetched first item (no refetch).
+  useEffect(() => {
+    if (slides[0]) {
+      seedTrailerKey(slides[0].mediaId, initialTrailerKey);
+      seedTitleLogo(slides[0].mediaId, initialLogo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearTimers = useCallback(() => {
@@ -51,13 +76,47 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
     }
   }, []);
 
-  const stop = useCallback(() => {
-    clearTimers();
-    setPhase("idle");
-    setChromeHidden(false);
-  }, [clearTimers]);
+  // Switch slides: reset per-slide playback state (done in the handler, not in an
+  // effect, so we don't trigger cascading renders on mount).
+  const goTo = useCallback(
+    (next: number) => {
+      clearTimers();
+      setPhase("idle");
+      setChromeHidden(false);
+      setLogo(null);
+      setTrailerKey(null);
+      setIndex(next);
+    },
+    [clearTimers]
+  );
+
+  // Resolve logo + trailer lazily for whichever slide is currently displayed.
+  // (setState only inside async callbacks — allowed.)
+  useEffect(() => {
+    if (!item) return;
+    let alive = true;
+    fetchTitleLogo(item.mediaId).then((value) => alive && setLogo(value));
+    fetchTrailerKey(item.mediaId).then((value) => alive && setTrailerKey(value));
+    return () => {
+      alive = false;
+    };
+  }, [item]);
+
+  // Auto-advance the trending loop when idle.
+  useEffect(() => {
+    if (slides.length <= 1 || hovered || phase !== "idle") return;
+    const timer = setTimeout(() => goTo((safeIndex + 1) % slides.length), ROTATE_MS);
+    return () => clearTimeout(timer);
+  }, [slides.length, hovered, phase, safeIndex, goTo]);
+
+  const canPlay = Boolean(trailerKey) && prefs.trailerAutoplay;
+
+  const post = useCallback((func: "mute" | "unMute") => {
+    iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "*");
+  }, []);
 
   const arm = useCallback(() => {
+    setHovered(true);
     if (!canPlay || phase !== "idle") return;
     hoverTimer.current = setTimeout(() => {
       setPhase("armed");
@@ -65,7 +124,13 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
     }, HOVER_STABLE_MS);
   }, [canPlay, phase]);
 
-  // During playback: hide chrome after inactivity; restore on any activity.
+  const stop = useCallback(() => {
+    setHovered(false);
+    clearTimers();
+    setPhase("idle");
+    setChromeHidden(false);
+  }, [clearTimers]);
+
   const bumpActivity = useCallback(() => {
     if (phase !== "playing") return;
     setChromeHidden(false);
@@ -75,8 +140,6 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
 
   useEffect(() => {
     if (phase !== "playing") return;
-    // Apply persisted sound preference once the player is live, then arm the
-    // inactivity timer that hides the chrome (setState only from the timer).
     post(prefs.trailerSound ? "unMute" : "mute");
     chromeTimer.current = setTimeout(() => setChromeHidden(true), CHROME_HIDE_MS);
     return () => {
@@ -91,13 +154,15 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
-  const toggleSound = () => update({ trailerSound: !prefs.trailerSound });
+  if (!item) return null;
 
+  const backdrop = item.backdropUrl || item.posterUrl;
+  const toggleSound = () => update({ trailerSound: !prefs.trailerSound });
   const showVideo = phase === "playing" || phase === "armed";
 
   return (
     <section
-      className="relative overflow-hidden rounded-[28px] border border-[var(--mega-border)]"
+      className="mega-poster-radius relative overflow-hidden border border-[var(--mega-border)]"
       onMouseEnter={arm}
       onMouseLeave={stop}
       onFocus={arm}
@@ -109,7 +174,7 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
       <div className="relative aspect-[16/9] w-full sm:aspect-[21/9]">
         {backdrop ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={backdrop} alt={item.title} className="h-full w-full object-cover" />
+          <img key={item.mediaId} src={backdrop} alt={item.title} className="web-fade-in h-full w-full object-cover" />
         ) : (
           <div className="h-full w-full bg-[var(--mega-surface)]" />
         )}
@@ -149,7 +214,17 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
           chromeHidden ? "pointer-events-none opacity-0" : "opacity-100"
         )}
       >
-        <h1 className="text-2xl font-black leading-tight text-[var(--mega-text)] drop-shadow sm:text-4xl">{item.title}</h1>
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`logo-${item.mediaId}`}
+            src={logo}
+            alt={item.title}
+            className="web-logo-in max-h-24 max-w-[70%] object-contain object-left drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] sm:max-h-32"
+          />
+        ) : (
+          <h1 className="text-2xl font-black leading-tight text-[var(--mega-text)] drop-shadow sm:text-4xl">{item.title}</h1>
+        )}
         {item.overview ? (
           <p className="line-clamp-3 text-sm text-[var(--mega-text-muted)] sm:text-base">{item.overview}</p>
         ) : null}
@@ -158,16 +233,38 @@ export function WebHero({ item, trailerKey }: { item: WebMediaItem; trailerKey?:
             href={withProfile(`/web/player/${item.mediaId}`)}
             className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--mega-text)] px-6 py-2.5 text-sm font-bold text-[var(--mega-background-deep)] transition hover:-translate-y-0.5"
           >
-            <Play className="h-4 w-4" fill="currentColor" /> Lire
+            <MegaTvIcon name="play" filled className="h-4 w-4" /> Lire
           </Link>
           <Link
             href={withProfile(`/web/details/${item.mediaId}`)}
             className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--mega-border-strong)] bg-[var(--mega-shell-nav)] px-5 py-2.5 text-sm font-semibold text-[var(--mega-text)] backdrop-blur transition hover:bg-[var(--mega-card-bg)]"
           >
-            <Info className="h-4 w-4" /> Détails
+            <MegaTvIcon name="info" className="h-4 w-4" /> Détails
           </Link>
         </div>
       </div>
+
+      {slides.length > 1 ? (
+        <div
+          className={clsx(
+            "absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 transition-opacity duration-500 sm:left-auto sm:right-20 sm:translate-x-0",
+            chromeHidden ? "pointer-events-none opacity-0" : "opacity-100"
+          )}
+        >
+          {slides.map((slide, i) => (
+            <button
+              key={slide.mediaId}
+              type="button"
+              aria-label={`Aller à ${slide.title}`}
+              onClick={() => goTo(i)}
+              className={clsx(
+                "h-1.5 rounded-full transition-all",
+                i === safeIndex ? "w-6 bg-[var(--mega-text)]" : "w-1.5 bg-[var(--mega-border-strong)] hover:bg-[var(--mega-text-muted)]"
+              )}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {phase === "playing" && trailerKey ? (
         <button

@@ -1,31 +1,50 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { clsx } from "clsx";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { PosterCard } from "@/features/web/PosterCard";
+import { RailHeader } from "@/features/web/RailHeader";
+import { RailSeeAllModal } from "@/features/web/RailSeeAllModal";
+import { Top10RailCell } from "@/features/web/Top10RailCell";
+import { useRailScroll } from "@/features/web/useRailScroll";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
 import { useWebPrefs } from "@/lib/web/prefs";
+import { isTop10Catalog } from "@/lib/catalogs/top10";
+import { previewToMediaItem, type WebMediaItem } from "@/lib/web/media";
+import { RAIL_PREVIEW_LIMIT } from "@/lib/web/rail";
 
-type PreviewItem = { posterUrl: string; mediaId: string | null };
+type PreviewItem = { posterUrl: string; mediaId: string | null; title?: string | null };
+
+function isGenericPosterLabel(value: string | null | undefined) {
+  const trimmed = value?.trim().toLowerCase();
+  return !trimmed || trimmed === "poster" || trimmed === "backdrop";
+}
 
 /**
  * Client rail that lazily pulls preview posters for a catalog via the shared
- * `/api/catalogs/preview` route (server-cached, revalidate 600). Kept out of SSR
- * so Home stays fast and we don't fan out network reads on every request.
- *
- * P1: posters with a resolved `mediaId` (Trakt items / direct TMDB refs) link to
- * `/web/details`; MDBList posters expose images only and stay non-clickable.
+ * `/api/catalogs/preview` route (server-cached, revalidate 600).
  */
-export function CatalogRail({ title, sourceUrl }: { title: string; sourceUrl: string }) {
-  const { withProfile, activeProfileId } = useWebProfile();
+export function CatalogRail({
+  title,
+  sourceUrl,
+  catalogId
+}: {
+  title: string;
+  sourceUrl: string;
+  catalogId?: string;
+}) {
+  const { activeProfileId } = useWebProfile();
   const { prefs } = useWebPrefs(activeProfileId);
   const [items, setItems] = useState<PreviewItem[]>([]);
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [seeAllOpen, setSeeAllOpen] = useState(false);
   const ref = useRef<HTMLElement>(null);
+  const { trackRef, canScrollLeft, canScrollRight, scrollLeft, scrollRight, refresh } = useRailScroll();
 
-  const landscape = prefs.layout === "landscape";
+  const top10 = isTop10Catalog({ id: catalogId, title, sourceUrl });
+  const landscape = top10 ? false : prefs.layout === "landscape";
 
   const load = useCallback(async () => {
     setState("loading");
@@ -39,7 +58,7 @@ export function CatalogRail({ title, sourceUrl }: { title: string; sourceUrl: st
       let next: PreviewItem[] = json.items && json.items.length ? json.items : [];
       if (next.length === 0) {
         const urls = (json.posterUrls && json.posterUrls.length ? json.posterUrls : json.posterUrl ? [json.posterUrl] : []).filter(Boolean);
-        next = urls.map((posterUrl) => ({ posterUrl, mediaId: null }));
+        next = urls.map((posterUrl) => ({ posterUrl, mediaId: null, title: null }));
       }
       setItems(next.filter((item) => Boolean(item.posterUrl)));
       setState("done");
@@ -64,48 +83,80 @@ export function CatalogRail({ title, sourceUrl }: { title: string; sourceUrl: st
     return () => observer.disconnect();
   }, [state, load]);
 
+  const mediaItems = useMemo(
+    () =>
+      items
+        .map((item) => previewToMediaItem(item.posterUrl, item.mediaId || "", title, item.title))
+        .filter((item): item is WebMediaItem => Boolean(item)),
+    [items, title]
+  );
+
   if (state === "done" && items.length === 0) return null;
 
   const tileWidth = landscape ? "w-[240px] sm:w-[280px]" : "w-[130px] sm:w-[150px]";
   const tileAspect = landscape ? "aspect-video" : "aspect-[2/3]";
+  const railItems = top10 ? items.slice(0, 10) : items;
+  const previewItems = top10 ? railItems : railItems.slice(0, RAIL_PREVIEW_LIMIT);
+  const showSeeAll = !top10 && items.length > RAIL_PREVIEW_LIMIT && mediaItems.length > RAIL_PREVIEW_LIMIT;
 
   return (
     <section ref={ref} className="space-y-3">
-      <h2 className="px-1 text-lg font-bold text-[var(--mega-text)]">{title}</h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+      <RailHeader
+        title={title}
+        showSeeAll={showSeeAll}
+        onSeeAll={() => setSeeAllOpen(true)}
+        canScrollLeft={canScrollLeft}
+        canScrollRight={canScrollRight}
+        onScrollLeft={scrollLeft}
+        onScrollRight={scrollRight}
+      />
+      <div ref={trackRef} className="mega-rail-track" onScroll={refresh}>
         {state !== "done"
           ? Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={`sk-${index}`}
-                className={clsx("shrink-0 animate-pulse rounded-2xl border border-[var(--mega-border)] bg-[var(--mega-surface)]", tileWidth, tileAspect)}
+                className={clsx("mega-poster-radius shrink-0 animate-pulse border border-[var(--mega-border)] bg-[var(--mega-surface)]", tileWidth, tileAspect)}
               />
             ))
-          : items.map((item, index) => {
-              const tile = (
+          : previewItems.map((item, index) => {
+              const media = item.mediaId
+                ? previewToMediaItem(item.posterUrl, item.mediaId, title, item.title)
+                : null;
+              if (media) {
+                const card = <PosterCard item={media} layout={landscape ? "landscape" : "poster"} />;
+                if (top10) {
+                  return (
+                    <Top10RailCell key={`top10-${item.mediaId}-${index}`} rank={index + 1}>
+                      {card}
+                    </Top10RailCell>
+                  );
+                }
+                return <PosterCard key={`${item.posterUrl}-${index}`} item={media} layout={landscape ? "landscape" : "poster"} />;
+              }
+
+              return (
                 <div
+                  key={`${item.posterUrl}-${index}`}
                   className={clsx(
-                    "group/poster relative shrink-0 overflow-hidden rounded-2xl border border-[var(--mega-border)] bg-[var(--mega-surface)] transition duration-300 hover:scale-[1.05] hover:border-[var(--mega-border-strong)]",
+                    "mega-poster-radius mega-poster-hover-glow group/poster relative shrink-0 overflow-hidden border border-[var(--mega-border)] bg-[var(--mega-surface)] transition duration-300 hover:scale-[1.05]",
                     tileWidth,
                     tileAspect
                   )}
                 >
-                  <Image src={item.posterUrl} alt={title} fill unoptimized sizes={landscape ? "280px" : "150px"} className="object-cover" />
+                  <Image src={item.posterUrl} alt="" fill unoptimized sizes={landscape ? "280px" : "150px"} className="object-cover" />
                 </div>
-              );
-              return item.mediaId ? (
-                <Link
-                  key={`${item.posterUrl}-${index}`}
-                  href={withProfile(`/web/details/${item.mediaId}`)}
-                  prefetch={false}
-                  className="focus-ring"
-                >
-                  {tile}
-                </Link>
-              ) : (
-                <div key={`${item.posterUrl}-${index}`}>{tile}</div>
               );
             })}
       </div>
+      {showSeeAll ? (
+        <RailSeeAllModal
+          title={title}
+          items={mediaItems}
+          layout={landscape ? "landscape" : "poster"}
+          open={seeAllOpen}
+          onClose={() => setSeeAllOpen(false)}
+        />
+      ) : null}
     </section>
   );
 }

@@ -132,10 +132,10 @@ export function WebPlayerExperience({
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">
-                      {source.provider} · {source.quality || "?"}
+                    <p className="truncate text-sm font-semibold text-white">{source.title || source.label}</p>
+                    <p className="truncate text-[11px] text-white/45">
+                      {[source.groupLabel || source.provider, source.quality, source.detail].filter(Boolean).join(" · ")}
                     </p>
-                    <p className="truncate text-[11px] text-white/45">{source.label}</p>
                   </div>
                   {index === selected ? <Check className="h-4 w-4 shrink-0 text-[var(--mega-red)]" /> : null}
                 </button>

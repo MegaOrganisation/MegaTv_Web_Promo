@@ -11,9 +11,12 @@ import { useCallback, useSyncExternalStore } from "react";
  * `megatv_web_client.md`); this module is the single source of truth locally.
  */
 export type WebLayout = "poster" | "landscape";
+/** Desktop shell: vertical hover-expand rail vs horizontal top-left pill dock (AppTopBar parity). */
+export type WebNavLayout = "vertical" | "horizontal";
 
 export type WebPrefs = {
   layout: WebLayout;
+  navLayout: WebNavLayout;
   trailerAutoplay: boolean;
   trailerSound: boolean;
   language: string;
@@ -21,6 +24,7 @@ export type WebPrefs = {
 
 export const WEB_PREFS_DEFAULTS: WebPrefs = {
   layout: "poster",
+  navLayout: "vertical",
   trailerAutoplay: true,
   trailerSound: false,
   language: "fr"
@@ -37,6 +41,7 @@ function readPrefs(profileId: string): WebPrefs {
     const parsed = JSON.parse(raw) as Partial<WebPrefs>;
     return {
       layout: parsed.layout === "landscape" ? "landscape" : "poster",
+      navLayout: parsed.navLayout === "horizontal" ? "horizontal" : "vertical",
       trailerAutoplay: parsed.trailerAutoplay ?? WEB_PREFS_DEFAULTS.trailerAutoplay,
       trailerSound: parsed.trailerSound ?? WEB_PREFS_DEFAULTS.trailerSound,
       language: typeof parsed.language === "string" ? parsed.language : WEB_PREFS_DEFAULTS.language

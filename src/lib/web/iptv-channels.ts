@@ -46,6 +46,9 @@ const PARSE_CAP = 12000; // hard ceiling on channels kept per refresh
 const FETCH_TIMEOUT_MS = 15000;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min: don't re-download M3U on nav
 const MAX_BYTES = 40 * 1024 * 1024; // 40 MB safety ceiling for a single M3U
+// Many Xtream panels 4xx/884 non-player user-agents. Presenting as VLC keeps the
+// server-side listing calls (player_api.php) and stream URLs accepted.
+const IPTV_UA = "VLC/3.0.20 LibVLC/3.0.20";
 
 type CacheEntry = { at: number; channels: IptvChannel[]; epgUrl: string | null; capped: boolean };
 const cache = new Map<string, CacheEntry>();
@@ -141,7 +144,7 @@ async function fetchText(url: string): Promise<string> {
     const res = await fetch(url, {
       signal: controller.signal,
       redirect: "follow",
-      headers: { "user-agent": "MegaTvWeb/1.0", accept: "*/*" },
+      headers: { "user-agent": IPTV_UA, accept: "*/*" },
       cache: "no-store"
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -153,14 +156,123 @@ async function fetchText(url: string): Promise<string> {
   }
 }
 
+async function fetchJson<T>(url: string): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      redirect: "follow",
+      headers: { "user-agent": IPTV_UA, accept: "application/json,*/*" },
+      cache: "no-store"
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+type XtreamCreds = { base: string; username: string; password: string };
+
+/** Extract base URL + credentials from an Xtream `get.php`/`player_api.php` URL. */
+function parseXtreamCreds(rawUrl: string): XtreamCreds | null {
+  try {
+    const u = new URL(rawUrl.trim());
+    const username = u.searchParams.get("username");
+    const password = u.searchParams.get("password");
+    if (!username || !password) return null;
+    return { base: `${u.protocol}//${u.host}`, username, password };
+  } catch {
+    return null;
+  }
+}
+
+type XtreamCategory = { category_id?: string | number; category_name?: string };
+type XtreamLiveStream = {
+  stream_id?: string | number;
+  name?: string;
+  stream_icon?: string;
+  category_id?: string | number;
+  epg_channel_id?: string | null;
+};
+
+/**
+ * Loads live channels through the Xtream JSON API (`player_api.php`).
+ * Preferred over `get.php` M3U export, which many panels block (HTTP 884)
+ * or gate behind connection limits. Builds `.m3u8` (HLS) stream URLs so the
+ * browser player / proxy can consume them directly.
+ */
+async function loadXtreamViaApi(entry: IptvPlaylistEntry): Promise<CacheEntry> {
+  const creds = parseXtreamCreds(entry.m3uUrl);
+  if (!creds) throw new Error("Identifiants Xtream introuvables dans l'URL.");
+  const { base, username, password } = creds;
+  const api = (action: string) =>
+    `${base}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=${action}`;
+
+  const [categories, streams] = await Promise.all([
+    fetchJson<XtreamCategory[]>(api("get_live_categories")),
+    fetchJson<XtreamLiveStream[]>(api("get_live_streams"))
+  ]);
+
+  const catName = new Map<string, string>();
+  for (const c of Array.isArray(categories) ? categories : []) {
+    if (c.category_id != null) catName.set(String(c.category_id), c.category_name || "Autres");
+  }
+
+  const channels: IptvChannel[] = [];
+  const seen = new Set<string>();
+  let capped = false;
+  for (const s of Array.isArray(streams) ? streams : []) {
+    if (s.stream_id == null) continue;
+    const streamId = String(s.stream_id);
+    const url = `${base}/live/${encodeURIComponent(username)}/${encodeURIComponent(password)}/${streamId}.m3u8`;
+    const tvgId = s.epg_channel_id ? String(s.epg_channel_id) : null;
+    const name = (s.name || "").trim() || "Sans nom";
+    let id = hashString(tvgId || `${name}|${streamId}`);
+    while (seen.has(id)) id = hashString(`${id}|${channels.length}`);
+    seen.add(id);
+    channels.push({
+      id,
+      name,
+      logo: s.stream_icon?.trim() || null,
+      group: (s.category_id != null && catName.get(String(s.category_id))) || "Autres",
+      url,
+      tvgId,
+      listId: entry.id
+    });
+    if (channels.length >= PARSE_CAP) {
+      capped = true;
+      break;
+    }
+  }
+
+  if (channels.length === 0) throw new Error("Aucune chaîne renvoyée par l'API Xtream.");
+  const epgUrl =
+    entry.epgUrl?.trim() ||
+    `${base}/xmltv.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+  return { at: Date.now(), channels, epgUrl, capped };
+}
+
 async function loadPlaylist(entry: IptvPlaylistEntry): Promise<CacheEntry> {
+  const type = detectPlaylistType(entry.m3uUrl);
+  if (type === "Stalker") {
+    throw new Error("Portails Stalker non supportés dans le viewer web (P3).");
+  }
+
+  // Xtream: use player_api.php JSON (get.php M3U export is often blocked / gated).
+  if (type === "Xtream") {
+    const key = `xtream:${entry.m3uUrl.trim()}`;
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached;
+    const result = await loadXtreamViaApi(entry);
+    cache.set(key, result);
+    return result;
+  }
+
   const url = normalizeToM3uUrl(entry.m3uUrl);
   const cached = cache.get(url);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached;
-
-  if (detectPlaylistType(entry.m3uUrl) === "Stalker") {
-    throw new Error("Portails Stalker non supportés dans le viewer web (P3).");
-  }
 
   const text = await fetchText(url);
   if (!/#EXTINF/i.test(text)) throw new Error("Format M3U non reconnu.");
