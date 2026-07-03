@@ -449,9 +449,24 @@ a {
   display: none;
 }
 
-/* Poster corner radius token applied everywhere. */
+/* Poster corner radius token applied everywhere (parité MegaTvSkin.radius.md = 28dp). */
 .mega-poster-radius {
   border-radius: var(--mega-poster-radius);
+}
+
+/* Stable clip shell — radius stays on this layer while inner frame animates aspect/width. */
+.mega-poster-shell {
+  border-radius: var(--mega-poster-radius);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--mega-surface);
+  border: 1px solid var(--mega-border);
+}
+
+.mega-poster-frame {
+  position: relative;
+  width: 100%;
+  transition: aspect-ratio 500ms ease-out;
 }
 
 /* White focus/hover glow — posters + CW cards. */

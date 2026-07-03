@@ -127,11 +127,11 @@ export function PosterCard({
         <Link href={detailsHref} prefetch={false} className="focus-ring block" title={label}>
           <div
             className={clsx(
-              "mega-poster-radius mega-poster-hover-glow relative overflow-hidden border border-[var(--mega-border)] bg-[var(--mega-surface)] transition-[transform,aspect-ratio] duration-500 ease-out",
-              !showVideo && !expanded && !fullWidth ? "group-hover/poster:scale-[1.05]" : "",
-              videoLandscape ? "aspect-video" : "aspect-[2/3]"
+              "mega-poster-shell mega-poster-hover-glow transition-transform duration-500 ease-out",
+              !showVideo && !expanded && !fullWidth ? "group-hover/poster:scale-[1.05]" : ""
             )}
           >
+            <div className={clsx("mega-poster-frame", videoLandscape ? "aspect-video" : "aspect-[2/3]")}>
             {image ? (
               <Image
                 src={image}
@@ -156,7 +156,7 @@ export function PosterCard({
             ) : null}
 
             {showVideo ? (
-              <div className="web-logo-in absolute inset-0 opacity-100 transition-opacity duration-500 ease-out">
+              <div className="web-logo-in absolute inset-0 overflow-hidden opacity-100 transition-opacity duration-500 ease-out">
                 <iframe
                   ref={iframeRef}
                   className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2"
@@ -191,6 +191,7 @@ export function PosterCard({
                 <div className="h-full bg-[var(--mega-red)]" style={{ width: `${progress}%` }} />
               </div>
             ) : null}
+            </div>
           </div>
         </Link>
 

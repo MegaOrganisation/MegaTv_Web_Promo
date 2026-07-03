@@ -78,12 +78,12 @@ export function SeasonEpisodes({ showId, profileId, seasons }: Props) {
               type="button"
               onClick={() => selectSeason(season.seasonNumber)}
               aria-expanded={isOpen}
-              className="focus-ring group w-[130px] shrink-0 text-left sm:w-[150px]"
+              className="focus-ring group mega-poster-w shrink-0 text-left"
             >
               <div
                 className={clsx(
-                  "relative aspect-[2/3] overflow-hidden rounded-2xl border bg-[var(--mega-surface)] transition duration-300 group-hover:scale-[1.04]",
-                  isOpen ? "border-[var(--mega-red)]/60" : "border-[var(--mega-border)] group-hover:border-[var(--mega-border-strong)]"
+                  "mega-poster-shell mega-poster-frame aspect-[2/3] transition duration-300 group-hover:scale-[1.04]",
+                  isOpen ? "border-[var(--mega-red)]/60" : "group-hover:border-[var(--mega-border-strong)]"
                 )}
               >
                 {season.posterUrl ? (

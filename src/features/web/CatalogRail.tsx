@@ -116,7 +116,7 @@ export function CatalogRail({
           ? Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={`sk-${index}`}
-                className={clsx("mega-poster-radius shrink-0 animate-pulse border border-[var(--mega-border)] bg-[var(--mega-surface)]", tileWidth, tileAspect)}
+                className={clsx("mega-poster-shell shrink-0 animate-pulse", tileWidth, tileAspect)}
               />
             ))
           : previewItems.map((item, index) => {
@@ -138,11 +138,7 @@ export function CatalogRail({
               return (
                 <div
                   key={`${item.posterUrl}-${index}`}
-                  className={clsx(
-                    "mega-poster-radius mega-poster-hover-glow group/poster relative shrink-0 overflow-hidden border border-[var(--mega-border)] bg-[var(--mega-surface)] transition duration-300 hover:scale-[1.05]",
-                    tileWidth,
-                    tileAspect
-                  )}
+                  className={clsx("mega-poster-shell mega-poster-hover-glow group/poster relative shrink-0 transition duration-300 hover:scale-[1.05]", tileWidth, tileAspect)}
                 >
                   <Image src={item.posterUrl} alt="" fill unoptimized sizes={landscape ? "280px" : "150px"} className="object-cover" />
                 </div>
