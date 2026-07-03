@@ -2,7 +2,8 @@
 
 import { clsx } from "clsx";
 import { Play, Star, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Spinner } from "@/features/web/Spinner";
 import { presentWebSource } from "@/lib/web/source-presentation";
@@ -68,16 +69,21 @@ export function SourceSheet({
   }, [sources]);
 
   const [tab, setTab] = useState("all");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const filtered = useMemo(() => {
     if (tab === "all") return sources;
     return sources.filter((source) => source.groupId === tab);
   }, [sources, tab]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center" role="dialog" aria-modal aria-label="Sources">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center" role="dialog" aria-modal aria-label="Sources">
       <button type="button" className="absolute inset-0 bg-black/75 backdrop-blur-sm" aria-label="Fermer" onClick={onClose} />
       <div className="relative z-[1] flex max-h-[min(92vh,820px)] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d1114] shadow-2xl sm:rounded-[28px]">
         <div className="shrink-0 px-5 pt-5">
@@ -178,6 +184,7 @@ export function SourceSheet({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

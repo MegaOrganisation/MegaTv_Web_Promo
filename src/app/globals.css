@@ -31,6 +31,10 @@ html[data-theme="dark"] {
   --grad-spectrum: linear-gradient(110deg, #3f9ae6 0%, #1fa8a0 19%, #5fbf5a 35%, #f2b43c 55%, #ee6a54 76%, #d8497f 100%);
   /* Poster/card corner radius — mirrors Android MegaTvSkin.radius.md (28dp). */
   --mega-poster-radius: 28px;
+  /* Vertical nav rail widths (collapsed / expanded on hover). */
+  --mega-nav-rail-collapsed: 5.5rem;
+  --mega-nav-rail-expanded: 16.5rem;
+  --mega-nav-rail-gutter: 0.75rem;
   --companion-mobile-header: calc(3.75rem + max(0.65rem, env(safe-area-inset-top)));
   --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
@@ -647,13 +651,23 @@ a {
   -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 50%, transparent 100%);
 }
 
-/* Rail « Voir tout » — plein écran, fond opaque, scroll interne uniquement. */
+/* Rail « Voir tout » — portal body, panneau inset, scroll interne. */
 .mega-rail-modal {
+  background: rgba(4, 6, 9, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mega-rail-modal-panel {
+  border: 1px solid var(--mega-border-strong);
+  border-radius: 28px;
   background: var(--mega-background-deep);
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(63, 154, 230, 0.08), transparent),
     radial-gradient(ellipse 60% 40% at 100% 100%, rgba(216, 73, 127, 0.06), transparent),
     linear-gradient(180deg, var(--mega-background) 0%, var(--mega-background-deep) 100%);
+  box-shadow: 0 32px 100px -24px rgba(0, 0, 0, 0.85);
+  max-height: 100%;
 }
 
 .mega-rail-modal-header {
@@ -664,6 +678,16 @@ a {
 
 .mega-rail-modal-body {
   scrollbar-gutter: stable;
+}
+
+/* Vertical nav — chips plus grands dans le rail latéral. */
+.mega-vertical-nav .mega-nav-chip {
+  min-height: 3rem;
+  min-width: 3rem;
+}
+
+.mega-vertical-nav .mega-nav-chip-rail:not(:hover):not(:focus-visible) {
+  min-width: 3rem;
 }
 
 .mega-profile-ring {

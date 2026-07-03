@@ -162,7 +162,7 @@ export function WebHero({
 
   return (
     <section
-      className="mega-poster-radius relative -mx-2 overflow-hidden border-y border-[var(--mega-border)] sm:-mx-3 sm:rounded-[var(--mega-poster-radius)] sm:border"
+      className="mega-poster-radius relative overflow-hidden border border-[var(--mega-border)]"
       onMouseEnter={arm}
       onMouseLeave={stop}
       onFocus={arm}

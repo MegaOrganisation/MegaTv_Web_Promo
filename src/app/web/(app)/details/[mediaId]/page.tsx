@@ -67,7 +67,7 @@ export default async function WebDetailsPage({
 
   return (
     <div className="space-y-8">
-      <section className="relative -mx-4 overflow-hidden sm:-mx-6 lg:mx-0 lg:border lg:border-[var(--mega-border)] mega-poster-radius">
+      <section className="relative overflow-hidden rounded-[var(--mega-poster-radius)] border border-[var(--mega-border)]">
         <div className="relative aspect-[16/9] w-full sm:aspect-[21/9]">
           {backdrop ? (
             // eslint-disable-next-line @next/next/no-img-element

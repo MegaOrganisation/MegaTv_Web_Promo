@@ -177,13 +177,15 @@ function VerticalSideNav() {
   }
 
   return (
-    <div className="peer/nav group/nav fixed inset-y-0 left-0 z-40 hidden w-[4.25rem] transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-[15rem] focus-within:w-[15rem] lg:flex">
+    <div
+      className="peer/nav group/nav fixed inset-y-0 left-0 z-40 hidden w-[var(--mega-nav-rail-collapsed)] transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-[var(--mega-nav-rail-expanded)] focus-within:w-[var(--mega-nav-rail-expanded)] lg:flex"
+    >
       <aside
         aria-label="Navigation MegaTv Web"
-        className="mega-nav-glass m-2 flex h-[calc(100vh-1rem)] min-h-0 w-[calc(100%-1rem)] flex-col overflow-hidden rounded-[26px] p-2 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
+        className="mega-nav-glass mega-vertical-nav m-3 flex h-[calc(100vh-1.5rem)] min-h-0 w-[calc(100%-0.75rem)] flex-col overflow-hidden rounded-[28px] p-2.5 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
       >
-        <div className="mb-2 flex shrink-0 justify-center px-1 py-1 group-hover/nav:justify-start group-focus-within/nav:justify-start">
-          <ProfileAvatarLink />
+        <div className="mb-2 flex shrink-0 justify-center px-1 py-1.5 group-hover/nav:justify-start group-focus-within/nav:justify-start">
+          <ProfileAvatarLink size="md" />
         </div>
 
         {activeProfile ? (
@@ -281,8 +283,8 @@ export function WebAppChrome({ children }: { children: ReactNode }) {
         className={clsx(
           "w-full pb-28 pt-3 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:pt-4 lg:pb-10",
           vertical
-            ? "pl-[4.75rem] pr-2 sm:pr-3 lg:peer-hover/nav:pl-[15.5rem] lg:peer-focus-within/nav:pl-[15.5rem]"
-            : "px-2 pt-0 sm:px-3 lg:pt-[5.5rem]"
+            ? "pl-[calc(var(--mega-nav-rail-collapsed)+var(--mega-nav-rail-gutter))] pr-3 sm:pr-4 lg:peer-hover/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))] lg:peer-focus-within/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))]"
+            : "px-3 pt-0 sm:px-4 lg:pt-[5.5rem]"
         )}
       >
         <RouteTransition>{children}</RouteTransition>
