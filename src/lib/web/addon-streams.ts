@@ -160,6 +160,7 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
 
   for (const stream of streams.slice(0, MAX_STREAMS_PER_ADDON)) {
     if (looksLikeTorrent(stream)) continue;
+    if (stream.behaviorHints?.notWebReady) continue;
     const url = stream.url?.trim();
     if (!url || !/^https?:\/\//i.test(url)) continue;
 

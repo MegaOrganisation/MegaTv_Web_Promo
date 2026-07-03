@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { ArrowLeft, Loader2, Maximize, Minimize, Pause, Play, Subtitles, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -53,6 +53,7 @@ function formatTime(seconds: number) {
 }
 
 export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], track, topRightSlot }: Props) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,13 +69,20 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
   const [controlsVisible, setControlsVisible] = useState(true);
   const [subMenuOpen, setSubMenuOpen] = useState(false);
   const [activeSub, setActiveSub] = useState<string | null>(null);
-  const [usingProxy, setUsingProxy] = useState(false);
+  const [sourceMode, setSourceMode] = useState<"proxy" | "direct">("proxy");
 
-  // Effective source URL: falls back to the signed Edge proxy on CORS failure.
-  const sourceUrl = usingProxy && stream.proxiedUrl ? stream.proxiedUrl : stream.url;
+  const sourceUrl =
+    sourceMode === "proxy" && stream.proxiedUrl ? stream.proxiedUrl : stream.url;
 
-  // Attach source: native HLS (Safari) or hls.js. Retries once via proxy on a
-  // fatal error when a proxied URL is available.
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.replace(backHref);
+  }, [router, backHref]);
+
+  // Attach source: native HLS (Safari) or hls.js. Retries direct URL if proxy fails.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -84,9 +92,9 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
     setReady(false);
     setError(null);
 
-    const failToProxy = (message: string) => {
-      if (!usingProxy && stream.proxiedUrl) {
-        setUsingProxy(true);
+    const failToDirect = (message: string) => {
+      if (sourceMode === "proxy" && stream.proxiedUrl && stream.url !== stream.proxiedUrl) {
+        setSourceMode("direct");
         return;
       }
       setError(message);
@@ -110,7 +118,7 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => setReady(true));
           hls.on(Hls.Events.ERROR, (_event: unknown, data: { fatal?: boolean }) => {
-            if (data?.fatal) failToProxy("Lecture impossible (flux indisponible ou bloqué).");
+            if (data?.fatal) failToDirect("Lecture impossible (flux indisponible ou bloqué).");
           });
         } else {
           video.src = sourceUrl;
@@ -126,7 +134,14 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
       destroyed = true;
       if (hls) hls.destroy();
     };
-  }, [sourceUrl, stream.type, stream.proxiedUrl, usingProxy]);
+  }, [sourceUrl, stream.type, stream.proxiedUrl, stream.url, sourceMode]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const video = videoRef.current;
+    if (!video) return;
+    void video.play().catch(() => setError("Lecture bloquée par le navigateur — cliquez sur Lire."));
+  }, [ready, sourceUrl]);
 
   // Restore resume position once metadata is known.
   const restoredRef = useRef(false);
@@ -344,7 +359,7 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         ref={videoRef}
         className="h-full w-full object-contain"
         playsInline
-        crossOrigin="anonymous"
+        {...(subtitles.length > 0 ? { crossOrigin: "anonymous" as const } : {})}
         onClick={togglePlay}
         onPlay={() => {
           setPlaying(true);
@@ -363,6 +378,13 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         }}
         onLoadedMetadata={onLoadedMetadata}
         onTimeUpdate={onTimeUpdate}
+        onError={() => {
+          if (sourceMode === "proxy" && stream.proxiedUrl) {
+            setSourceMode("direct");
+            return;
+          }
+          setError("Impossible de lire ce flux dans le navigateur.");
+        }}
         onVolumeChange={() => {
           const video = videoRef.current;
           if (video) {
@@ -386,9 +408,13 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         <div className="absolute inset-0 grid place-items-center bg-black/70 p-6 text-center">
           <div className="space-y-4">
             <p className="text-lg font-semibold text-white">{error}</p>
-            <Link href={backHref} className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white">
+            <button
+              type="button"
+              onClick={goBack}
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
+            >
               <ArrowLeft className="h-4 w-4" /> Retour
-            </Link>
+            </button>
           </div>
         </div>
       ) : null}
@@ -401,14 +427,19 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         )}
       >
         <div className="pointer-events-auto flex items-center gap-3 bg-[linear-gradient(180deg,rgba(0,0,0,0.6),transparent)] p-4">
-          <Link href={backHref} className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-black/60">
+          <button
+            type="button"
+            onClick={goBack}
+            className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-black/60"
+            aria-label="Retour"
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </button>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">{title}</p>
             <p className="truncate text-[11px] text-white/50">
               {stream.label}
-              {usingProxy ? " · via proxy" : ""}
+              {sourceMode === "proxy" && stream.proxiedUrl ? " · via proxy" : ""}
             </p>
           </div>
           {topRightSlot ? <div className="ml-auto">{topRightSlot}</div> : null}

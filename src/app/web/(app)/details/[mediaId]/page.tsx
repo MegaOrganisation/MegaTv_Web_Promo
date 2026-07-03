@@ -5,7 +5,7 @@ import { CastRail, type CastMember } from "@/features/web/details/CastRail";
 import { DetailActionBar, DetailBackButton } from "@/features/web/details/DetailActions";
 import { PosterCard } from "@/features/web/PosterCard";
 import { SeasonEpisodes, type SeasonInput } from "@/features/web/details/SeasonEpisodes";
-import { fetchTmdbMediaFull, formatRuntimeMinutes, pickTrailerKey, tmdbImageUrl } from "@/lib/tmdb";
+import { fetchTmdbMediaFull, fetchTmdbImages, formatRuntimeMinutes, pickTitleLogo, pickTrailerKey, tmdbImageUrl } from "@/lib/tmdb";
 import { decodeMediaId, encodeMediaId, type WebMediaItem } from "@/lib/web/media";
 
 export const dynamic = "force-dynamic";
@@ -25,10 +25,14 @@ export default async function WebDetailsPage({
   const ref = decodeMediaId(mediaId);
   if (!ref) notFound();
 
-  const details = await fetchTmdbMediaFull(ref.mediaType, ref.tmdbId);
+  const [details, images] = await Promise.all([
+    fetchTmdbMediaFull(ref.mediaType, ref.tmdbId),
+    fetchTmdbImages(ref.mediaType, ref.tmdbId)
+  ]);
   if (!details) notFound();
 
   const title = details.title || details.name || "Contenu MegaTv";
+  const logoUrl = tmdbImageUrl(pickTitleLogo(images), "w500");
   const backdrop = tmdbImageUrl(details.backdrop_path, "w780") || tmdbImageUrl(details.poster_path, "w500");
   const runtime =
     ref.mediaType === "movie" ? formatRuntimeMinutes(details.runtime) : formatRuntimeMinutes(details.episode_run_time?.[0]);
@@ -101,7 +105,7 @@ export default async function WebDetailsPage({
       </section>
 
       <section className="px-1">
-        <DetailActionBar mediaId={mediaId} profileId={profileId} title={title} trailerKey={trailerKey} />
+        <DetailActionBar mediaId={mediaId} profileId={profileId} title={title} logoUrl={logoUrl} trailerKey={trailerKey} />
       </section>
 
       {details.overview ? (

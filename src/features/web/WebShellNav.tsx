@@ -128,9 +128,9 @@ function HorizontalTopNav() {
   }
 
   return (
-    <header className={clsx("fixed left-0 right-0 top-0 z-40 hidden lg:block", scrolled && "mega-topnav-scrolled")}>
-      <div className="mega-topnav-scrim pointer-events-none absolute inset-0" aria-hidden />
-      <div className="relative mx-auto flex max-w-[1500px] items-center gap-4 px-6 py-3">
+    <header className={clsx("mega-topnav-bar fixed left-0 right-0 top-0 z-40 hidden lg:block", scrolled && "mega-topnav-scrolled")}>
+      <div className="mega-topnav-scrim" aria-hidden />
+      <div className="relative flex w-full items-center gap-4 px-4 py-3 sm:px-5">
         <ProfileAvatarLink size="md" className="pointer-events-auto" />
 
         <div className="pointer-events-auto flex flex-1 items-center gap-3">
@@ -177,10 +177,10 @@ function VerticalSideNav() {
   }
 
   return (
-    <div className="peer/nav group/nav fixed left-3 top-3 z-40 hidden w-[4.25rem] flex-col transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-[15rem] focus-within:w-[15rem] lg:flex">
+    <div className="peer/nav group/nav fixed inset-y-0 left-0 z-40 hidden w-[4.25rem] transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-[15rem] focus-within:w-[15rem] lg:flex">
       <aside
         aria-label="Navigation MegaTv Web"
-        className="mega-nav-glass flex min-h-0 max-h-[calc(100vh-1.5rem)] flex-col overflow-visible rounded-[26px] p-2 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
+        className="mega-nav-glass m-2 flex h-[calc(100vh-1rem)] min-h-0 w-[calc(100%-1rem)] flex-col overflow-hidden rounded-[26px] p-2 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
       >
         <div className="mb-2 flex shrink-0 justify-center px-1 py-1 group-hover/nav:justify-start group-focus-within/nav:justify-start">
           <ProfileAvatarLink />
@@ -201,7 +201,7 @@ function VerticalSideNav() {
         <button
           type="button"
           onClick={signOut}
-          className="focus-ring mega-nav-chip mega-nav-chip-rail mt-2 w-full text-[var(--mega-text-muted)] hover:text-[var(--mega-text)]"
+          className="focus-ring mega-nav-chip mega-nav-chip-rail mt-auto w-full shrink-0 text-[var(--mega-text-muted)] hover:text-[var(--mega-text)]"
         >
           <MegaTvIcon name="logout" className="h-[1.15rem] w-[1.15rem]" />
           <span className="mega-nav-chip-label">Se déconnecter</span>
@@ -216,9 +216,11 @@ function MobileBottomNav() {
   const { withProfile } = useWebProfile();
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[85] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
-      <nav className="pointer-events-auto mega-nav-glass mx-auto grid w-full max-w-md grid-cols-5 gap-0.5 rounded-[24px] p-1.5">
-        {MOBILE_NAV.map((item) => {
+    <div className="mega-bottomnav-shell pointer-events-none fixed inset-x-0 bottom-0 z-[85] lg:hidden">
+      <div className="mega-bottomnav-scrim" aria-hidden />
+      <div className="relative px-2">
+        <nav className="pointer-events-auto mega-nav-glass mx-auto grid w-full max-w-md grid-cols-5 gap-0.5 rounded-[24px] p-1.5">
+          {MOBILE_NAV.map((item) => {
           const active = isActive(pathname, item);
           return (
             <Link
@@ -249,8 +251,9 @@ function MobileBottomNav() {
               </span>
             </Link>
           );
-        })}
-      </nav>
+          })}
+        </nav>
+      </div>
     </div>
   );
 }
@@ -276,10 +279,10 @@ export function WebAppChrome({ children }: { children: ReactNode }) {
       <WebShellNav layout={prefs.navLayout} />
       <main
         className={clsx(
-          "mx-auto w-full max-w-[1500px] px-4 pb-28 pt-5 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-6 lg:pb-10 lg:pr-8",
+          "w-full pb-28 pt-3 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:pt-4 lg:pb-10",
           vertical
-            ? "lg:pl-[5.75rem] lg:peer-hover/nav:pl-[17.25rem] lg:peer-focus-within/nav:pl-[17.25rem]"
-            : "lg:pl-8 lg:pt-[5.5rem]"
+            ? "pl-[4.75rem] pr-2 sm:pr-3 lg:peer-hover/nav:pl-[15.5rem] lg:peer-focus-within/nav:pl-[15.5rem]"
+            : "px-2 pt-0 sm:px-3 lg:pt-[5.5rem]"
         )}
       >
         <RouteTransition>{children}</RouteTransition>

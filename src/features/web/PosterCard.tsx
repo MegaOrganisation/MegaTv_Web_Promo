@@ -15,7 +15,6 @@ import { useWebPrefs, type WebLayout } from "@/lib/web/prefs";
 import type { WebMediaItem } from "@/lib/web/media";
 
 const HOVER_STABLE_MS = 700;
-const EXPAND_WIDTH = 400;
 
 function isGenericPosterLabel(value: string | null | undefined) {
   const trimmed = value?.trim().toLowerCase();
@@ -58,10 +57,7 @@ export function PosterCard({
   const rawProgress = typeof item.progress === "number" ? item.progress : 0;
   const progress = Math.min(100, Math.max(0, rawProgress <= 1 ? rawProgress * 100 : rawProgress));
 
-  const canExpand = !fullWidth;
-  const expanded = phase === "playing" && !landscape && canExpand;
   const showVideo = phase === "playing" && Boolean(trailerKey);
-  const videoLandscape = landscape || expanded;
 
   const landscapeImage = landscape
     ? backdropUrl || item.backdropUrl || item.posterUrl || null
@@ -117,7 +113,6 @@ export function PosterCard({
   return (
     <div
       className={clsx("group/poster relative", fullWidth ? "" : "shrink-0", className)}
-      style={expanded ? { width: EXPAND_WIDTH } : undefined}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={onEnter}
@@ -127,13 +122,13 @@ export function PosterCard({
         setMenu({ x: event.clientX, y: event.clientY });
       }}
     >
-      <div className={clsx("transition-[width] duration-500 ease-out", expanded ? "" : widthClass)}>
+      <div className={clsx("transition-[width] duration-500 ease-out", widthClass)}>
         <Link href={detailsHref} prefetch={false} className="focus-ring block" title={label}>
           <div
             className={clsx(
               "mega-poster-radius mega-poster-hover-glow relative overflow-hidden border border-[var(--mega-border)] bg-[var(--mega-surface)]",
-              expanded ? "" : "group-hover/poster:scale-[1.05]",
-              videoLandscape ? "aspect-video" : "aspect-[2/3]"
+              !showVideo && !fullWidth ? "group-hover/poster:scale-[1.05]" : "",
+              landscape ? "aspect-video" : "aspect-[2/3]"
             )}
           >
             {image ? (
@@ -142,8 +137,12 @@ export function PosterCard({
                 alt=""
                 fill
                 unoptimized
-                sizes={videoLandscape ? "400px" : "150px"}
-                className={clsx("object-cover", usingPosterFallback ? "scale-110 object-top" : "")}
+                sizes={landscape ? "400px" : "150px"}
+                className={clsx(
+                  "object-cover transition-opacity duration-500 ease-out",
+                  usingPosterFallback ? "scale-110 object-top" : "",
+                  showVideo ? "opacity-0" : "opacity-100"
+                )}
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-2 text-center text-[var(--mega-text-faint)]">
@@ -156,7 +155,7 @@ export function PosterCard({
             ) : null}
 
             {showVideo ? (
-              <div className="web-logo-in absolute inset-0">
+              <div className="web-logo-in absolute inset-0 opacity-100 transition-opacity duration-500 ease-out">
                 <iframe
                   ref={iframeRef}
                   className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2"
@@ -165,7 +164,7 @@ export function PosterCard({
                   allow="autoplay; encrypted-media"
                   frameBorder={0}
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(6,7,10,0.85)_0%,transparent_50%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(6,7,10,0.55)_0%,transparent_45%)]" />
               </div>
             ) : null}
 

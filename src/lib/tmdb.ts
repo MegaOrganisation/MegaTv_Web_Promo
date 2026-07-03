@@ -164,6 +164,12 @@ export async function fetchTmdbDetails(mediaType: TmdbMediaType, tmdbId: number)
   return (await fetchTmdbProxy(`/${mediaType}/${tmdbId}`, "credits")) as TmdbDetails | null;
 }
 
+/** Lightweight TMDB read for rail modal filters (no credits fan-out). */
+export async function fetchTmdbSummary(mediaType: TmdbMediaType, tmdbId: number) {
+  if (!tmdbId) return null;
+  return (await fetchTmdbProxy(`/${mediaType}/${tmdbId}`, "")) as TmdbDetails | null;
+}
+
 /** Rich details for the web `/web/details/[mediaId]` page (seasons, similar, trailer). */
 export async function fetchTmdbMediaFull(mediaType: TmdbMediaType, tmdbId: number) {
   if (!tmdbId) return null;

@@ -15,6 +15,7 @@ type Props = {
   mediaId: string;
   profileId: string;
   title: string;
+  logoUrl?: string | null;
   /** YouTube key from pickTrailerKey (null → no trailer button). */
   trailerKey: string | null;
 };
@@ -79,7 +80,7 @@ export function DetailBackButton({ profileId }: { profileId: string }) {
 }
 
 /** Play / sources / trailer / vu / watchlist — rendered below the poster block. */
-export function DetailActionBar({ mediaId, profileId, title, trailerKey }: Props) {
+export function DetailActionBar({ mediaId, profileId, title, logoUrl, trailerKey }: Props) {
   const router = useRouter();
   const [watched, toggleWatched] = useLocalFlag("watched", profileId, mediaId);
   const [inWatchlist, toggleWatchlist] = useLocalFlag("watchlist", profileId, mediaId);
@@ -105,7 +106,14 @@ export function DetailActionBar({ mediaId, profileId, title, trailerKey }: Props
         <ActionButton icon={inWatchlist ? Check : Plus} label={inWatchlist ? "Dans ma liste" : "Ma liste"} active={inWatchlist} onClick={toggleWatchlist} />
       </div>
 
-      <SourcePicker open={sourcesOpen} onClose={() => setSourcesOpen(false)} mediaId={mediaId} profileId={profileId} />
+      <SourcePicker
+        open={sourcesOpen}
+        onClose={() => setSourcesOpen(false)}
+        mediaId={mediaId}
+        profileId={profileId}
+        title={title}
+        logoUrl={logoUrl}
+      />
 
       {trailerKey ? (
         <Modal open={trailerOpen} onClose={() => setTrailerOpen(false)} label={`Bande-annonce — ${title}`} size="trailer">

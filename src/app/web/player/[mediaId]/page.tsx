@@ -5,7 +5,7 @@ import type { PlayerSubtitle } from "@/features/web/WebPlayer";
 import { getAddonsSlice } from "@/lib/companion/sync-queries";
 import { getIptvPlaylistsForProfile } from "@/lib/iptv/queries";
 import { withProfileQuery } from "@/lib/companion/profile-scope";
-import { fetchTmdbDetails } from "@/lib/tmdb";
+import { fetchTmdbDetails, fetchTmdbImages, pickTitleLogo, tmdbImageUrl } from "@/lib/tmdb";
 import { resolveAddonSubtitles } from "@/lib/web/addon-streams";
 import { decodeMediaId } from "@/lib/web/media";
 import { subtitleProxyUrl } from "@/lib/web/stream-proxy";
@@ -28,13 +28,15 @@ export default async function WebPlayerPage({
   const ref = decodeMediaId(mediaId);
   if (!ref) notFound();
 
-  const [details, addonsSlice, iptv] = await Promise.all([
+  const [details, images, addonsSlice, iptv] = await Promise.all([
     fetchTmdbDetails(ref.mediaType, ref.tmdbId),
+    fetchTmdbImages(ref.mediaType, ref.tmdbId),
     getAddonsSlice(profileId),
     getIptvPlaylistsForProfile(profileId)
   ]);
 
   const title = details?.title || details?.name || "Lecture MegaTv";
+  const logoUrl = tmdbImageUrl(pickTitleLogo(images), "w500");
   const year = Number((details?.release_date || details?.first_air_date || "").slice(0, 4)) || null;
 
   const resolution = await resolveStreamSources(
@@ -75,6 +77,7 @@ export default async function WebPlayerPage({
       sources={resolution.sources}
       subtitles={subtitles}
       title={title}
+      logoUrl={logoUrl}
       backHref={backHref}
       resumeKey={resumeKey}
       addonsHref={withProfileQuery("/companion/manage/addons", profileId)}
