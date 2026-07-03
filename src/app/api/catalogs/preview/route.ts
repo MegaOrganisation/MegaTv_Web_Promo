@@ -102,14 +102,14 @@ async function previewMdblist(sourceUrl: string, title: string) {
     .map((match) => normalizePosterUrl(match[1]))
     .filter((url) => /image\.tmdb\.org/i.test(url))
     .filter((url, index, all) => all.indexOf(url) === index)
-    .slice(0, 8);
+    .slice(0, 60);
 
   if (posterUrls.length === 0) {
     const fallback = [...html.matchAll(/<img[^>]+(?:data-src|src)="([^"]+)"[^>]*>/gi)]
       .map((match) => normalizePosterUrl(match[1]))
       .filter((url) => /poster|image\.tmdb/i.test(url))
       .filter((url, index, all) => all.indexOf(url) === index)
-      .slice(0, 8);
+      .slice(0, 60);
     posterUrls.push(...fallback);
   }
 
@@ -183,7 +183,7 @@ async function previewTrakt(sourceUrl: string, title: string) {
   const url = new URL(endpoint);
   url.searchParams.set("path", `/users/${userSlug}/lists/${listSlug}/items`);
   url.searchParams.set("extended", "images");
-  url.searchParams.set("limit", "8");
+  url.searchParams.set("limit", "60");
 
   const response = await fetch(url.toString(), {
     headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
@@ -214,7 +214,7 @@ async function previewTrakt(sourceUrl: string, title: string) {
       } satisfies PreviewItem;
     })
     .filter((item): item is PreviewItem => item != null)
-    .slice(0, 8);
+    .slice(0, 60);
 
   const posterUrls = items.map((item) => item.posterUrl);
   const firstTitle = rows[0]?.movie?.title || rows[0]?.show?.title;

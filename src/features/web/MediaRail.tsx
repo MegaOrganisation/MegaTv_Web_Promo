@@ -12,10 +12,6 @@ import { useWebPrefs, type WebLayout } from "@/lib/web/prefs";
 import { RAIL_PREVIEW_LIMIT } from "@/lib/web/rail";
 import type { WebMediaItem } from "@/lib/web/media";
 
-/**
- * Horizontal rail of posters. Layout (poster/landscape) follows the profile
- * preference from Settings unless a rail forces one.
- */
 export function MediaRail({
   title,
   items,
@@ -33,14 +29,14 @@ export function MediaRail({
   const { prefs } = useWebPrefs(activeProfileId);
   const effectiveLayout = layout ?? prefs.layout;
   const [seeAllOpen, setSeeAllOpen] = useState(false);
-  const { trackRef, canScrollLeft, canScrollRight, scrollLeft, scrollRight, refresh } = useRailScroll();
+  const { trackRef, canScrollLeft, canScrollRight, atEnd, scrollLeft, scrollRight, refresh } = useRailScroll();
 
   const isContinue = variant === "continue";
   const previewItems = useMemo(
     () => (isContinue ? items : items.slice(0, RAIL_PREVIEW_LIMIT)),
     [isContinue, items]
   );
-  const showSeeAll = !isContinue && items.length > RAIL_PREVIEW_LIMIT;
+  const hasMore = !isContinue && items.length > RAIL_PREVIEW_LIMIT;
 
   if (items.length === 0) return null;
 
@@ -48,7 +44,8 @@ export function MediaRail({
     <section className="space-y-3">
       <RailHeader
         title={title}
-        showSeeAll={showSeeAll}
+        hasMore={hasMore}
+        atEnd={atEnd}
         onSeeAll={() => setSeeAllOpen(true)}
         canScrollLeft={canScrollLeft}
         canScrollRight={canScrollRight}
@@ -65,7 +62,7 @@ export function MediaRail({
           )
         )}
       </div>
-      {showSeeAll ? (
+      {hasMore ? (
         <RailSeeAllModal
           title={title}
           items={items}

@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { clsx } from "clsx";
 
 export function RailHeader({
   title,
-  showSeeAll,
+  hasMore,
+  atEnd,
   onSeeAll,
   canScrollLeft,
   canScrollRight,
@@ -14,7 +15,8 @@ export function RailHeader({
   showNav = true
 }: {
   title: string;
-  showSeeAll?: boolean;
+  hasMore?: boolean;
+  atEnd?: boolean;
   onSeeAll?: () => void;
   canScrollLeft?: boolean;
   canScrollRight?: boolean;
@@ -22,55 +24,69 @@ export function RailHeader({
   onScrollRight?: () => void;
   showNav?: boolean;
 }) {
+  const showSeeAllMorph = Boolean(hasMore && atEnd && onSeeAll);
+  const showScrollRight = Boolean(showNav && !showSeeAllMorph);
+
   return (
     <div className="flex items-center justify-between gap-3 px-1">
       <div className="flex min-w-0 items-center gap-2">
         <span className="mega-rail-bar h-[18px] w-1 shrink-0 rounded-sm bg-white/90" aria-hidden />
         <h2 className="truncate text-lg font-bold text-[var(--mega-text)]">{title}</h2>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {showSeeAll && onSeeAll ? (
+      {showNav ? (
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            onClick={onSeeAll}
-            className="focus-ring rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--mega-text-muted)] transition hover:bg-white/5 hover:text-[var(--mega-text)]"
+            aria-label="Défiler à gauche"
+            disabled={!canScrollLeft}
+            onClick={onScrollLeft}
+            className={clsx(
+              "focus-ring grid h-8 w-8 place-items-center rounded-full border border-[var(--mega-border)] transition",
+              canScrollLeft
+                ? "text-[var(--mega-text)] hover:border-[var(--mega-border-strong)] hover:bg-white/5"
+                : "cursor-not-allowed text-[var(--mega-text-faint)] opacity-40"
+            )}
           >
-            Voir tout
+            <ChevronLeft className="h-4 w-4" />
           </button>
-        ) : null}
-        {showNav ? (
-          <>
+
+          {showSeeAllMorph ? (
             <button
               type="button"
-              aria-label="Défiler à gauche"
-              disabled={!canScrollLeft}
-              onClick={onScrollLeft}
-              className={clsx(
-                "focus-ring grid h-8 w-8 place-items-center rounded-full border border-[var(--mega-border)] transition",
-                canScrollLeft
-                  ? "text-[var(--mega-text)] hover:border-[var(--mega-border-strong)] hover:bg-white/5"
-                  : "cursor-not-allowed text-[var(--mega-text-faint)] opacity-40"
-              )}
+              onClick={onSeeAll}
+              className="mega-rail-seeall-morph mega-rail-seeall-morph--expanded focus-ring"
+              aria-label="Voir tout le catalogue"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <span className="mega-rail-seeall-morph-label">Voir tout</span>
             </button>
+          ) : null}
+
+          {showScrollRight ? (
             <button
               type="button"
               aria-label="Défiler à droite"
               disabled={!canScrollRight}
               onClick={onScrollRight}
               className={clsx(
-                "focus-ring grid h-8 w-8 place-items-center rounded-full border border-[var(--mega-border)] transition",
+                "focus-ring mega-rail-seeall-morph grid h-8 w-8 place-items-center rounded-full border border-[var(--mega-border)] transition",
                 canScrollRight
                   ? "text-[var(--mega-text)] hover:border-[var(--mega-border-strong)] hover:bg-white/5"
                   : "cursor-not-allowed text-[var(--mega-text-faint)] opacity-40"
               )}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRightIcon />
             </button>
-          </>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

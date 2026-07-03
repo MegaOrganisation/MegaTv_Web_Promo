@@ -147,6 +147,13 @@ async function write(fileName, buffer) {
   console.log(`wrote ${target}`);
 }
 
+async function buildTransparentTriangleIcon(size, triangleSource) {
+  return sharp(triangleSource)
+    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+}
+
 async function main() {
   await fs.mkdir(companionDir, { recursive: true });
   const fontBase64 = await loadFontBase64();
@@ -157,13 +164,16 @@ async function main() {
   const icon512 = await buildInstallIcon(512, fontBase64, triangleSource);
   const appleTouch = await buildInstallIcon(180, fontBase64, triangleSource);
   const maskable512 = await buildMaskableIcon(512, triangleSource);
+  const favicon32 = await buildTransparentTriangleIcon(32, triangleSource);
+  const triangleIcon180 = await buildTransparentTriangleIcon(180, triangleSource);
 
   await write("companion-icon-192.png", icon192);
   await write("companion-icon-512.png", icon512);
   await write("companion-icon-maskable-512.png", maskable512);
   await write("apple-touch-icon.png", appleTouch);
   await write("mark.png", icon512);
-  await write("favicon-32.png", await sharp(icon192).resize(32, 32).png().toBuffer());
+  await write("favicon-32.png", favicon32);
+  await write("triangle-icon-180.png", triangleIcon180);
 
   const appleStartup = await buildSplashScreen(1284, 2778, fontBase64, triangleSource);
   const androidSplash = await buildSplashScreen(1080, 1920, fontBase64, triangleSource);

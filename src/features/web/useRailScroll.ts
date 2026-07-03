@@ -8,13 +8,16 @@ export function useRailScroll() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const [atEnd, setAtEnd] = useState(false);
 
   const refresh = useCallback(() => {
     const node = trackRef.current;
     if (!node) return;
-    const max = node.scrollWidth - node.clientWidth;
-    setCanLeft(node.scrollLeft > 4);
-    setCanRight(node.scrollLeft < max - 4);
+    const max = Math.max(0, node.scrollWidth - node.clientWidth);
+    const left = node.scrollLeft;
+    setCanLeft(left > 4);
+    setCanRight(left < max - 4);
+    setAtEnd(max <= 4 || left >= max - 4);
   }, []);
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export function useRailScroll() {
     trackRef,
     canScrollLeft: canLeft,
     canScrollRight: canRight,
+    atEnd,
     scrollLeft: () => scrollBy(-RAIL_SCROLL_STEP),
     scrollRight: () => scrollBy(RAIL_SCROLL_STEP),
     refresh

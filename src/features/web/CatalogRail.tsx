@@ -41,7 +41,7 @@ export function CatalogRail({
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [seeAllOpen, setSeeAllOpen] = useState(false);
   const ref = useRef<HTMLElement>(null);
-  const { trackRef, canScrollLeft, canScrollRight, scrollLeft, scrollRight, refresh } = useRailScroll();
+  const { trackRef, canScrollLeft, canScrollRight, atEnd, scrollLeft, scrollRight, refresh } = useRailScroll();
 
   const top10 = isTop10Catalog({ id: catalogId, title, sourceUrl });
   const landscape = top10 ? false : prefs.layout === "landscape";
@@ -97,13 +97,14 @@ export function CatalogRail({
   const tileAspect = landscape ? "aspect-video" : "aspect-[2/3]";
   const railItems = top10 ? items.slice(0, 10) : items;
   const previewItems = top10 ? railItems : railItems.slice(0, RAIL_PREVIEW_LIMIT);
-  const showSeeAll = !top10 && items.length > RAIL_PREVIEW_LIMIT && mediaItems.length > RAIL_PREVIEW_LIMIT;
+  const hasMore = !top10 && mediaItems.length > RAIL_PREVIEW_LIMIT;
 
   return (
     <section ref={ref} className="space-y-3">
       <RailHeader
         title={title}
-        showSeeAll={showSeeAll}
+        hasMore={hasMore}
+        atEnd={atEnd}
         onSeeAll={() => setSeeAllOpen(true)}
         canScrollLeft={canScrollLeft}
         canScrollRight={canScrollRight}
@@ -148,7 +149,7 @@ export function CatalogRail({
               );
             })}
       </div>
-      {showSeeAll ? (
+      {hasMore ? (
         <RailSeeAllModal
           title={title}
           items={mediaItems}
