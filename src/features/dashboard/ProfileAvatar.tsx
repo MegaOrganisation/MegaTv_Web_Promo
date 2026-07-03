@@ -1,7 +1,6 @@
-import Image from "next/image";
 import { clsx } from "clsx";
 
-import { avatarAssetPath, avatarGradientCss } from "@/lib/profiles/avatars";
+import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
 import type { ProfileRow } from "@/lib/supabase/types";
 
 type Props = {
@@ -10,6 +9,8 @@ type Props = {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
   label?: string;
+  /** Force MegaTv preset even if a legacy custom photo still exists in storage. */
+  preferPreset?: boolean;
 };
 
 const sizeClasses = {
@@ -26,10 +27,13 @@ const avatarPixelSizes = {
   xl: 96
 };
 
-export function ProfileAvatar({ profile, avatarUrl, size = "md", className, label }: Props) {
+export function ProfileAvatar({ profile, avatarUrl, size = "md", className, label, preferPreset = false }: Props) {
   const resolvedLabel = label || profile?.name || "Profil MegaTv";
-  const hasCustomImage = Boolean(avatarUrl && (profile?.avatar_image_version || 0) > 0);
-  const hasPreset = !hasCustomImage && Boolean((profile?.avatar_id || 0) > 0);
+  const avatarId = profile?.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1;
+  const hasCustomImage =
+    !preferPreset &&
+    (profile?.avatar_id || 0) === 0 &&
+    Boolean(avatarUrl && (profile?.avatar_image_version || 0) > 0);
 
   if (hasCustomImage) {
     return (
@@ -40,25 +44,12 @@ export function ProfileAvatar({ profile, avatarUrl, size = "md", className, labe
     );
   }
 
-  if (hasPreset) {
-    return (
-      <span
-        className={clsx("relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border border-white/15 p-0.5", sizeClasses[size], className)}
-        style={{ background: avatarGradientCss(profile?.avatar_id) }}
-      >
-        <Image src={avatarAssetPath(profile?.avatar_id)} alt={resolvedLabel} width={avatarPixelSizes[size]} height={avatarPixelSizes[size]} className="h-full w-full rounded-full object-cover" />
-      </span>
-    );
-  }
-
-  const fallbackAvatarId = profile?.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1;
   return (
-    <span
-      className={clsx("relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border border-white/15 p-0.5", sizeClasses[size], className)}
-      style={{ background: avatarGradientCss(fallbackAvatarId) }}
-      aria-label={resolvedLabel}
-    >
-      <Image src={avatarAssetPath(fallbackAvatarId)} alt={resolvedLabel} width={avatarPixelSizes[size]} height={avatarPixelSizes[size]} className="h-full w-full rounded-full object-cover" />
-    </span>
+    <PresetAvatarCircle
+      avatarId={avatarId}
+      size={size}
+      className={className}
+      label={resolvedLabel}
+    />
   );
 }

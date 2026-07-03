@@ -10,8 +10,9 @@ type CookieToSet = {
 };
 
 export async function proxy(request: NextRequest) {
-  const isCompanionRoute = request.nextUrl.pathname.startsWith("/companion");
-  if (!isCompanionRoute) {
+  const { pathname } = request.nextUrl;
+  const isProtectedRoute = pathname.startsWith("/companion") || pathname.startsWith("/web");
+  if (!isProtectedRoute) {
     return NextResponse.next({ request });
   }
 

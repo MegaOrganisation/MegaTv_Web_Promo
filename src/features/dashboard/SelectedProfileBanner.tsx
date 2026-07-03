@@ -37,7 +37,7 @@ export function SelectedProfileBanner({
   return (
     <GlassCard className="mb-6 flex flex-col gap-4 overflow-hidden sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
-        <ProfileAvatar profile={activeProfile} avatarUrl={avatarUrl} size="lg" />
+        <ProfileAvatar profile={activeProfile} avatarUrl={avatarUrl} size="lg" preferPreset={Boolean((activeProfile.avatar_id || 0) > 0)} />
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/38">Profil sélectionné</p>
           <h2 className="mt-1 text-2xl font-black text-white">{activeProfile.name || "Profil MegaTv"}</h2>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getIptvPlaylistsForProfile, saveIptvPlaylistsForProfile } from "@/lib/iptv/queries";
 import type { IptvPlaylistEntry } from "@/lib/iptv/types";
+import { requestForceSync } from "@/lib/companion/force-sync";
 import { createClient } from "@/lib/supabase/server";
 
 async function assertProfileOwnership(profileId: string) {
@@ -87,5 +88,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
-  return NextResponse.json({ ok: true, ...result.data });
+  await requestForceSync(["iptv"]);
+
+  return NextResponse.json({ ok: true, ...result.data, forceSync: true });
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { clsx } from "clsx";
 
-import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
+import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
 import type { ProfileRow } from "@/lib/supabase/types";
 
 type Props = {
@@ -63,7 +63,14 @@ function ProfilePill({
       )}
     >
       {profile ? (
-        <ProfileAvatar profile={profile} avatarUrl={avatarUrl} size="sm" />
+        (profile.avatar_id || 0) > 0 || !avatarUrl || !(profile.avatar_image_version || 0) ? (
+          <PresetAvatarCircle avatarId={profile.avatar_id || 1} size="sm" label={label} />
+        ) : (
+          <span className="grid h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/15">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatarUrl} alt={label} className="h-full w-full object-cover" />
+          </span>
+        )
       ) : (
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#3f9ae6,#d8497f)] text-xs font-black text-white">T</span>
       )}

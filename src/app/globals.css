@@ -29,6 +29,8 @@ html[data-theme="dark"] {
   --brand-coral: #ee6a54;
   --brand-magenta: #d8497f;
   --grad-spectrum: linear-gradient(110deg, #3f9ae6 0%, #1fa8a0 19%, #5fbf5a 35%, #f2b43c 55%, #ee6a54 76%, #d8497f 100%);
+  --companion-mobile-header: calc(3.75rem + max(0.65rem, env(safe-area-inset-top)));
+  --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
 
 html[data-theme="light"] {
@@ -74,6 +76,20 @@ html[data-theme="light"] .companion-shell [class*="bg-black"] {
   background-color: var(--mega-input-bg) !important;
 }
 
+@keyframes dashboard-edit-shake {
+  0%,
+  100% {
+    transform: rotate(-0.35deg) translateY(0);
+  }
+  50% {
+    transform: rotate(0.35deg) translateY(-1px);
+  }
+}
+
+.dashboard-edit-shake {
+  animation: dashboard-edit-shake 0.42s ease-in-out infinite;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -101,7 +117,7 @@ html[data-theme="light"] body {
   background:
     radial-gradient(circle at 12% -10%, rgba(63, 154, 230, 0.12), transparent 34rem),
     radial-gradient(circle at 95% 2%, rgba(216, 73, 127, 0.08), transparent 32rem),
-    var(--mega-background-deep);
+    var(--mega-background);
 }
 
 body::before {
@@ -199,4 +215,75 @@ a {
 
 .poster-shadow {
   box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.96), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.companion-mobile-header {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.companion-mobile-nav {
+  width: 100%;
+  max-width: min(28rem, calc(100vw - 1rem));
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MegaTv Web (P1) — shared micro-animations (focus→hover parity)
+   ───────────────────────────────────────────────────────────── */
+
+/* Route / page enter transition (equivalent of the TV page spinner + fade). */
+@keyframes web-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.web-route-enter {
+  animation: web-fade-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Poster open (details) transition. */
+@keyframes web-poster-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.web-poster-in {
+  animation: web-poster-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Unified spinner ring (profile / page / poster transitions). */
+@keyframes web-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.web-spinner {
+  border-radius: 9999px;
+  border-style: solid;
+  border-color: rgba(237, 237, 237, 0.16);
+  border-top-color: var(--mega-text);
+  animation: web-spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-route-enter,
+  .web-poster-in {
+    animation: none;
+  }
 }

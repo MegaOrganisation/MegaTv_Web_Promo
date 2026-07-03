@@ -12,7 +12,7 @@ const defaultSummary: DashboardSummary = {
   last_activity_at: null
 };
 
-export async function getDashboardData(profileId?: string | null, options: { deviceLimit?: number } = {}) {
+export async function getDashboardData(profileId?: string | null, options: { deviceLimit?: number; skipAvatarUrls?: boolean } = {}) {
   const supabase = await createClient();
   const {
     data: { user }
@@ -46,7 +46,8 @@ export async function getDashboardData(profileId?: string | null, options: { dev
     continueQuery
   ]);
 
-  const profileAvatarUrlsById = user ? await createProfileAvatarUrls(supabase, user.id, profiles) : {};
+  const profileAvatarUrlsById =
+    user && !options.skipAvatarUrls ? await createProfileAvatarUrls(supabase, user.id, profiles) : {};
 
   return {
     activeProfileId: normalizedProfileId,
@@ -67,17 +68,19 @@ export async function getAdminDashboardData(fromInput?: Date, toInput?: Date) {
   const to = toInput ?? new Date();
   const from = fromInput ?? new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const [overview, topContent, pageAnalytics] = await Promise.all([
-    supabase.rpc("megacompanion_admin_overview", { from_ts: from.toISOString(), to_ts: to.toISOString() }).maybeSingle(),
+  const [overviewResult, topContent, pageAnalytics] = await Promise.all([
+    supabase.rpc("megacompanion_admin_overview", { from_ts: from.toISOString(), to_ts: to.toISOString() }),
     supabase.rpc("megacompanion_admin_top_content", { from_ts: from.toISOString(), to_ts: to.toISOString(), p_limit: 10 }),
     supabase.rpc("megacompanion_admin_page_analytics", { from_ts: from.toISOString(), to_ts: to.toISOString() })
   ]);
 
+  const overviewRow = Array.isArray(overviewResult.data) ? overviewResult.data[0] ?? null : overviewResult.data ?? null;
+
   return {
-    overview: overview.data,
-    topContent: topContent.data || [],
-    pageAnalytics: pageAnalytics.data || [],
-    errors: [overview.error, topContent.error, pageAnalytics.error].filter(Boolean).map((error) => error?.message || "Erreur Supabase")
+    overview: overviewRow,
+    topContent: Array.isArray(topContent.data) ? topContent.data : [],
+    pageAnalytics: Array.isArray(pageAnalytics.data) ? pageAnalytics.data : [],
+    errors: [overviewResult.error, topContent.error, pageAnalytics.error].filter(Boolean).map((error) => error?.message || "Erreur Supabase")
   };
 }
 
@@ -90,6 +93,7 @@ async function createProfileAvatarUrls(
     profiles.map(async (profile) => {
       const path = profile.avatar_image_storage_path?.trim();
       if (!path || !profile.avatar_image_version || profile.avatar_image_version <= 0) return null;
+      if ((profile.avatar_id || 0) > 0) return null;
       if (!path.startsWith(`${userId}/${profile.profile_id}/`)) return null;
 
       const { data, error } = await supabase.storage.from("profile-avatars").createSignedUrl(path, 60 * 60);
