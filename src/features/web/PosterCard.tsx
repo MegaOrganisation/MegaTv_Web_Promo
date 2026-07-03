@@ -63,21 +63,24 @@ export function PosterCard({
   const showVideo = phase === "playing" && Boolean(trailerKey);
   const videoLandscape = landscape || expanded;
 
-  const landscapeImage = landscape ? backdropUrl || item.backdropUrl || null : item.posterUrl;
+  const landscapeImage = landscape
+    ? backdropUrl || item.backdropUrl || item.posterUrl || null
+    : item.posterUrl;
   const portraitImage = item.posterUrl;
   const image = landscape ? landscapeImage : portraitImage;
+  const usingPosterFallback = landscape && !backdropUrl && !item.backdropUrl && Boolean(item.posterUrl);
 
   useYoutubeTrailerSound(iframeRef, showVideo, prefs.trailerSound);
 
   useEffect(() => {
     if (!landscape || enrichAsked.current) return;
+    if (backdropUrl || item.backdropUrl) return;
     enrichAsked.current = true;
-    if (item.backdropUrl && !isGenericPosterLabel(item.title)) return;
     void fetchCardEnrich(item.mediaId).then((enrich) => {
       if (enrich.backdropUrl) setBackdropUrl(enrich.backdropUrl);
       if (!displayTitle && enrich.title) setResolvedTitle(enrich.title);
     });
-  }, [landscape, item.mediaId, item.backdropUrl, item.title, displayTitle]);
+  }, [landscape, item.mediaId, item.backdropUrl, backdropUrl, displayTitle]);
 
   useEffect(() => {
     if (!landscape || logo || logoAsked.current) return;
@@ -140,17 +143,16 @@ export function PosterCard({
                 fill
                 unoptimized
                 sizes={videoLandscape ? "400px" : "150px"}
-                className={clsx("object-cover", landscape && !landscapeImage ? "opacity-60" : "")}
+                className={clsx("object-cover", usingPosterFallback ? "scale-110 object-top" : "")}
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-2 text-center text-[var(--mega-text-faint)]">
                 <ImageOff className="h-6 w-6" />
-                {label ? <span className="line-clamp-3 text-xs">{label}</span> : null}
               </div>
             )}
 
             {landscape ? (
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(6,7,10,0.35)_55%,rgba(6,7,10,0.82)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(6,7,10,0.72)_0%,transparent_58%)]" />
             ) : null}
 
             {showVideo ? (
@@ -168,17 +170,17 @@ export function PosterCard({
             ) : null}
 
             {landscape && logo ? (
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex w-[52%] items-end justify-end p-3">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 px-2.5 pb-[18px] pl-2.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={logo}
                   alt=""
-                  className="web-logo-in max-h-[42%] max-w-full object-contain object-bottom drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
+                  className="web-logo-in max-h-12 max-w-[52%] object-contain object-left-bottom drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
                 />
               </div>
             ) : landscape && resolvedTitle ? (
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex w-[52%] items-end p-3">
-                <p className="line-clamp-2 text-right text-sm font-bold text-[var(--mega-text)] drop-shadow">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
+                <p className="line-clamp-2 max-w-[52%] text-sm font-bold text-[var(--mega-text)] drop-shadow">
                   {resolvedTitle}
                 </p>
               </div>

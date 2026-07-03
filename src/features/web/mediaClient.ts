@@ -19,7 +19,7 @@ const inflight = new Map<string, Promise<string | null>>();
 
 const LOGO_LS = "megatv_web_logo_";
 const TRAILER_LS = "megatv_web_trailer_";
-const ENRICH_LS = "megatv_web_enrich_";
+const ENRICH_LS = "megatv_web_enrich_v2_";
 const enrichMem = new Map<string, { title: string | null; backdropUrl: string | null }>();
 
 function readLs(prefix: string, key: string): string | null | undefined {
@@ -136,29 +136,27 @@ export async function fetchCardEnrich(mediaId: string): Promise<CardEnrich> {
   }
 
   try {
-    const res = await fetch(`/api/tmdb/enrich?media_type=${ref.mediaType}&tmdb_id=${ref.tmdbId}`);
+    const res = await fetch(`/api/web/card-enrich?type=${ref.mediaType}&id=${ref.tmdbId}`);
     if (!res.ok) {
-      const empty = { title: null, backdropUrl: null };
-      enrichMem.set(key, empty);
-      return empty;
+      return { title: null, backdropUrl: null };
     }
     const json = (await res.json()) as { title?: string; backdropUrl?: string | null };
     const value = {
       title: json.title?.trim() || null,
       backdropUrl: json.backdropUrl || null
     };
-    enrichMem.set(key, value);
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(ENRICH_LS + key, JSON.stringify(value));
-      } catch {
-        /* ignore */
+    if (value.backdropUrl || value.title) {
+      enrichMem.set(key, value);
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(ENRICH_LS + key, JSON.stringify(value));
+        } catch {
+          /* ignore */
+        }
       }
     }
     return value;
   } catch {
-    const empty = { title: null, backdropUrl: null };
-    enrichMem.set(key, empty);
-    return empty;
+    return { title: null, backdropUrl: null };
   }
 }
