@@ -244,7 +244,7 @@ export function RailSeeAllModal({
         {visible.length === 0 ? (
           <p className="py-16 text-center text-sm text-[var(--mega-text-muted)]">Aucun résultat pour ces critères.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 overflow-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {visible.map((item) => (
               <PosterCard key={item.mediaId} item={item} layout={layout} fullWidth />
             ))}

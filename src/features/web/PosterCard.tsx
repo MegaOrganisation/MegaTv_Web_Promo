@@ -57,32 +57,32 @@ export function PosterCard({
   const rawProgress = typeof item.progress === "number" ? item.progress : 0;
   const progress = Math.min(100, Math.max(0, rawProgress <= 1 ? rawProgress * 100 : rawProgress));
 
+  const expanded = phase === "playing" && !landscape && Boolean(trailerKey);
   const showVideo = phase === "playing" && Boolean(trailerKey);
+  const videoLandscape = landscape || expanded;
 
-  const landscapeImage = landscape
-    ? backdropUrl || item.backdropUrl || item.posterUrl || null
-    : item.posterUrl;
+  const landscapeImage = backdropUrl || item.backdropUrl || item.posterUrl || null;
   const portraitImage = item.posterUrl;
-  const image = landscape ? landscapeImage : portraitImage;
-  const usingPosterFallback = landscape && !backdropUrl && !item.backdropUrl && Boolean(item.posterUrl);
+  const image = videoLandscape ? landscapeImage : portraitImage;
+  const usingPosterFallback = videoLandscape && !backdropUrl && !item.backdropUrl && Boolean(item.posterUrl);
 
   useYoutubeTrailerSound(iframeRef, showVideo, prefs.trailerSound);
 
   useEffect(() => {
-    if (!landscape || enrichAsked.current) return;
+    if (!videoLandscape || enrichAsked.current) return;
     if (backdropUrl || item.backdropUrl) return;
     enrichAsked.current = true;
     void fetchCardEnrich(item.mediaId).then((enrich) => {
       if (enrich.backdropUrl) setBackdropUrl(enrich.backdropUrl);
       if (!displayTitle && enrich.title) setResolvedTitle(enrich.title);
     });
-  }, [landscape, item.mediaId, item.backdropUrl, backdropUrl, displayTitle]);
+  }, [videoLandscape, item.mediaId, item.backdropUrl, backdropUrl, displayTitle]);
 
   useEffect(() => {
-    if (!landscape || logo || logoAsked.current) return;
+    if (!videoLandscape || logo || logoAsked.current) return;
     logoAsked.current = true;
     void fetchTitleLogo(item.mediaId).then((value) => value && setLogo(value));
-  }, [landscape, logo, item.mediaId]);
+  }, [videoLandscape, logo, item.mediaId]);
 
   const clearHover = useCallback(() => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -112,7 +112,8 @@ export function PosterCard({
 
   return (
     <div
-      className={clsx("group/poster relative", fullWidth ? "" : "shrink-0", className)}
+      className={clsx("group/poster relative", fullWidth && !expanded ? "" : "shrink-0", expanded && "mega-poster-expanded", className)}
+      style={expanded ? { width: "var(--mega-poster-expand-w)" } : undefined}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={onEnter}
@@ -122,13 +123,13 @@ export function PosterCard({
         setMenu({ x: event.clientX, y: event.clientY });
       }}
     >
-      <div className={clsx("transition-[width] duration-500 ease-out", widthClass)}>
+      <div className={clsx("transition-[width] duration-500 ease-out", expanded ? "w-full" : widthClass)}>
         <Link href={detailsHref} prefetch={false} className="focus-ring block" title={label}>
           <div
             className={clsx(
-              "mega-poster-radius mega-poster-hover-glow relative overflow-hidden border border-[var(--mega-border)] bg-[var(--mega-surface)]",
-              !showVideo && !fullWidth ? "group-hover/poster:scale-[1.05]" : "",
-              landscape ? "aspect-video" : "aspect-[2/3]"
+              "mega-poster-radius mega-poster-hover-glow relative overflow-hidden border border-[var(--mega-border)] bg-[var(--mega-surface)] transition-[transform,aspect-ratio] duration-500 ease-out",
+              !showVideo && !expanded && !fullWidth ? "group-hover/poster:scale-[1.05]" : "",
+              videoLandscape ? "aspect-video" : "aspect-[2/3]"
             )}
           >
             {image ? (
@@ -137,7 +138,7 @@ export function PosterCard({
                 alt=""
                 fill
                 unoptimized
-                sizes={landscape ? "400px" : "150px"}
+                sizes={videoLandscape ? "420px" : "224px"}
                 className={clsx(
                   "object-cover transition-opacity duration-500 ease-out",
                   usingPosterFallback ? "scale-110 object-top" : "",
@@ -150,7 +151,7 @@ export function PosterCard({
               </div>
             )}
 
-            {landscape ? (
+            {videoLandscape ? (
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(6,7,10,0.72)_0%,transparent_58%)]" />
             ) : null}
 
@@ -168,7 +169,7 @@ export function PosterCard({
               </div>
             ) : null}
 
-            {landscape && logo ? (
+            {videoLandscape && logo ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 px-2.5 pb-[18px] pl-2.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -177,7 +178,7 @@ export function PosterCard({
                   className="web-logo-in max-h-12 max-w-[52%] object-contain object-left-bottom drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
                 />
               </div>
-            ) : landscape && resolvedTitle ? (
+            ) : videoLandscape && resolvedTitle ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3">
                 <p className="line-clamp-2 max-w-[52%] text-sm font-bold text-[var(--mega-text)] drop-shadow">
                   {resolvedTitle}
@@ -204,7 +205,7 @@ export function PosterCard({
           </Link>
         ) : null}
 
-        {!landscape && resolvedTitle ? (
+        {!landscape && !showVideo && resolvedTitle ? (
           <Link href={detailsHref} prefetch={false} className="block">
             <p className="mt-2 line-clamp-1 text-xs font-medium text-[var(--mega-text-muted)] group-hover/poster:text-[var(--mega-text)]">
               {resolvedTitle}
