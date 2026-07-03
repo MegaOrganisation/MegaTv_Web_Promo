@@ -172,7 +172,6 @@ export function WebHero({
       tabIndex={-1}
     >
       <div className="mega-hero-shell relative w-full overflow-hidden">
-        <div className="absolute inset-0">
         {backdrop ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={item.mediaId} src={backdrop} alt={item.title} className="web-fade-in h-full w-full object-cover" />
