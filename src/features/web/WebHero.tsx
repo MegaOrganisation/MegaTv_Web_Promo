@@ -171,7 +171,8 @@ export function WebHero({
       onKeyDown={bumpActivity}
       tabIndex={-1}
     >
-      <div className="relative aspect-[16/9] w-full sm:aspect-[21/9]">
+      <div className="mega-hero-shell relative w-full overflow-hidden">
+        <div className="absolute inset-0">
         {backdrop ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={item.mediaId} src={backdrop} alt={item.title} className="web-fade-in h-full w-full object-cover" />
@@ -210,7 +211,7 @@ export function WebHero({
 
       <div
         className={clsx(
-          "absolute inset-0 flex flex-col justify-end gap-4 p-5 transition-opacity duration-500 sm:max-w-xl sm:p-8",
+          "absolute inset-0 flex flex-col justify-end gap-2 p-4 transition-opacity duration-500 sm:max-w-lg sm:gap-3 sm:p-5",
           chromeHidden ? "pointer-events-none opacity-0" : "opacity-100"
         )}
       >
@@ -220,24 +221,24 @@ export function WebHero({
             key={`logo-${item.mediaId}`}
             src={logo}
             alt={item.title}
-            className="web-logo-in max-h-24 max-w-[70%] object-contain object-left drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] sm:max-h-32"
+            className="web-logo-in max-h-14 max-w-[65%] object-contain object-left drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] sm:max-h-[4.5rem]"
           />
         ) : (
-          <h1 className="text-2xl font-black leading-tight text-[var(--mega-text)] drop-shadow sm:text-4xl">{item.title}</h1>
+          <h1 className="text-xl font-black leading-tight text-[var(--mega-text)] drop-shadow sm:text-2xl">{item.title}</h1>
         )}
         {item.overview ? (
-          <p className="line-clamp-3 text-sm text-[var(--mega-text-muted)] sm:text-base">{item.overview}</p>
+          <p className="line-clamp-2 text-xs text-[var(--mega-text-muted)] sm:text-sm">{item.overview}</p>
         ) : null}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Link
             href={withProfile(`/web/player/${item.mediaId}`)}
-            className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--mega-text)] px-6 py-2.5 text-sm font-bold text-[var(--mega-background-deep)] transition hover:-translate-y-0.5"
+            className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-full bg-[var(--mega-text)] px-5 py-2 text-sm font-bold text-[var(--mega-background-deep)] transition hover:-translate-y-0.5"
           >
             <MegaTvIcon name="play" filled className="h-4 w-4" /> Lire
           </Link>
           <Link
             href={withProfile(`/web/details/${item.mediaId}`)}
-            className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--mega-border-strong)] bg-[var(--mega-shell-nav)] px-5 py-2.5 text-sm font-semibold text-[var(--mega-text)] backdrop-blur transition hover:bg-[var(--mega-card-bg)]"
+            className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--mega-border-strong)] bg-[var(--mega-shell-nav)] px-4 py-2 text-sm font-semibold text-[var(--mega-text)] backdrop-blur transition hover:bg-[var(--mega-card-bg)]"
           >
             <MegaTvIcon name="info" className="h-4 w-4" /> Détails
           </Link>

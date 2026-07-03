@@ -51,9 +51,10 @@ function isActive(pathname: string, item: NavItem) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function ProfileAvatarLink({ className, size = "sm" }: { className?: string; size?: "sm" | "md" }) {
+function ProfileAvatarLink({ className, size = "sm" }: { className?: string; size?: "sm" | "md" | "lg" }) {
   const { activeProfile } = useWebProfile();
-  const dim = size === "md" ? "h-10 w-10" : "h-9 w-9";
+  const dim =
+    size === "lg" ? "h-16 w-16" : size === "md" ? "h-11 w-11" : "h-9 w-9";
 
   return (
     <Link
@@ -101,7 +102,11 @@ function NavChip({
         className
       )}
     >
-      <MegaTvIcon name={item.icon} filled={active} className="h-[1.15rem] w-[1.15rem]" />
+      <MegaTvIcon
+        name={item.icon}
+        filled={active}
+        className={showLabel === "rail" ? "h-6 w-6" : "h-[1.15rem] w-[1.15rem]"}
+      />
       <span className="mega-nav-chip-label">{item.label}</span>
     </Link>
   );
@@ -182,10 +187,10 @@ function VerticalSideNav() {
     >
       <aside
         aria-label="Navigation MegaTv Web"
-        className="mega-nav-glass mega-vertical-nav m-3 flex h-[calc(100vh-1.5rem)] min-h-0 w-[calc(100%-0.75rem)] flex-col overflow-hidden rounded-[28px] p-2.5 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
+        className="mega-nav-glass mega-vertical-nav m-3 flex h-[calc(100vh-1.5rem)] min-h-0 w-[calc(100%-0.5rem)] flex-col overflow-hidden rounded-[30px] p-3 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
       >
-        <div className="mb-2 flex shrink-0 justify-center px-1 py-1.5 group-hover/nav:justify-start group-focus-within/nav:justify-start">
-          <ProfileAvatarLink size="md" />
+        <div className="mb-3 flex shrink-0 justify-center px-1 py-1 group-hover/nav:justify-start group-focus-within/nav:justify-start">
+          <ProfileAvatarLink size="lg" />
         </div>
 
         {activeProfile ? (
