@@ -51,10 +51,10 @@ function isActive(pathname: string, item: NavItem) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function ProfileAvatarLink({ className, size = "sm" }: { className?: string; size?: "sm" | "md" | "lg" }) {
+function ProfileAvatarLink({ className, size = "sm" }: { className?: string; size?: "sm" | "md" | "lg" | "xl" }) {
   const { activeProfile } = useWebProfile();
   const dim =
-    size === "lg" ? "h-16 w-16" : size === "md" ? "h-11 w-11" : "h-9 w-9";
+    size === "xl" ? "h-24 w-24" : size === "lg" ? "h-16 w-16" : size === "md" ? "h-11 w-11" : "h-9 w-9";
 
   return (
     <Link
@@ -105,7 +105,7 @@ function NavChip({
       <MegaTvIcon
         name={item.icon}
         filled={active}
-        className={showLabel === "rail" ? "h-8 w-8" : "h-[1.15rem] w-[1.15rem]"}
+        className={showLabel === "rail" ? "mega-nav-chip-icon" : "h-[1.15rem] w-[1.15rem]"}
       />
       <span className="mega-nav-chip-label">{item.label}</span>
     </Link>
@@ -190,7 +190,7 @@ function VerticalSideNav() {
         className="mega-nav-glass mega-vertical-nav m-3 flex h-[calc(100vh-1.5rem)] min-h-0 w-[calc(100%-0.5rem)] flex-col overflow-hidden rounded-[30px] p-3 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
       >
         <div className="mb-3 flex shrink-0 justify-center px-1 py-1 group-hover/nav:justify-start group-focus-within/nav:justify-start">
-          <ProfileAvatarLink size="lg" />
+          <ProfileAvatarLink size="xl" />
         </div>
 
         {activeProfile ? (

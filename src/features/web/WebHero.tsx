@@ -210,7 +210,7 @@ export function WebHero({
 
       <div
         className={clsx(
-          "absolute inset-0 flex flex-col justify-end gap-3 p-5 transition-opacity duration-500 sm:max-w-xl sm:p-6",
+          "absolute inset-0 flex flex-col justify-end gap-3 p-5 transition-opacity duration-500 sm:max-w-2xl sm:gap-4 sm:p-7",
           chromeHidden ? "pointer-events-none opacity-0" : "opacity-100"
         )}
       >
@@ -220,10 +220,10 @@ export function WebHero({
             key={`logo-${item.mediaId}`}
             src={logo}
             alt={item.title}
-            className="web-logo-in max-h-[4.5rem] max-w-[70%] object-contain object-left drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] sm:max-h-24"
+            className="web-logo-in max-h-20 max-w-[75%] object-contain object-left drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] sm:max-h-28"
           />
         ) : (
-          <h1 className="text-2xl font-black leading-tight text-[var(--mega-text)] drop-shadow sm:text-3xl">{item.title}</h1>
+          <h1 className="text-2xl font-black leading-tight text-[var(--mega-text)] drop-shadow sm:text-4xl">{item.title}</h1>
         )}
         {item.overview ? (
           <p className="line-clamp-2 text-xs text-[var(--mega-text-muted)] sm:text-sm">{item.overview}</p>

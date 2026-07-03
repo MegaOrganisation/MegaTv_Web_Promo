@@ -93,7 +93,7 @@ export function CatalogRail({
 
   if (state === "done" && items.length === 0) return null;
 
-  const tileWidth = landscape ? "w-[240px] sm:w-[280px]" : "w-[130px] sm:w-[150px]";
+  const tileWidth = landscape ? "mega-poster-landscape-w shrink-0" : "mega-poster-w shrink-0";
   const tileAspect = landscape ? "aspect-video" : "aspect-[2/3]";
   const railItems = top10 ? items.slice(0, 10) : items;
   const previewItems = top10 ? railItems : railItems.slice(0, RAIL_PREVIEW_LIMIT);

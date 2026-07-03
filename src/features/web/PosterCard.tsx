@@ -53,7 +53,7 @@ export function PosterCard({
   const enrichAsked = useRef(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const widthClass = fullWidth ? "w-full" : landscape ? "w-[240px] sm:w-[280px]" : "w-[130px] sm:w-[150px]";
+  const widthClass = fullWidth ? "w-full" : landscape ? "mega-poster-landscape-w shrink-0" : "mega-poster-w shrink-0";
   const rawProgress = typeof item.progress === "number" ? item.progress : 0;
   const progress = Math.min(100, Math.max(0, rawProgress <= 1 ? rawProgress * 100 : rawProgress));
 

@@ -87,7 +87,8 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
 
   return (
     <div
-      className="group/cw relative w-[300px] shrink-0"
+      className="group/cw relative shrink-0"
+      style={{ width: "var(--mega-cw-w)" }}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={onEnter}
@@ -104,8 +105,8 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
         title={item.title}
       >
         <div
-          className="mega-cw-shell relative flex h-24 overflow-hidden rounded-[28px] border border-white/10 bg-[#151618] transition duration-300"
-          style={{ backgroundColor: CARD_BG }}
+          className="mega-cw-shell relative flex overflow-hidden rounded-[28px] border border-white/10 bg-[#151618] transition duration-300"
+          style={{ backgroundColor: CARD_BG, height: "var(--mega-cw-h)" }}
         >
           {backdropUrl ? (
             <div className="pointer-events-none absolute inset-y-0 right-0 w-[65%] overflow-hidden">
@@ -128,9 +129,12 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
           ) : null}
 
           <div className="relative z-[1] flex h-full min-w-0 flex-1 items-center">
-            <div className="relative h-full w-16 shrink-0 overflow-hidden rounded-l-[12px] rounded-r-lg bg-[var(--mega-surface)]">
+            <div
+              className="relative h-full shrink-0 overflow-hidden rounded-l-[12px] rounded-r-lg bg-[var(--mega-surface)]"
+              style={{ width: "var(--mega-cw-poster-w)" }}
+            >
               {posterUrl ? (
-                <Image src={posterUrl} alt={item.title} fill unoptimized sizes="64px" className="object-cover" />
+                <Image src={posterUrl} alt={item.title} fill unoptimized sizes="96px" className="object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[var(--mega-text-faint)]">
                   <ImageOff className="h-5 w-5" />
@@ -151,14 +155,14 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
               ) : null}
 
               <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                <SeriesInProgressBadge progressPercent={progressPercent} size={38} className="relative" />
+                <SeriesInProgressBadge progressPercent={progressPercent} size={46} className="relative" />
               </div>
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col px-3 pt-2.5 pb-2">
-              <p className="line-clamp-1 text-[15px] font-bold leading-tight text-white">{item.title}</p>
+              <p className="line-clamp-1 text-base font-bold leading-tight text-white sm:text-[17px]">{item.title}</p>
               {episodeInfo ? (
-                <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-white/60">{episodeInfo}</p>
+                <p className="mt-0.5 line-clamp-1 text-xs leading-snug text-white/60 sm:text-[13px]">{episodeInfo}</p>
               ) : null}
 
               <div className="min-h-[0.35rem] flex-1" />

@@ -31,11 +31,21 @@ html[data-theme="dark"] {
   --grad-spectrum: linear-gradient(110deg, #3f9ae6 0%, #1fa8a0 19%, #5fbf5a 35%, #f2b43c 55%, #ee6a54 76%, #d8497f 100%);
   /* Poster/card corner radius — mirrors Android MegaTvSkin.radius.md (28dp). */
   --mega-poster-radius: 28px;
+  /* Card sizes — home rails (≈1.5× baseline juillet 2026). */
+  --mega-poster-w: 12.25rem;
+  --mega-poster-w-lg: 14rem;
+  --mega-poster-landscape-w: 22.5rem;
+  --mega-poster-landscape-w-lg: 26.25rem;
+  --mega-cw-w: 26.25rem;
+  --mega-cw-h: 8.75rem;
+  --mega-cw-poster-w: 6rem;
   /* Vertical nav rail widths (collapsed / expanded on hover). */
-  --mega-nav-rail-collapsed: 8.5rem;
-  --mega-nav-rail-expanded: 20rem;
+  --mega-nav-rail-collapsed: 10.5rem;
+  --mega-nav-rail-expanded: 22rem;
   --mega-nav-rail-gutter: 1rem;
-  --mega-hero-height: clamp(14rem, 38vh, 24rem);
+  --mega-nav-rail-chip: 5.75rem;
+  --mega-nav-rail-icon: 3rem;
+  --mega-hero-height: clamp(17.5rem, 48vh, 32rem);
   --companion-mobile-header: calc(3.75rem + max(0.65rem, env(safe-area-inset-top)));
   --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
@@ -545,13 +555,13 @@ a {
 
 /* Top 10 rank glyph — MobileTop10RankGlyph parity (130×195 poster, 30px gutter, 10px overlap). */
 .top10-rail-cell {
-  --top10-poster-w: 130px;
+  --top10-poster-w: var(--mega-poster-w);
   --top10-poster-h: calc(var(--top10-poster-w) * 3 / 2);
 }
 
 @media (min-width: 640px) {
   .top10-rail-cell {
-    --top10-poster-w: 150px;
+    --top10-poster-w: var(--mega-poster-w-lg);
   }
 }
 
@@ -683,20 +693,45 @@ a {
 
 /* Vertical nav — rail large (desktop latéral). */
 .mega-vertical-nav .mega-nav-chip {
-  min-height: 4.25rem;
-  min-width: 4.25rem;
-  font-size: 1rem;
+  min-height: var(--mega-nav-rail-chip);
+  min-width: var(--mega-nav-rail-chip);
+  font-size: 1.0625rem;
 }
 
 .mega-vertical-nav .mega-nav-chip-rail:not(:hover):not(:focus-visible) {
-  min-width: 4.25rem;
+  min-width: var(--mega-nav-rail-chip);
 }
 
 .mega-vertical-nav .mega-nav-chip-label {
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
-/* Hero home — bandeau court (plus de rails visibles au-dessus du fold). */
+.mega-vertical-nav .mega-nav-chip-icon {
+  width: var(--mega-nav-rail-icon);
+  height: var(--mega-nav-rail-icon);
+}
+
+.mega-poster-w {
+  width: var(--mega-poster-w);
+}
+
+@media (min-width: 640px) {
+  .mega-poster-w {
+    width: var(--mega-poster-w-lg);
+  }
+}
+
+.mega-poster-landscape-w {
+  width: var(--mega-poster-landscape-w);
+}
+
+@media (min-width: 640px) {
+  .mega-poster-landscape-w {
+    width: var(--mega-poster-landscape-w-lg);
+  }
+}
+
+/* Hero home — bandeau principal (~48vh). */
 .mega-hero-shell {
   height: var(--mega-hero-height);
 }

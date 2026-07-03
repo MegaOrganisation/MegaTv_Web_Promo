@@ -5,4 +5,4 @@ export const RAIL_PREVIEW_LIMIT = 20;
 export const RAIL_FETCH_LIMIT = 60;
 
 /** Scroll step when using rail arrow buttons (px). */
-export const RAIL_SCROLL_STEP = 520;
+export const RAIL_SCROLL_STEP = 780;
