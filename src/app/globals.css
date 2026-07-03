@@ -44,8 +44,9 @@ html[data-theme="dark"] {
   --mega-nav-rail-expanded: 22rem;
   --mega-nav-rail-gutter: 1rem;
   --mega-nav-rail-chip: 5.75rem;
-  --mega-nav-rail-icon: 3rem;
-  --mega-hero-height: clamp(17.5rem, 48vh, 32rem);
+  --mega-nav-rail-icon: 2.75rem;
+  --mega-topnav-height: calc(var(--mega-nav-rail-chip) + 1.5rem);
+  --mega-hero-height: clamp(20rem, 54vh, 38rem);
   --companion-mobile-header: calc(3.75rem + max(0.65rem, env(safe-area-inset-top)));
   --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
@@ -248,8 +249,8 @@ a {
 }
 
 .mega-nav-chip-expand:not(:hover):not(:focus-visible) {
-  width: 2.5rem;
-  min-width: 2.5rem;
+  width: var(--mega-nav-rail-chip);
+  min-width: var(--mega-nav-rail-chip);
   padding-inline: 0;
 }
 
@@ -692,6 +693,17 @@ a {
 }
 
 /* Vertical nav — rail large (desktop latéral). */
+.mega-topnav-bar .mega-nav-chip {
+  min-height: var(--mega-nav-rail-chip);
+  min-width: var(--mega-nav-rail-chip);
+}
+
+.mega-nav-chip-icon {
+  width: var(--mega-nav-rail-icon);
+  height: var(--mega-nav-rail-icon);
+  flex-shrink: 0;
+}
+
 .mega-vertical-nav .mega-nav-chip {
   min-height: var(--mega-nav-rail-chip);
   min-width: var(--mega-nav-rail-chip);
@@ -704,11 +716,6 @@ a {
 
 .mega-vertical-nav .mega-nav-chip-label {
   font-size: 1rem;
-}
-
-.mega-vertical-nav .mega-nav-chip-icon {
-  width: var(--mega-nav-rail-icon);
-  height: var(--mega-nav-rail-icon);
 }
 
 .mega-poster-w {
@@ -731,7 +738,7 @@ a {
   }
 }
 
-/* Hero home — bandeau principal (~48vh). */
+/* Hero home — bandeau principal (~54vh). */
 .mega-hero-shell {
   height: var(--mega-hero-height);
 }

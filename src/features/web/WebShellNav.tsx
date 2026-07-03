@@ -105,7 +105,7 @@ function NavChip({
       <MegaTvIcon
         name={item.icon}
         filled={active}
-        className={showLabel === "rail" ? "mega-nav-chip-icon" : "h-[1.15rem] w-[1.15rem]"}
+        className={showLabel === "always" ? "h-6 w-6 shrink-0" : "mega-nav-chip-icon"}
       />
       <span className="mega-nav-chip-label">{item.label}</span>
     </Link>
@@ -158,9 +158,9 @@ function HorizontalTopNav() {
             type="button"
             onClick={signOut}
             aria-label="Se déconnecter"
-            className="focus-ring mega-nav-glass grid h-10 w-10 place-items-center rounded-full text-[var(--mega-text-muted)] transition hover:text-[var(--mega-text)]"
+            className="focus-ring mega-nav-glass grid h-[var(--mega-nav-rail-chip)] w-[var(--mega-nav-rail-chip)] place-items-center rounded-full text-[var(--mega-text-muted)] transition hover:text-[var(--mega-text)]"
           >
-            <MegaTvIcon name="logout" className="h-[1.15rem] w-[1.15rem]" />
+            <MegaTvIcon name="logout" className="mega-nav-chip-icon" />
           </button>
         </div>
       </div>
@@ -210,7 +210,7 @@ function VerticalSideNav() {
           onClick={signOut}
           className="focus-ring mega-nav-chip mega-nav-chip-rail mt-auto w-full shrink-0 text-[var(--mega-text-muted)] hover:text-[var(--mega-text)]"
         >
-          <MegaTvIcon name="logout" className="h-[1.15rem] w-[1.15rem]" />
+          <MegaTvIcon name="logout" className="mega-nav-chip-icon" />
           <span className="mega-nav-chip-label">Se déconnecter</span>
         </button>
       </aside>
@@ -289,7 +289,7 @@ export function WebAppChrome({ children }: { children: ReactNode }) {
           "w-full pb-28 pt-3 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:pt-4 lg:pb-10",
           vertical
             ? "pl-[calc(var(--mega-nav-rail-collapsed)+var(--mega-nav-rail-gutter))] pr-3 sm:pr-4 lg:peer-hover/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))] lg:peer-focus-within/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))]"
-            : "px-3 pt-0 sm:px-4 lg:pt-[5.5rem]"
+            : "px-3 pt-0 sm:px-4 lg:pt-[var(--mega-topnav-height)]"
         )}
       >
         <RouteTransition>{children}</RouteTransition>

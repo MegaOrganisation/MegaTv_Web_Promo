@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { MediaHeroBackdrop } from "@/features/web/MediaHeroBackdrop";
 import { fetchTitleLogo, fetchTrailerKey, seedTitleLogo, seedTrailerKey } from "@/features/web/mediaClient";
 import { MegaTvIcon } from "@/features/web/icons/MegaTvIcon";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
@@ -171,14 +172,7 @@ export function WebHero({
       onKeyDown={bumpActivity}
       tabIndex={-1}
     >
-      <div className="mega-hero-shell relative w-full overflow-hidden">
-        {backdrop ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={item.mediaId} src={backdrop} alt={item.title} className="web-fade-in h-full w-full object-cover" />
-        ) : (
-          <div className="h-full w-full bg-[var(--mega-surface)]" />
-        )}
-
+      <MediaHeroBackdrop key={item.mediaId} src={backdrop} alt={item.title} chromeHidden={chromeHidden}>
         {showVideo && trailerKey ? (
           <div
             className={clsx(
@@ -196,17 +190,7 @@ export function WebHero({
             />
           </div>
         ) : null}
-
-        <div
-          className={clsx(
-            "absolute inset-0 transition-opacity duration-500",
-            chromeHidden ? "opacity-0" : "opacity-100"
-          )}
-        >
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,7,10,0.92)_0%,rgba(6,7,10,0.55)_45%,rgba(6,7,10,0.1)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(6,7,10,0.9)_0%,transparent_55%)]" />
-        </div>
-      </div>
+      </MediaHeroBackdrop>
 
       <div
         className={clsx(

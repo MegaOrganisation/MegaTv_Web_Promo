@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 
 import { CastRail, type CastMember } from "@/features/web/details/CastRail";
 import { DetailActionBar, DetailBackButton } from "@/features/web/details/DetailActions";
+import { MediaHeroBackdrop } from "@/features/web/MediaHeroBackdrop";
 import { PosterCard } from "@/features/web/PosterCard";
 import { SeasonEpisodes, type SeasonInput } from "@/features/web/details/SeasonEpisodes";
 import { fetchTmdbMediaFull, fetchTmdbImages, formatRuntimeMinutes, pickTitleLogo, pickTrailerKey, tmdbImageUrl } from "@/lib/tmdb";
@@ -67,18 +68,11 @@ export default async function WebDetailsPage({
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[var(--mega-poster-radius)] border border-[var(--mega-border)]">
-        <div className="relative aspect-[16/9] w-full sm:aspect-[21/9]">
-          {backdrop ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={backdrop} alt={title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full bg-[var(--mega-surface)]" />
-          )}
-          <div className="absolute inset-0 bg-[linear-gradient(0deg,var(--mega-background-deep)_2%,rgba(6,7,10,0.35)_60%,transparent_100%)]" />
+      <section className="mega-poster-radius relative overflow-hidden border border-[var(--mega-border)]">
+        <MediaHeroBackdrop src={backdrop} alt={title}>
           <DetailBackButton profileId={profileId} />
-        </div>
-        <div className="relative -mt-24 flex flex-col gap-4 px-4 sm:-mt-28 sm:px-8">
+        </MediaHeroBackdrop>
+        <div className="relative -mt-32 flex flex-col gap-4 px-4 sm:-mt-36 sm:px-8">
           <h1 className="text-3xl font-black text-[var(--mega-text)] sm:text-5xl">{title}</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--mega-text-muted)]">
             {year ? <span>{year}</span> : null}
