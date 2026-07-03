@@ -66,19 +66,19 @@ export function AddonsEditor({ profileId, initialAddons, initialHiddenBuiltIn }:
     setDirty(true);
   }, []);
 
-  const save = async (forceSync = false) => {
+  const save = async () => {
     setSaving(true);
     setStatus(null);
     try {
       const res = await fetch("/api/companion/sync/addons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId, addons, hiddenBuiltIn, forceSync })
+        body: JSON.stringify({ profileId, addons, hiddenBuiltIn, forceSync: true })
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Échec de sauvegarde");
       setDirty(false);
-      setStatus(forceSync ? "Sauvegardé et sync forcée sur vos appareils." : "Sauvegardé dans le cloud.");
+      setStatus("Sauvegardé — synchronisation envoyée à vos appareils.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Erreur inconnue");
     } finally {
@@ -97,7 +97,7 @@ export function AddonsEditor({ profileId, initialAddons, initialHiddenBuiltIn }:
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Échec force sync");
-      setStatus("Sync forcée programmée — vos appareils Android la liront au prochain cold start.");
+      setStatus("Sync forcée envoyée à vos appareils.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Erreur inconnue");
     } finally {
@@ -123,13 +123,9 @@ export function AddonsEditor({ profileId, initialAddons, initialHiddenBuiltIn }:
               <Plus className="h-4 w-4" />
               Ajouter
             </MegaButton>
-            <MegaButton variant="ghost" disabled={!dirty || saving} onClick={() => save(false)}>
+            <MegaButton disabled={!dirty || saving} onClick={save}>
               <Save className="h-4 w-4" />
               Sauvegarder
-            </MegaButton>
-            <MegaButton disabled={saving} onClick={() => save(true)}>
-              <Save className="h-4 w-4" />
-              Sauver + sync
             </MegaButton>
             <MegaButton variant="ghost" disabled={forcing} onClick={forceSyncOnly}>
               <RefreshCw className="h-4 w-4" />

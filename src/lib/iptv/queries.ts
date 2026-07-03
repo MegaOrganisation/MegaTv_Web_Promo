@@ -52,6 +52,21 @@ function hasPlaylistData(state: IptvProfileState) {
   return Array.isArray(state.playlists) && state.playlists.length > 0;
 }
 
+function favoriteChannelsFromState(state: IptvProfileState): string[] {
+  const raw = (state as Record<string, unknown>).favoriteChannels;
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of raw) {
+    const id = typeof value === "string" ? value.trim() : String(value ?? "").trim();
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
+}
+
 function playlistsFromState(profileState: IptvProfileState) {
   const rawPlaylists = Array.isArray(profileState.playlists) ? profileState.playlists : [];
   const playlists = rawPlaylists.map((entry, index) => normalizePlaylistEntry(entry as Record<string, unknown>, index));
@@ -125,12 +140,24 @@ export async function getIptvPlaylistsForProfile(profileId: string) {
     playlists = collectAccountPlaylists(iptvByProfile, accountM3u, accountEpg);
   }
 
+  // Favorites are strictly profile-scoped: read only the requested profile's
+  // favoriteChannels (never merged across profiles). Additive field — the
+  // Companion editor ignores it.
+  const favoriteChannels = favoriteChannelsFromState(iptvByProfile[normalizedProfileId] || profileState);
+
   if (playlists.length === 0 && sliceError) {
-    return { playlists: [] as IptvPlaylistEntry[], updatedAt: null as string | null, error: sliceError.message, scope: "empty" as const };
+    return {
+      playlists: [] as IptvPlaylistEntry[],
+      favoriteChannels,
+      updatedAt: null as string | null,
+      error: sliceError.message,
+      scope: "empty" as const
+    };
   }
 
   return {
     playlists,
+    favoriteChannels,
     updatedAt: (sliceResult.data?.updated_at as string | null) || (payloadResult.data?.updated_at as string | null) || null,
     error: null as string | null,
     scope: playlists.length > 0 && !hasPlaylistData(profileState) && !profileState.m3uUrl ? ("account" as const) : ("profile" as const)
@@ -150,6 +177,32 @@ export async function saveIptvPlaylistsForProfile(profileId: string, playlists: 
   const { data, error } = await supabase.rpc("megacompanion_patch_iptv_playlists", {
     p_profile_id: profileId.trim(),
     p_playlists: payload
+  });
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  return { ok: true as const, data };
+}
+
+/**
+ * Batch write of the ordered favorite channel ids for a profile.
+ *
+ * Free Tier: called ONCE on exit / debounce (never per toggle). Anti-wipe is
+ * enforced server-side (RPC refuses an empty push over a non-empty cloud list),
+ * so callers can pass their current local list safely.
+ */
+export async function saveIptvFavoritesForProfile(profileId: string, favoriteChannels: string[]) {
+  const supabase = await createClient();
+  const seen = new Set<string>();
+  const clean = favoriteChannels
+    .map((id) => (typeof id === "string" ? id.trim() : String(id ?? "").trim()))
+    .filter((id) => id && !seen.has(id) && (seen.add(id), true));
+
+  const { data, error } = await supabase.rpc("megacompanion_patch_iptv_favorites", {
+    p_profile_id: profileId.trim(),
+    p_favorite_channels: clean
   });
 
   if (error) {

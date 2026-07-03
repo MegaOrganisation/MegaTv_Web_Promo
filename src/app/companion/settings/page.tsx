@@ -1,8 +1,9 @@
-import { LockKeyhole, Palette, UserRound } from "lucide-react";
+import { LockKeyhole, Palette, Smartphone, UserRound } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { SignOutButton } from "@/features/auth/SignOutButton";
+import { PwaInstallPrompt } from "@/features/companion/PwaInstallPrompt";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import { ThemeSelector } from "@/features/theme/ThemeSelector";
 import { requireUser } from "@/lib/auth/require-user";
@@ -45,6 +46,17 @@ export default async function CompanionSettingsPage() {
           </div>
         </GlassCard>
       </div>
+
+      <GlassCard as="section" className="mt-6">
+        <div className="mb-4 flex items-center gap-3">
+          <Smartphone className="h-6 w-6 text-white/70" />
+          <div>
+            <h2 className="text-2xl font-bold text-white">Application mobile</h2>
+            <p className="mt-1 text-sm text-white/45">Installez MegaCompagnon sur l&apos;écran d&apos;accueil (PWA).</p>
+          </div>
+        </div>
+        <PwaInstallPrompt embedded />
+      </GlassCard>
 
       <GlassCard as="section" className="mt-6">
         <div className="mb-4 flex items-center gap-3">

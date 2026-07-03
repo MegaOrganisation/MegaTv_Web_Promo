@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCatalogsSlice } from "@/lib/companion/sync-queries";
+import { requestForceSync } from "@/lib/companion/force-sync";
 import { requireUser } from "@/lib/auth/require-user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,9 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  if (body.forceSync) {
-    await supabase.rpc("megacompanion_request_force_sync", { p_scopes: ["catalogs"] });
-  }
+  await requestForceSync(["catalogs"]);
 
-  return NextResponse.json({ ok: true, result: data });
+  return NextResponse.json({ ok: true, result: data, forceSync: true });
 }

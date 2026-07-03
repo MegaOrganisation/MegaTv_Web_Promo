@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CompanionProfilesPage() {
   await requireUser("/companion/profiles");
-  const { profiles, profileAvatarUrlsById, isAdmin } = await getDashboardData(null);
+  const { profiles, isAdmin } = await getDashboardData(null, { skipAvatarUrls: true });
 
   return (
     <ResponsiveShell title="Profils" subtitle="Gérez les profils MegaTv : avatars, mode Kids et code PIN." isAdmin={isAdmin}>
@@ -24,7 +24,7 @@ export default async function CompanionProfilesPage() {
             <p className="mt-1 text-sm text-white/45">Avatars MegaTv, photo personnalisée, Kids et PIN synchronisés avec l&apos;application.</p>
           </div>
         </div>
-        <ProfileManagementPanel profiles={profiles} profileAvatarUrlsById={profileAvatarUrlsById} />
+        <ProfileManagementPanel profiles={profiles} />
       </GlassCard>
     </ResponsiveShell>
   );

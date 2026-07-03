@@ -4,17 +4,16 @@ import { clsx } from "clsx";
 import { Baby, Camera, Check, KeyRound, Loader2, RotateCcw, Save, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useMemo, useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 
 import { MegaButton } from "@/components/ui/MegaButton";
-import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
+import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
 import { AVATAR_REGISTRY, avatarAssetPath, avatarGradientCss } from "@/lib/profiles/avatars";
 import { formatPinInput } from "@/lib/profiles/pin";
 import type { ProfileRow } from "@/lib/supabase/types";
 
 type Props = {
   profiles: ProfileRow[];
-  profileAvatarUrlsById?: Record<string, string>;
 };
 
 type ProfileFormState = {
@@ -26,7 +25,7 @@ type ProfileFormState = {
   removePin: boolean;
 };
 
-export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }: Props) {
+export function ProfileManagementPanel({ profiles }: Props) {
   const router = useRouter();
   const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.profile_id || "");
   const selectedProfile = profiles.find((profile) => profile.profile_id === selectedProfileId) || profiles[0] || null;
@@ -41,6 +40,20 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
     if (!selectedProfile) return null;
     return formByProfileId[selectedProfile.profile_id] || profileToForm(selectedProfile);
   }, [formByProfileId, selectedProfile]);
+
+  useEffect(() => {
+    setFormByProfileId((current) => {
+      const next = { ...current };
+      for (const profile of profiles) {
+        const serverForm = profileToForm(profile);
+        const existing = current[profile.profile_id];
+        next[profile.profile_id] = existing
+          ? { ...existing, name: serverForm.name, isKidsProfile: serverForm.isKidsProfile }
+          : serverForm;
+      }
+      return next;
+    });
+  }, [profiles]);
 
   if (profiles.length === 0 || !selectedProfile || !form) {
     return <p className="text-sm text-white/45">Aucun profil cloud détecté pour le moment.</p>;
@@ -162,6 +175,8 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
       <div className="space-y-3">
         {profiles.map((profile) => {
           const active = profile.profile_id === selectedProfile.profile_id;
+          const itemForm = active ? form : formByProfileId[profile.profile_id] || profileToForm(profile);
+          const displayAvatarId = itemForm.avatarId;
           return (
             <button
               key={profile.profile_id}
@@ -176,7 +191,12 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
                 active ? "border-white/24 bg-white/12" : "border-white/8 bg-white/[0.035] hover:bg-white/[0.06]"
               )}
             >
-              <ProfileAvatar profile={profile} avatarUrl={profileAvatarUrlsById[profile.profile_id]} size="lg" />
+              <PresetAvatarCircle
+                key={`${profile.profile_id}-${displayAvatarId}`}
+                avatarId={displayAvatarId}
+                size="lg"
+                label={profile.name || "Profil MegaTv"}
+              />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold text-white">{profile.name || "Profil MegaTv"}</span>
                 <span className="mt-1 block truncate text-xs text-white/42">
@@ -192,14 +212,16 @@ export function ProfileManagementPanel({ profiles, profileAvatarUrlsById = {} }:
 
       <form onSubmit={submit} className="rounded-[26px] border border-white/10 bg-white/[0.035] p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <ProfileAvatar
-            profile={{ ...selectedProfile, avatar_id: form.avatarId, avatar_image_version: 0, avatar_image_storage_path: null }}
-            size="xl"
-          />
+          <PresetAvatarCircle avatarId={form.avatarId} size="xl" label={selectedProfile.name || "Profil MegaTv"} />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Profil sélectionné</p>
             <h3 className="mt-1 truncate text-2xl font-black text-white">{selectedProfile.name || "Profil MegaTv"}</h3>
             <p className="mt-1 text-sm text-white/45">Avatars MegaTv, mode Kids et PIN synchronisés avec l&apos;application.</p>
+            {(selectedProfile.avatar_image_version || 0) > 0 && (selectedProfile.avatar_id || 0) > 0 ? (
+              <p className="mt-2 rounded-xl border border-yellow-300/20 bg-yellow-300/8 px-3 py-2 text-xs text-yellow-100">
+                Ancienne photo personnalisée détectée — cliquez Enregistrer pour basculer sur l&apos;avatar MegaTv.
+              </p>
+            ) : null}
           </div>
         </div>
 

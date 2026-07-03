@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { Layers3, Puzzle, Tv } from "lucide-react";
+
+import { useCompanionProfile } from "@/features/companion/CompanionProfileProvider";
 
 const tabs = [
   { href: "/companion/manage/iptv", label: "IPTV", icon: Tv },
@@ -13,9 +15,7 @@ const tabs = [
 
 export function ManageTabs() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const profile = searchParams.get("profile");
-  const query = profile ? `?profile=${encodeURIComponent(profile)}` : "";
+  const { withProfile } = useCompanionProfile();
 
   return (
     <nav className="mb-6 flex gap-2 overflow-x-auto pb-1">
@@ -24,7 +24,8 @@ export function ManageTabs() {
         return (
           <Link
             key={href}
-            href={`${href}${query}`}
+            href={withProfile(href)}
+            prefetch
             className={clsx(
               "focus-ring flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition",
               active ? "border-white/30 bg-white/14 text-white" : "border-white/10 bg-white/[0.045] text-white/55 hover:text-white"

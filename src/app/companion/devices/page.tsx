@@ -18,7 +18,7 @@ export default async function CompanionDevicesPage() {
   return (
     <ResponsiveShell title="Appareils" subtitle="Appareils liés au compte MegaTv — statut en ligne, renommage et suppression." isAdmin={isAdmin}>
       <PageEventTracker page="Companion Devices" />
-      <GlassCard as="section">
+      <GlassCard as="section" className="min-w-0 max-w-full overflow-hidden">
         <div className="mb-5 flex items-center gap-3">
           <MonitorSmartphone className="h-6 w-6 text-white/70" />
           <div>
