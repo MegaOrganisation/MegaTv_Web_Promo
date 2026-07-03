@@ -105,7 +105,7 @@ function NavChip({
       <MegaTvIcon
         name={item.icon}
         filled={active}
-        className={showLabel === "rail" ? "h-6 w-6" : "h-[1.15rem] w-[1.15rem]"}
+        className={showLabel === "rail" ? "h-8 w-8" : "h-[1.15rem] w-[1.15rem]"}
       />
       <span className="mega-nav-chip-label">{item.label}</span>
     </Link>

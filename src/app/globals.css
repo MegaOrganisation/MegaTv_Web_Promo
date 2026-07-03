@@ -35,7 +35,7 @@ html[data-theme="dark"] {
   --mega-nav-rail-collapsed: 8.5rem;
   --mega-nav-rail-expanded: 20rem;
   --mega-nav-rail-gutter: 1rem;
-  --mega-hero-height: clamp(11rem, 28vh, 17.5rem);
+  --mega-hero-height: clamp(14rem, 38vh, 24rem);
   --companion-mobile-header: calc(3.75rem + max(0.65rem, env(safe-area-inset-top)));
   --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
@@ -683,13 +683,13 @@ a {
 
 /* Vertical nav — rail large (desktop latéral). */
 .mega-vertical-nav .mega-nav-chip {
-  min-height: 3.75rem;
-  min-width: 3.75rem;
-  font-size: 0.9375rem;
+  min-height: 4.25rem;
+  min-width: 4.25rem;
+  font-size: 1rem;
 }
 
 .mega-vertical-nav .mega-nav-chip-rail:not(:hover):not(:focus-visible) {
-  min-width: 3.75rem;
+  min-width: 4.25rem;
 }
 
 .mega-vertical-nav .mega-nav-chip-label {
