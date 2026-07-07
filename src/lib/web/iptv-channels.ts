@@ -61,6 +61,20 @@ function hashString(input: string): string {
   return (h >>> 0).toString(36);
 }
 
+/** Normalize tvg-logo / stream_icon URLs (protocol-relative, relative to playlist host). */
+export function normalizeIptvLogoUrl(raw: string | null | undefined, baseUrl?: string | null): string | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+  try {
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (baseUrl) return new URL(trimmed, baseUrl).toString();
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
 function attr(line: string, name: string): string | null {
   const match = new RegExp(`${name}="([^"]*)"`, "i").exec(line);
   return match ? match[1].trim() || null : null;
@@ -85,7 +99,7 @@ function normalizeToM3uUrl(url: string): string {
   }
 }
 
-function parseM3u(text: string, listId: string): { channels: IptvChannel[]; epgUrl: string | null; capped: boolean } {
+function parseM3u(text: string, listId: string, logoBase?: string | null): { channels: IptvChannel[]; epgUrl: string | null; capped: boolean } {
   const channels: IptvChannel[] = [];
   const seen = new Set<string>();
   let epgUrl: string | null = null;
@@ -125,7 +139,15 @@ function parseM3u(text: string, listId: string): { channels: IptvChannel[]; epgU
       // Guard against id collisions across duplicate tvg-ids.
       while (seen.has(id)) id = hashString(`${id}|${channels.length}`);
       seen.add(id);
-      channels.push({ id, name: pending.name, logo: pending.logo, group: pending.group, url, tvgId: pending.tvgId, listId });
+      channels.push({
+        id,
+        name: pending.name,
+        logo: normalizeIptvLogoUrl(pending.logo, logoBase),
+        group: pending.group,
+        url,
+        tvgId: pending.tvgId,
+        listId
+      });
       pending = null;
       if (channels.length >= PARSE_CAP) {
         capped = true;
@@ -235,7 +257,7 @@ async function loadXtreamViaApi(entry: IptvPlaylistEntry): Promise<CacheEntry> {
     channels.push({
       id,
       name,
-      logo: s.stream_icon?.trim() || null,
+      logo: normalizeIptvLogoUrl(s.stream_icon, base),
       group: (s.category_id != null && catName.get(String(s.category_id))) || "Autres",
       url,
       tvgId,
@@ -276,7 +298,7 @@ async function loadPlaylist(entry: IptvPlaylistEntry): Promise<CacheEntry> {
 
   const text = await fetchText(url);
   if (!/#EXTINF/i.test(text)) throw new Error("Format M3U non reconnu.");
-  const parsed = parseM3u(text, entry.id);
+  const parsed = parseM3u(text, entry.id, url);
   const result: CacheEntry = {
     at: Date.now(),
     channels: parsed.channels,

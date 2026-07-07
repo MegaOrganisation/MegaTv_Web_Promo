@@ -2,11 +2,11 @@
 
 import { clsx } from "clsx";
 import { ChevronDown, ChevronUp, ImageOff, LayoutGrid, ListVideo, Search, SquarePen, Star, Tv } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Spinner, SpinnerOverlay } from "@/features/web/Spinner";
+import { IptvChannelLogo } from "@/features/web/tv/IptvChannelLogo";
 import { TvLivePlayer } from "@/features/web/tv/TvLivePlayer";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
 import type { IptvCategory, IptvChannel } from "@/lib/web/iptv-channels";
@@ -439,12 +439,8 @@ function ChannelCard({
       )}
     >
       <button type="button" onClick={onPlay} className="focus-ring flex w-full items-center gap-3 p-3 text-left">
-        <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--mega-input-bg)]">
-          {channel.logo ? (
-            <Image src={channel.logo} alt="" width={48} height={48} unoptimized className="h-full w-full object-contain" />
-          ) : (
-            <Tv className="h-5 w-5 text-[var(--mega-text-faint)]" />
-          )}
+        <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--mega-input-bg)] p-1">
+          <IptvChannelLogo src={channel.logo} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">

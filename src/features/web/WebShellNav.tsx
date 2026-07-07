@@ -286,9 +286,9 @@ export function WebAppChrome({ children }: { children: ReactNode }) {
       <WebShellNav layout={prefs.navLayout} />
       <main
         className={clsx(
-          "w-full pb-28 pt-3 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:pt-4 lg:pb-10",
+          "w-full max-w-[100vw] overflow-x-hidden pb-28 pt-3 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:pt-4 lg:pb-10",
           vertical
-            ? "px-3 pb-28 pt-3 sm:px-4 sm:pt-4 lg:pb-10 lg:pl-[calc(var(--mega-nav-rail-collapsed)+var(--mega-nav-rail-gutter))] lg:pr-4 lg:peer-hover/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))] lg:peer-focus-within/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))]"
+            ? "pl-3 pr-3 max-lg:pl-3 max-lg:pr-3 sm:pl-4 sm:pr-4 lg:pl-[calc(var(--mega-nav-rail-collapsed)+var(--mega-nav-rail-gutter))] lg:pr-4 lg:peer-hover/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))] lg:peer-focus-within/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))]"
             : "px-3 pt-0 sm:px-4 lg:pt-[var(--mega-topnav-height)]"
         )}
       >

@@ -60,7 +60,7 @@ export default async function WebHomePage({ searchParams }: { searchParams: Prom
     .slice(0, 10);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {heroItems.length ? <WebHero items={heroItems} initialTrailerKey={heroTrailerKey} initialLogo={heroLogo} /> : null}
       <MediaRail title="Reprendre" items={continueItems} layout="landscape" variant="continue" />
       {catalogRails.map((catalog) => (

@@ -52,6 +52,22 @@ html[data-theme="dark"] {
   --companion-mobile-nav: calc(5.25rem + env(safe-area-inset-bottom));
 }
 
+/* Smartphone — rails compacts (posters, CW, hero) ; nav latérale absente. */
+@media (max-width: 639px) {
+  html {
+    --mega-poster-w: 7.75rem;
+    --mega-poster-w-lg: 7.75rem;
+    --mega-poster-landscape-w: 15.5rem;
+    --mega-poster-landscape-w-lg: 15.5rem;
+    --mega-poster-expand-w: 15.5rem;
+    --mega-poster-radius: 20px;
+    --mega-cw-w: 18.5rem;
+    --mega-cw-h: 6.75rem;
+    --mega-cw-poster-w: 4.5rem;
+    --mega-hero-height: clamp(13rem, 38vh, 18rem);
+  }
+}
+
 html[data-theme="light"] {
   --mega-background: #f4f7f8;
   --mega-background-deep: #e8eef0;
