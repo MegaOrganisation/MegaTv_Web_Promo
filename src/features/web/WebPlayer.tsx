@@ -69,7 +69,8 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
   const [controlsVisible, setControlsVisible] = useState(true);
   const [subMenuOpen, setSubMenuOpen] = useState(false);
   const [activeSub, setActiveSub] = useState<string | null>(null);
-  const [sourceMode, setSourceMode] = useState<"proxy" | "direct">("proxy");
+  const [sourceMode, setSourceMode] = useState<"direct" | "proxy">("direct");
+  const [needsGesture, setNeedsGesture] = useState(false);
 
   const sourceUrl =
     sourceMode === "proxy" && stream.proxiedUrl ? stream.proxiedUrl : stream.url;
@@ -92,9 +93,9 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
     setReady(false);
     setError(null);
 
-    const failToDirect = (message: string) => {
-      if (sourceMode === "proxy" && stream.proxiedUrl && stream.url !== stream.proxiedUrl) {
-        setSourceMode("direct");
+    const failToProxy = (message: string) => {
+      if (sourceMode === "direct" && stream.proxiedUrl && stream.url !== stream.proxiedUrl) {
+        setSourceMode("proxy");
         return;
       }
       setError(message);
@@ -118,7 +119,7 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => setReady(true));
           hls.on(Hls.Events.ERROR, (_event: unknown, data: { fatal?: boolean }) => {
-            if (data?.fatal) failToDirect("Lecture impossible (flux indisponible ou bloqué).");
+            if (data?.fatal) failToProxy("Lecture impossible (flux indisponible ou bloqué).");
           });
         } else {
           video.src = sourceUrl;
@@ -140,7 +141,8 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
     if (!ready) return;
     const video = videoRef.current;
     if (!video) return;
-    void video.play().catch(() => setError("Lecture bloquée par le navigateur — cliquez sur Lire."));
+    setNeedsGesture(false);
+    void video.play().catch(() => setNeedsGesture(true));
   }, [ready, sourceUrl]);
 
   // Restore resume position once metadata is known.
@@ -281,8 +283,16 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) video.play().catch(() => setError("Lecture bloquée par le navigateur."));
-    else video.pause();
+    if (video.paused) {
+      void video.play()
+        .then(() => {
+          setNeedsGesture(false);
+          setError(null);
+        })
+        .catch(() => setNeedsGesture(true));
+    } else {
+      video.pause();
+    }
   }, []);
 
   const toggleMute = useCallback(() => {
@@ -379,8 +389,8 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         onLoadedMetadata={onLoadedMetadata}
         onTimeUpdate={onTimeUpdate}
         onError={() => {
-          if (sourceMode === "proxy" && stream.proxiedUrl) {
-            setSourceMode("direct");
+          if (sourceMode === "direct" && stream.proxiedUrl) {
+            setSourceMode("proxy");
             return;
           }
           setError("Impossible de lire ce flux dans le navigateur.");
@@ -401,6 +411,19 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
       {!ready && !error ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <Loader2 className="h-10 w-10 animate-spin text-white/80" />
+        </div>
+      ) : null}
+
+      {needsGesture && !error ? (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/35">
+          <button
+            type="button"
+            onClick={togglePlay}
+            className="focus-ring pointer-events-auto grid h-20 w-20 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition hover:scale-105 hover:bg-white/25"
+            aria-label="Lire"
+          >
+            <Play className="h-10 w-10" fill="currentColor" />
+          </button>
         </div>
       ) : null}
 

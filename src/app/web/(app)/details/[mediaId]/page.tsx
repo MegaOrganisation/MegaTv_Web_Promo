@@ -67,12 +67,12 @@ export default async function WebDetailsPage({
     }));
 
   return (
-    <div className="space-y-8">
-      <section className="mega-poster-radius relative overflow-hidden border border-[var(--mega-border)]">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="mega-poster-radius relative -mx-3 overflow-hidden border border-[var(--mega-border)] sm:mx-0">
         <MediaHeroBackdrop src={backdrop} alt={title}>
           <DetailBackButton profileId={profileId} />
         </MediaHeroBackdrop>
-        <div className="relative -mt-32 flex flex-col gap-4 px-4 sm:-mt-36 sm:px-8">
+        <div className="relative -mt-24 flex flex-col gap-3 px-4 sm:-mt-36 sm:gap-4 sm:px-8">
           <h1 className="text-3xl font-black text-[var(--mega-text)] sm:text-5xl">{title}</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--mega-text-muted)]">
             {year ? <span>{year}</span> : null}
@@ -98,12 +98,12 @@ export default async function WebDetailsPage({
         </div>
       </section>
 
-      <section className="px-1">
+      <section className="px-0 sm:px-1">
         <DetailActionBar mediaId={mediaId} profileId={profileId} title={title} logoUrl={logoUrl} trailerKey={trailerKey} />
       </section>
 
       {details.overview ? (
-        <section className="max-w-3xl px-1">
+        <section className="max-w-3xl px-0 sm:px-1">
           <h2 className="mb-2 text-lg font-bold text-[var(--mega-text)]">Synopsis</h2>
           <p className="text-sm leading-relaxed text-[var(--mega-text-muted)] sm:text-base">{details.overview}</p>
         </section>

@@ -91,7 +91,7 @@ export function DetailActionBar({ mediaId, profileId, title, logoUrl, trailerKey
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
         <button
           type="button"
           onClick={() => router.push(playHref)}
