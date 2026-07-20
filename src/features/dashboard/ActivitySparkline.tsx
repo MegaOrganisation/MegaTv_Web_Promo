@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { MiniLineChart } from "@/components/ui/Charts";
+import { CinemaRechartsArea } from "@/components/ui/CinemaRecharts";
 import { MegaButton } from "@/components/ui/MegaButton";
 
 type ActivityDay = {
@@ -73,7 +73,7 @@ export function ActivitySparkline({ profileId, initialDays = 30 }: Props) {
         </div>
       </div>
       {error ? <p className="mb-3 text-xs text-yellow-100/70">{error}</p> : null}
-      <MiniLineChart points={points.length ? points : [0]} />
+      <CinemaRechartsArea points={points.length ? points : [0]} labels={rows.map((row) => row.day.slice(5))} />
     </div>
   );
 }

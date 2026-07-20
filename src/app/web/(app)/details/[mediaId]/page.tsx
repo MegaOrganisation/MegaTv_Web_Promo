@@ -1,12 +1,11 @@
 import { notFound, redirect } from "next/navigation";
-import { Star } from "lucide-react";
 
 import { CastRail, type CastMember } from "@/features/web/details/CastRail";
-import { DetailActionBar, DetailBackButton } from "@/features/web/details/DetailActions";
-import { MediaHeroBackdrop } from "@/features/web/MediaHeroBackdrop";
+import { DetailActionBar } from "@/features/web/details/DetailActions";
+import { DetailHeroPremium } from "@/features/web/details/DetailHeroPremium";
 import { PosterCard } from "@/features/web/PosterCard";
 import { SeasonEpisodes, type SeasonInput } from "@/features/web/details/SeasonEpisodes";
-import { fetchTmdbMediaFull, fetchTmdbImages, formatRuntimeMinutes, pickTitleLogo, pickTrailerKey, tmdbImageUrl } from "@/lib/tmdb";
+import { fetchTmdbMediaFull, fetchTmdbImages, formatRuntimeMinutes, pickTitleLogo, pickTrailerKey, tmdbBackdropUrl, tmdbImageUrl } from "@/lib/tmdb";
 import { decodeMediaId, encodeMediaId, type WebMediaItem } from "@/lib/web/media";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +33,8 @@ export default async function WebDetailsPage({
 
   const title = details.title || details.name || "Contenu MegaTv";
   const logoUrl = tmdbImageUrl(pickTitleLogo(images), "w500");
-  const backdrop = tmdbImageUrl(details.backdrop_path, "w780") || tmdbImageUrl(details.poster_path, "w500");
+  const posterUrl = tmdbImageUrl(details.poster_path, "w500");
+  const backdrop = tmdbBackdropUrl(details.backdrop_path) || posterUrl;
   const runtime =
     ref.mediaType === "movie" ? formatRuntimeMinutes(details.runtime) : formatRuntimeMinutes(details.episode_run_time?.[0]);
   const year = (details.release_date || details.first_air_date || "").slice(0, 4);
@@ -63,44 +63,35 @@ export default async function WebDetailsPage({
       tmdbId: item.id,
       title: item.title || item.name || "",
       posterUrl: tmdbImageUrl(item.poster_path, "w342"),
-      backdropUrl: tmdbImageUrl(item.backdrop_path, "w780")
+      backdropUrl: tmdbBackdropUrl(item.backdrop_path)
     }));
 
-  return (
-    <div className="space-y-6 sm:space-y-8">
-      <section className="mega-poster-radius relative -mx-3 overflow-hidden border border-[var(--mega-border)] sm:mx-0">
-        <MediaHeroBackdrop src={backdrop} alt={title}>
-          <DetailBackButton profileId={profileId} />
-        </MediaHeroBackdrop>
-        <div className="relative -mt-24 flex flex-col gap-3 px-4 sm:-mt-36 sm:gap-4 sm:px-8">
-          <h1 className="text-3xl font-black text-[var(--mega-text)] sm:text-5xl">{title}</h1>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--mega-text-muted)]">
-            {year ? <span>{year}</span> : null}
-            {runtime ? <span>· {runtime}</span> : null}
-            {details.vote_average ? (
-              <span className="inline-flex items-center gap-1">
-                · <Star className="h-4 w-4 text-[var(--mega-yellow)]" fill="currentColor" /> {details.vote_average.toFixed(1)}
-              </span>
-            ) : null}
-            <span className="rounded-full border border-[var(--mega-border)] px-2 py-0.5 text-xs uppercase tracking-wide">
-              {ref.mediaType === "tv" ? "Série" : "Film"}
-            </span>
-          </div>
-          {(details.genres || []).length ? (
-            <div className="flex flex-wrap gap-2">
-              {(details.genres || []).map((genre) => (
-                <span key={genre.id} className="rounded-full bg-[var(--mega-card-bg)] px-3 py-1 text-xs text-[var(--mega-text-muted)]">
-                  {genre.name}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
+  const crew = (details.credits as { crew?: Array<{ job?: string; name?: string }> } | undefined)?.crew;
+  const director = crew?.find((person) => person.job === "Director" || person.job === "Creator")?.name ?? null;
 
-      <section className="px-0 sm:px-1">
-        <DetailActionBar mediaId={mediaId} profileId={profileId} title={title} logoUrl={logoUrl} trailerKey={trailerKey} />
-      </section>
+  return (
+    <div className="space-y-6 pb-4 sm:space-y-8 sm:pb-0">
+      <DetailHeroPremium
+        profileId={profileId}
+        title={title}
+        backdrop={backdrop}
+        posterUrl={posterUrl}
+        logoUrl={logoUrl}
+        year={year}
+        runtime={runtime}
+        rating={details.vote_average ?? null}
+        mediaType={ref.mediaType}
+        genres={details.genres || []}
+        director={director}
+      >
+        <DetailActionBar
+          mediaId={mediaId}
+          profileId={profileId}
+          title={title}
+          logoUrl={logoUrl}
+          trailerKey={trailerKey}
+        />
+      </DetailHeroPremium>
 
       {details.overview ? (
         <section className="max-w-3xl px-0 sm:px-1">

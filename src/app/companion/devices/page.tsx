@@ -16,7 +16,12 @@ export default async function CompanionDevicesPage() {
   const [{ devices, duplicateIds }, raw] = await Promise.all([getMergedDevices({ dedupe: true }), getMergedDevices({ dedupe: false })]);
 
   return (
-    <ResponsiveShell title="Appareils" subtitle="Appareils liés au compte MegaTv — statut en ligne, renommage et suppression." isAdmin={isAdmin}>
+    <ResponsiveShell
+      title="Appareils"
+      subtitle="Appareils liés au compte — statut en ligne, renommage et suppression."
+      isAdmin={isAdmin}
+      hidePageHeader
+    >
       <PageEventTracker page="Companion Devices" />
       <GlassCard as="section" className="min-w-0 max-w-full overflow-hidden">
         <div className="mb-5 flex items-center gap-3">

@@ -2,22 +2,43 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { PosterMetricRow } from "@/features/dashboard/PosterMetricRow";
+import { LandscapeMediaRail, type LandscapeCardItem } from "@/features/companion/ui/LandscapeMediaRail";
+import { formatDate } from "@/lib/format";
 import type { ContinueWatchingRow } from "@/lib/supabase/types";
 
 type EnrichedItem = ContinueWatchingRow & {
   enrichedTitle?: string | null;
   enrichedPoster?: string | null;
+  enrichedBackdrop?: string | null;
 };
 
-export function ContinueWatchingRail({ items }: { items: ContinueWatchingRow[] }) {
+function progressPercent(item: ContinueWatchingRow) {
+  const raw = item.progress;
+  if (raw != null && raw > 0) {
+    return Math.min(99, Math.round(raw <= 1 ? raw * 100 : raw));
+  }
+  if (item.progress_seconds && item.total_duration_seconds) {
+    return Math.min(99, Math.round((item.progress_seconds / item.total_duration_seconds) * 100));
+  }
+  return null;
+}
+
+function subtitle(item: ContinueWatchingRow) {
+  if (item.media_type === "tv" && item.season) {
+    const ep = item.episode ?? 1;
+    return item.episode_title ? `S${item.season} · E${ep} — ${item.episode_title}` : `S${item.season} · E${ep}`;
+  }
+  return item.media_type === "tv" ? "Série" : "Film";
+}
+
+export function ContinueWatchingRail({ items, lastActivityAt }: { items: ContinueWatchingRow[]; lastActivityAt?: string | null }) {
   const [enriched, setEnriched] = useState<EnrichedItem[]>(items);
 
   useEffect(() => {
     setEnriched(items);
     let cancelled = false;
 
-    const targets = items.filter((item) => item.tmdb_id && (!item.poster_path || !item.title));
+    const targets = items.filter((item) => item.tmdb_id && (!item.poster_path || !item.backdrop_path || !item.title));
     if (targets.length === 0) return;
 
     void Promise.all(
@@ -28,11 +49,12 @@ export function ContinueWatchingRail({ items }: { items: ContinueWatchingRow[] }
         });
         const response = await fetch(`/api/tmdb/enrich?${params.toString()}`);
         if (!response.ok) return null;
-        const body = (await response.json()) as { title?: string; posterUrl?: string | null };
+        const body = (await response.json()) as { title?: string; posterUrl?: string | null; backdropUrl?: string | null };
         return {
           key: item.track_id,
           title: body.title || null,
-          posterUrl: body.posterUrl || null
+          posterUrl: body.posterUrl || null,
+          backdropUrl: body.backdropUrl || null
         };
       })
     ).then((results) => {
@@ -45,9 +67,11 @@ export function ContinueWatchingRail({ items }: { items: ContinueWatchingRow[] }
           return {
             ...item,
             title: item.title || patch.title,
-            enrichedTitle: patch.title,
             poster_path: item.poster_path || patch.posterUrl,
-            enrichedPoster: patch.posterUrl
+            backdrop_path: item.backdrop_path || patch.backdropUrl,
+            enrichedTitle: patch.title,
+            enrichedPoster: patch.posterUrl,
+            enrichedBackdrop: patch.backdropUrl
           };
         })
       );
@@ -58,22 +82,42 @@ export function ContinueWatchingRail({ items }: { items: ContinueWatchingRow[] }
     };
   }, [items]);
 
-  const displayItems = useMemo(() => enriched, [enriched]);
+  const railItems = useMemo<LandscapeCardItem[]>(
+    () =>
+      enriched.slice(0, 12).map((item) => ({
+        id: item.track_id,
+        title: item.title || item.enrichedTitle || `TMDB ${item.tmdb_id}`,
+        posterPath: item.poster_path || item.enrichedPoster,
+        backdropPath: item.backdrop_path || item.enrichedBackdrop,
+        mediaType: item.media_type,
+        meta: subtitle(item),
+        progressPercent: progressPercent(item),
+        tmdbId: item.tmdb_id
+      })),
+    [enriched]
+  );
 
-  if (displayItems.length === 0) {
+  if (railItems.length === 0) {
     return (
-      <div className="rounded-[24px] border border-dashed border-white/14 bg-white/[0.025] p-8 text-center">
-        <p className="font-semibold text-white">Aucune reprise de lecture</p>
-        <p className="mt-2 text-sm text-white/45">Les contenus repris dans MegaTv apparaîtront ici dès que la synchronisation Cloud aura des données.</p>
+      <div className="mega-liquid-glass mega-liquid-glass-panel rounded-[28px] border border-dashed border-[var(--mega-cp-border)] p-8 text-center">
+        <p className="font-semibold text-[var(--mega-text)]">Aucune reprise de lecture</p>
+        <p className="mt-2 text-sm text-[var(--mega-text-muted)]">Les contenus repris dans MegaTv apparaîtront ici dès que la synchronisation Cloud aura des données.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {displayItems.slice(0, 8).map((item, index) => (
-        <PosterMetricRow key={item.track_id} item={item} rank={index + 1} />
-      ))}
-    </div>
+    <LandscapeMediaRail
+      title="Continuer à regarder"
+      subtitle="Rails paysage visionOS — survolez pour teinter le fond."
+      items={railItems}
+      endSlot={
+        lastActivityAt ? (
+          <span className="rounded-full border border-[var(--mega-cp-border)] bg-[var(--mega-card-bg)] px-3 py-1 text-xs text-[var(--mega-text-faint)]">
+            {formatDate(lastActivityAt)}
+          </span>
+        ) : null
+      }
+    />
   );
 }

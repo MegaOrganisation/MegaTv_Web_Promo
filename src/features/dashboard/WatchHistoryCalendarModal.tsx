@@ -275,7 +275,7 @@ export function WatchHistoryCalendarModal({ open, rows, onClose }: Props) {
   return (
     <MobileModalOverlay open={open} onClose={onClose}>
       <div
-        className="mega-glass flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-[var(--mega-border)]"
+        className="mega-glass mega-lg-modal flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-[var(--mega-border)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--mega-border)] px-4 py-4 sm:px-5">

@@ -1,0 +1,260 @@
+/* MegaCompagnon — glass premium (web approximation, pas API Apple). Une couche par surface. */
+
+html[data-mega-surface="companion"] {
+  --mega-lg-blur: 24px;
+  --mega-lg-saturate: 168%;
+}
+
+/* Masquer la grille promo sur Companion — fond ambient à la place */
+html[data-mega-surface="companion"] body::before {
+  opacity: 0;
+}
+
+html[data-mega-surface="companion"] body {
+  background: #06080a;
+}
+
+/* Fond cinématique — colonnes posters (parité auth.megatv.tv) */
+.companion-poster-backdrop {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.companion-poster-columns {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0 1.25rem;
+  opacity: 0.48;
+  filter: blur(2px);
+  transform: scale(1.06);
+}
+
+.companion-poster-col {
+  width: clamp(6.5rem, 18vw, 9.5rem);
+  flex-shrink: 0;
+}
+
+.companion-poster-track-up,
+.companion-poster-track-down {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.companion-poster-track-up {
+  animation: companion-poster-scroll-up 58s linear infinite;
+}
+
+.companion-poster-track-down {
+  animation: companion-poster-scroll-down 62s linear infinite;
+}
+
+.companion-poster-thumb {
+  margin-bottom: 1.25rem;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.65);
+}
+
+.companion-poster-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 8%, rgba(42, 21, 64, 0.42), transparent 55%),
+    radial-gradient(ellipse 70% 55% at 88% 15%, rgba(21, 37, 69, 0.35), transparent 52%),
+    radial-gradient(ellipse 55% 45% at 50% 100%, rgba(21, 53, 53, 0.28), transparent 50%),
+    linear-gradient(165deg, rgba(16, 25, 28, 0.62) 0%, rgba(8, 12, 14, 0.82) 48%, rgba(6, 8, 10, 0.9) 100%);
+}
+
+.companion-auth-shell .companion-poster-scrim {
+  background:
+    radial-gradient(ellipse 85% 65% at 50% 35%, rgba(63, 154, 230, 0.12), rgba(6, 8, 10, 0.88) 70%),
+    linear-gradient(180deg, rgba(6, 8, 10, 0.78) 0%, rgba(16, 25, 28, 0.92) 100%);
+}
+
+@keyframes companion-poster-scroll-up {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes companion-poster-scroll-down {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.companion-shell {
+  position: relative;
+  z-index: 1;
+}
+
+/* Glass carte — léger, sans double pseudo sur tout le DOM */
+.companion-shell .mega-glass,
+.companion-auth-shell .mega-glass,
+[data-mega-surface="companion"] .mega-glass {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(16, 25, 28, 0.42);
+  box-shadow:
+    0 24px 64px -32px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(var(--mega-lg-blur)) saturate(var(--mega-lg-saturate));
+  -webkit-backdrop-filter: blur(var(--mega-lg-blur)) saturate(var(--mega-lg-saturate));
+}
+
+.companion-shell .mega-glass::before,
+.companion-shell .mega-glass::after,
+.companion-auth-shell .mega-glass::before,
+.companion-auth-shell .mega-glass::after,
+[data-mega-surface="companion"] .mega-glass::before,
+[data-mega-surface="companion"] .mega-glass::after {
+  content: none;
+  display: none;
+}
+
+/* KPI — orbe tonal (jamais barre rectangulaire) */
+.mega-kpi-orb {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(32px);
+}
+
+.mega-kpi-orb--blue {
+  width: 7rem;
+  height: 7rem;
+  top: -2rem;
+  right: -1.5rem;
+  background: rgba(63, 154, 230, 0.32);
+}
+
+.mega-kpi-orb--green {
+  width: 6.5rem;
+  height: 6.5rem;
+  top: -1.75rem;
+  right: -1.25rem;
+  background: rgba(0, 213, 136, 0.28);
+}
+
+.mega-kpi-orb--gold {
+  width: 6.5rem;
+  height: 6.5rem;
+  top: -1.75rem;
+  right: -1.25rem;
+  background: rgba(255, 205, 60, 0.26);
+}
+
+.mega-kpi-orb--pink {
+  width: 6.5rem;
+  height: 6.5rem;
+  top: -1.75rem;
+  right: -1.25rem;
+  background: rgba(216, 73, 127, 0.26);
+}
+
+.mega-kpi-icon {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Nav Companion — pilule flottante */
+.companion-shell .companion-nav,
+.companion-shell .companion-mobile-nav {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 12, 16, 0.55);
+  box-shadow: 0 28px 72px -28px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+}
+
+.companion-shell .companion-mobile-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 16, 0.62);
+  backdrop-filter: blur(24px) saturate(165%);
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+}
+
+/* Modales */
+.mega-lg-scrim {
+  border: 0;
+  background: rgba(4, 8, 12, 0.62);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+.mega-lg-modal {
+  animation: mega-lg-modal-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes mega-lg-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mega-lg-sheet {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(16, 25, 28, 0.88);
+  box-shadow: 0 -24px 72px -24px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+}
+
+.mega-lg-icon-btn {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+html[data-theme="light"][data-mega-surface="companion"] body {
+  background: #eef2f4;
+}
+
+html[data-theme="light"] .companion-shell .mega-glass {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(16, 25, 28, 0.1);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .companion-shell .mega-glass,
+  .mega-lg-scrim,
+  .mega-lg-sheet,
+  .companion-shell .companion-nav,
+  .companion-shell .companion-mobile-nav,
+  .companion-shell .companion-mobile-header {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--mega-surface) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mega-lg-modal {
+    animation: none !important;
+  }
+
+  .companion-poster-track-up,
+  .companion-poster-track-down {
+    animation: none !important;
+  }
+}

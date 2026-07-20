@@ -5,6 +5,7 @@ import {
   fetchTmdbDetails,
   fetchTmdbEpisodeWithShow,
   formatRuntimeMinutes,
+  tmdbBackdropUrl,
   tmdbImageUrl,
   type TmdbCastMember
 } from "@/lib/tmdb";
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
       episode,
       overview: bundle.episode?.overview || bundle.show?.overview || null,
       posterUrl: tmdbImageUrl(bundle.show?.poster_path, "w342"),
-      backdropUrl: tmdbImageUrl(bundle.show?.backdrop_path || bundle.episode?.still_path, "w780"),
+      backdropUrl: tmdbBackdropUrl(bundle.show?.backdrop_path || bundle.episode?.still_path),
       runtime: formatRuntimeMinutes(bundle.episode?.runtime),
       rating: bundle.episode?.vote_average || bundle.show?.vote_average || null,
       releaseDate: bundle.episode?.air_date || bundle.show?.first_air_date || null,
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
     title: details.title || details.name || "Contenu MegaTv",
     overview: details.overview || null,
     posterUrl: tmdbImageUrl(details.poster_path, "w342"),
-    backdropUrl: tmdbImageUrl(details.backdrop_path, "w780"),
+    backdropUrl: tmdbBackdropUrl(details.backdrop_path),
     runtime,
     rating: details.vote_average || null,
     releaseDate: details.release_date || details.first_air_date || null,

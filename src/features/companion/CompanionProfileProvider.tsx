@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { readStoredProfileId, writeStoredProfileId, withProfileQuery } from "@/lib/companion/profile-scope";
@@ -29,8 +29,6 @@ export function CompanionProfileProvider({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [ready, setReady] = useState(false);
-
   const urlProfileId = searchParams.get("profile")?.trim() || null;
 
   const activeProfile = useMemo(
@@ -42,14 +40,11 @@ export function CompanionProfileProvider({
     const stored = readStoredProfileId();
     if (urlProfileId) {
       writeStoredProfileId(urlProfileId);
-      setReady(true);
       return;
     }
     if (stored) {
       router.replace(withProfileQuery(pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ""), stored));
-      return;
     }
-    setReady(true);
   }, [pathname, router, searchParams, urlProfileId]);
 
   const setActiveProfileId = useCallback(
@@ -79,10 +74,7 @@ export function CompanionProfileProvider({
     [profiles, profileAvatarUrlsById, urlProfileId, activeProfile, setActiveProfileId, withProfile]
   );
 
-  if (!ready && !urlProfileId && readStoredProfileId()) {
-    return null;
-  }
-
+  /* Toujours rendre les children — return null provoquait crash hooks / page Gérer KO. */
   return <CompanionProfileContext.Provider value={value}>{children}</CompanionProfileContext.Provider>;
 }
 

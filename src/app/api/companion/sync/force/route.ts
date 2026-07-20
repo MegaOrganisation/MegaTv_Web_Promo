@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function POST(request: Request) {
   await requireUser("/companion/manage");
   const body = (await request.json().catch(() => ({}))) as { scopes?: string[] };
-  const scopes = Array.isArray(body.scopes) && body.scopes.length > 0 ? body.scopes : ["addons", "catalogs", "iptv"];
+  const scopes = Array.isArray(body.scopes) && body.scopes.length > 0
+    ? body.scopes
+    : ["watchlist", "catalogs", "iptv", "settings", "addons", "devices"];
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("megacompanion_request_force_sync", { p_scopes: scopes });

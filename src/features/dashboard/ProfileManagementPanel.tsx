@@ -186,10 +186,7 @@ export function ProfileManagementPanel({ profiles }: Props) {
                 setMessage(null);
                 setError(null);
               }}
-              className={clsx(
-                "focus-ring flex w-full items-center gap-3 rounded-[22px] border p-3 text-left transition",
-                active ? "border-white/24 bg-white/12" : "border-white/8 bg-white/[0.035] hover:bg-white/[0.06]"
-              )}
+              className={clsx("mega-profile-row focus-ring", active && "is-active")}
             >
               <PresetAvatarCircle
                 key={`${profile.profile_id}-${displayAvatarId}`}
@@ -198,19 +195,19 @@ export function ProfileManagementPanel({ profiles }: Props) {
                 label={profile.name || "Profil MegaTv"}
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-white">{profile.name || "Profil MegaTv"}</span>
-                <span className="mt-1 block truncate text-xs text-white/42">
+                <span className="block truncate text-sm font-bold text-[var(--mega-text)]">{profile.name || "Profil MegaTv"}</span>
+                <span className="mt-1 block truncate text-xs text-[var(--mega-text-faint)]">
                   {profile.is_kids_profile ? "Profil enfant" : "Profil adulte"}
                   {profile.is_locked ? " · PIN actif" : ""}
                 </span>
               </span>
-              {active ? <Check className="h-5 w-5 text-white" /> : null}
+              {active ? <Check className="h-5 w-5 text-[var(--brand-blue)]" /> : null}
             </button>
           );
         })}
       </div>
 
-      <form onSubmit={submit} className="rounded-[26px] border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+      <form onSubmit={submit} className="mega-surface mega-surface-elevated rounded-[26px] p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <PresetAvatarCircle avatarId={form.avatarId} size="xl" label={selectedProfile.name || "Profil MegaTv"} />
           <div className="min-w-0 flex-1">

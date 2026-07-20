@@ -1,16 +1,13 @@
+import "@fontsource-variable/nunito";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans } from "next/font/google";
+import Script from "next/script";
 
 import { CompanionPwaSplash } from "@/features/companion/CompanionPwaSplash";
 import { ThemeProvider } from "@/features/theme/ThemeProvider";
 
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"]
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -20,7 +17,13 @@ const geistMono = Geist_Mono({
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
-  weight: ["600", "700", "800"]
+  display: "swap"
+});
+
+const instrument = Instrument_Sans({
+  variable: "--font-instrument",
+  subsets: ["latin"],
+  display: "swap"
 });
 
 export const metadata: Metadata = {
@@ -38,11 +41,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/assets/favicon-32.png?v=2", sizes: "32x32", type: "image/png" },
-      { url: "/assets/triangle-icon-180.png?v=2", sizes: "180x180", type: "image/png" }
+      { url: "/assets/megatv-icon.png?v=3", sizes: "32x32", type: "image/png" },
+      { url: "/assets/megatv-icon.png?v=3", sizes: "180x180", type: "image/png" }
     ],
-    apple: [{ url: "/assets/triangle-icon-180.png?v=2", sizes: "180x180", type: "image/png" }],
-    shortcut: [{ url: "/assets/favicon-32.png?v=2", type: "image/png" }]
+    apple: [{ url: "/assets/megatv-icon.png?v=3", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/assets/megatv-icon.png?v=3", type: "image/png" }]
   },
   openGraph: {
     title: "MegaTv — Site officiel & MegaCompagnon",
@@ -62,14 +65,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=localStorage.getItem('megacompanion_theme');var t=m==='light'?'light':m==='system'&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`
-          }}
-        />
         <link rel="apple-touch-startup-image" href="/assets/apple-touch-startup.png" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable}`}>
+      <body
+        className={`${geistMono.variable} ${bricolage.variable} ${instrument.variable} font-[family-name:var(--font-nunito)]`}
+        style={{ ["--font-nunito" as string]: "'Nunito Variable', Nunito, system-ui, sans-serif" }}
+      >
+        <Script id="mega-theme-boot" strategy="beforeInteractive">
+          {`(function(){try{var m=localStorage.getItem('megacompanion_theme');var t=m==='light'?'light':m==='system'&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`}
+        </Script>
         <ThemeProvider>
           <CompanionPwaSplash />
           {children}

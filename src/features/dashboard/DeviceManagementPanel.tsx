@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Loader2, MonitorSmartphone, Save, Trash2, Wifi, WifiOff } from "lucide-react";
+import { Loader2, MonitorSmartphone, RefreshCw, Save, Trash2, Wifi, WifiOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -15,6 +15,8 @@ type Props = {
   duplicateCount?: number;
 };
 
+const FORCE_SYNC_SCOPES = ["watchlist", "catalogs", "iptv", "settings", "addons", "devices"] as const;
+
 export function DeviceManagementPanel({ devices, duplicateCount = 0 }: Props) {
   const router = useRouter();
   const [selectedDeviceId, setSelectedDeviceId] = useState(devices[0]?.device_id || "");
@@ -25,6 +27,7 @@ export function DeviceManagementPanel({ devices, duplicateCount = 0 }: Props) {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [isForcingSync, setIsForcingSync] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,8 +121,43 @@ export function DeviceManagementPanel({ devices, duplicateCount = 0 }: Props) {
     router.refresh();
   }
 
+  async function forceSyncAllDevices() {
+    setIsForcingSync(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/companion/sync/force", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scopes: [...FORCE_SYNC_SCOPES] })
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setError(body.error || "Impossible de forcer la synchronisation.");
+        return;
+      }
+      setMessage(
+        "Synchronisation demandée — une popup « Charger » apparaîtra sur vos apps Mobile/TV ouvertes."
+      );
+      router.refresh();
+    } catch {
+      setError("Impossible de forcer la synchronisation.");
+    } finally {
+      setIsForcingSync(false);
+    }
+  }
+
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <MegaButton variant="ghost" disabled={isForcingSync} onClick={forceSyncAllDevices}>
+          {isForcingSync ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Forcer la synchro des appareils
+        </MegaButton>
+        <p className="text-xs text-[var(--mega-text-faint)]">
+          Envoie un signal cloud : popup de confirmation sur Mobile/TV (cold-start = apply silencieux).
+        </p>
+      </div>
       <div className="min-w-0 max-w-full grid gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-3 lg:max-w-xl">
           {duplicateCount > 0 ? (

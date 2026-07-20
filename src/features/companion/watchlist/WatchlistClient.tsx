@@ -44,7 +44,7 @@ export function WatchlistDetailModal({ open, item, detail, loading, onClose }: P
   return (
     <MobileModalOverlay open={open} onClose={onClose}>
       <div
-        className="mega-glass flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-[var(--mega-border)]"
+        className="mega-glass mega-lg-modal mega-cinema-modal flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-[28px]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative h-40 shrink-0 overflow-hidden sm:h-48">
@@ -127,23 +127,16 @@ export function WatchlistThumb({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={clsx(
-        "group overflow-hidden rounded-2xl border border-[var(--mega-border)] bg-[var(--mega-card-bg)] text-left transition",
-        "hover:border-[var(--mega-accent)]/40 hover:shadow-lg"
-      )}
-    >
+    <button type="button" onClick={onClick} className="mega-poster-card group focus-ring">
       {posterUrl ? (
-        <img src={posterUrl} alt={title} className="aspect-[2/3] w-full object-cover transition group-hover:scale-[1.03]" loading="lazy" />
+        <img src={posterUrl} alt={title} className="aspect-[2/3] w-full object-cover" loading="lazy" />
       ) : (
-        <div className="grid aspect-[2/3] w-full place-items-center text-[10px] text-[var(--mega-text-faint)]">
+        <div className="grid aspect-[2/3] w-full place-items-center bg-[var(--mega-card-bg)] text-[10px] text-[var(--mega-text-faint)]">
           {mediaType === "tv" ? "Série" : "Film"}
         </div>
       )}
-      <div className="p-2">
-        <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-[var(--mega-text)]">{title}</p>
+      <div className="border-t border-[var(--mega-cp-border)] p-2.5">
+        <p className="line-clamp-2 text-[11px] font-bold leading-4 text-[var(--mega-text)]">{title}</p>
       </div>
     </button>
   );

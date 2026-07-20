@@ -41,12 +41,12 @@ function ActionButton({
       onClick={onClick}
       aria-pressed={active}
       className={clsx(
-        "focus-ring inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition hover:-translate-y-0.5",
+        "focus-ring inline-flex items-center gap-2 rounded-full transition",
         primary
-          ? "bg-[var(--mega-text)] text-[var(--mega-background-deep)]"
+          ? "mega-btn-primary min-h-11 px-5 py-2.5 text-sm"
           : active
-            ? "border border-[var(--mega-red)]/50 bg-[var(--mega-red)]/15 text-[var(--mega-text)]"
-            : "border border-[var(--mega-border)] bg-[var(--mega-card-bg)] text-[var(--mega-text)] hover:bg-[var(--mega-surface)]"
+            ? "min-h-11 border border-[var(--mega-red)]/50 bg-[var(--mega-red)]/15 px-5 py-2.5 text-sm font-bold text-[var(--mega-text)]"
+            : "mega-btn-ghost min-h-11 px-5 py-2.5 text-sm"
       )}
     >
       <Icon className="h-4 w-4" fill={filled ? "currentColor" : "none"} />
@@ -95,13 +95,15 @@ export function DetailActionBar({ mediaId, profileId, title, logoUrl, trailerKey
         <button
           type="button"
           onClick={() => router.push(playHref)}
-          className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--mega-text)] px-5 py-2.5 text-sm font-bold text-[var(--mega-background-deep)] transition hover:-translate-y-0.5"
+          className="focus-ring mega-btn-primary min-h-11 px-5 py-2.5 text-sm"
         >
           <MegaTvIcon name="play" filled className="h-4 w-4" />
           <span>Lire</span>
         </button>
         <ActionButton icon={Server} label="Sources" onClick={() => setSourcesOpen(true)} />
-        {trailerKey ? <ActionButton icon={Film} label="Bande-annonce" onClick={() => setTrailerOpen(true)} /> : null}
+        {trailerKey ? (
+          <ActionButton icon={Film} label="Bande-annonce" onClick={() => setTrailerOpen(true)} primary={false} />
+        ) : null}
         <ActionButton icon={watched ? Check : Eye} label={watched ? "Vu" : "Marquer vu"} active={watched} onClick={toggleWatched} />
         <ActionButton icon={inWatchlist ? Check : Plus} label={inWatchlist ? "Dans ma liste" : "Ma liste"} active={inWatchlist} onClick={toggleWatchlist} />
       </div>

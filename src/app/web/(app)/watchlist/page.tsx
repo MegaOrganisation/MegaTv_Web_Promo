@@ -3,7 +3,7 @@ import { Bookmark } from "lucide-react";
 
 import { PosterCard } from "@/features/web/PosterCard";
 import { getWatchlistForProfile } from "@/lib/dashboard/watch-data";
-import { tmdbImageUrl } from "@/lib/tmdb";
+import { tmdbBackdropUrl, tmdbImageUrl } from "@/lib/tmdb";
 import { encodeMediaId, type WebMediaItem } from "@/lib/web/media";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export default async function WebWatchlistPage({ searchParams }: { searchParams:
     title: item.title,
     subtitle: null,
     posterUrl: tmdbImageUrl(item.posterPath, "w342"),
-    backdropUrl: tmdbImageUrl(item.backdropPath, "w780")
+    backdropUrl: tmdbBackdropUrl(item.backdropPath)
   }));
 
   return (

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/require-user";
-import { searchTmdbMulti, tmdbImageUrl } from "@/lib/tmdb";
+import { searchTmdbMulti, tmdbBackdropUrl, tmdbImageUrl } from "@/lib/tmdb";
 import { encodeMediaId, type WebMediaItem } from "@/lib/web/media";
 
 /**
@@ -10,7 +10,7 @@ import { encodeMediaId, type WebMediaItem } from "@/lib/web/media";
  * debounced client-side, results reused via an in-memory client cache).
  */
 export async function GET(request: Request) {
-  await requireUser("/web");
+  await requireUser("/companion");
 
   const query = new URL(request.url).searchParams.get("q")?.trim() || "";
   if (query.length < 2) {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         title: item.title || item.name || "Contenu MegaTv",
         subtitle: (item.release_date || item.first_air_date || "").slice(0, 4) || null,
         posterUrl: tmdbImageUrl(item.poster_path, "w342"),
-        backdropUrl: tmdbImageUrl(item.backdrop_path, "w780"),
+        backdropUrl: tmdbBackdropUrl(item.backdrop_path),
         overview: item.overview || null
       };
     })

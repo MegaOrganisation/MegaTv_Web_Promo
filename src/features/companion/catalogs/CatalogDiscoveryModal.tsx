@@ -55,7 +55,7 @@ export function CatalogDiscoveryModal({ open, existingUrls, onClose, onConfirmAd
   return (
     <MobileModalOverlay open={open} onClose={onClose}>
       <div className="relative flex max-h-full w-full max-w-3xl flex-col" onClick={(event) => event.stopPropagation()}>
-        <div className="mega-glass flex max-h-full w-full flex-col overflow-hidden rounded-[28px] border border-[var(--mega-border)]">
+        <div className="mega-glass mega-lg-modal flex max-h-full w-full flex-col overflow-hidden rounded-[28px] border border-[var(--mega-border)]">
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--mega-border)] px-4 py-4 sm:px-5">
           <div className="min-w-0">
             <h2 id="catalog-discovery-title" className="text-lg font-bold text-[var(--mega-text)] sm:text-xl">

@@ -5,6 +5,7 @@ import { GripVertical, Pencil, Plus, Save, Trash2, Tv, X } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MegaButton } from "@/components/ui/MegaButton";
+
 import { detectPlaylistType, maskPlaylistUrl, newPlaylistId, type IptvPlaylistEntry } from "@/lib/iptv/types";
 
 type Props = {
@@ -13,6 +14,9 @@ type Props = {
 };
 
 type DraftEntry = IptvPlaylistEntry & { isNew?: boolean };
+
+const inputClass =
+  "focus-ring mt-1 w-full rounded-2xl border border-[var(--mega-cp-border)] bg-[var(--mega-card-bg)] px-3 py-2 text-sm text-[var(--mega-text)] outline-none placeholder:text-[var(--mega-text-faint)]";
 
 export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
   const [editing, setEditing] = useState(false);
@@ -104,46 +108,52 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
 
   return (
     <GlassCard as="section">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Tv className="h-5 w-5 text-white/70" />
-          <div>
-            <h2 className="text-xl font-bold text-white">Playlists IPTV</h2>
-            <p className="text-sm text-white/45">Profil {profileLabel}… · écriture batch à l&apos;enregistrement uniquement</p>
+      <div className="mega-surface mega-surface-elevated mb-5 rounded-[26px]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="mega-metric-icon-wrap">
+              <Tv className="h-5 w-5" strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="mega-section-title">Playlists IPTV</h2>
+              <p className="mega-section-sub">
+                Profil {profileLabel}… · écriture batch à l&apos;enregistrement uniquement
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {!editing ? (
-            <>
-              <MegaButton type="button" variant="ghost" onClick={() => setEditing(true)}>
-                <Pencil className="h-4 w-4" />
-                Modifier
-              </MegaButton>
-              <MegaButton type="button" onClick={addPlaylist}>
-                <Plus className="h-4 w-4" />
-                Ajouter
-              </MegaButton>
-            </>
-          ) : (
-            <>
-              <MegaButton type="button" variant="ghost" onClick={resetDraft} disabled={saving}>
-                <X className="h-4 w-4" />
-                Annuler
-              </MegaButton>
-              <MegaButton type="button" onClick={() => void savePlaylists()} disabled={saving}>
-                <Save className="h-4 w-4" />
-                {saving ? "Enregistrement…" : "Enregistrer"}
-              </MegaButton>
-            </>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {!editing ? (
+              <>
+                <MegaButton type="button" variant="ghost" onClick={() => setEditing(true)}>
+                  <Pencil className="h-4 w-4" />
+                  Modifier
+                </MegaButton>
+                <MegaButton type="button" onClick={addPlaylist}>
+                  <Plus className="h-4 w-4" />
+                  Ajouter
+                </MegaButton>
+              </>
+            ) : (
+              <>
+                <MegaButton type="button" variant="ghost" onClick={resetDraft} disabled={saving}>
+                  <X className="h-4 w-4" />
+                  Annuler
+                </MegaButton>
+                <MegaButton type="button" onClick={() => void savePlaylists()} disabled={saving}>
+                  <Save className="h-4 w-4" />
+                  {saving ? "Enregistrement…" : "Enregistrer"}
+                </MegaButton>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {message ? <p className="mb-4 text-sm text-green-100/80">{message}</p> : null}
-      {error ? <p className="mb-4 text-sm text-red-100/80">{error}</p> : null}
+      {message ? <p className="mb-4 text-sm text-green-300/90">{message}</p> : null}
+      {error ? <p className="mb-4 text-sm text-red-300/90">{error}</p> : null}
 
       {displayList.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/14 bg-white/[0.025] p-8 text-center text-sm text-white/45">
+        <div className="mega-surface rounded-[22px] border border-dashed border-[var(--mega-cp-border)] p-8 text-center text-sm text-[var(--mega-text-muted)]">
           Aucune playlist pour ce profil. Ajoutez une liste M3U ou Xtream pour démarrer.
         </div>
       ) : (
@@ -158,49 +168,53 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
                 if (dragIndex !== null) movePlaylist(dragIndex, index);
                 setDragIndex(null);
               }}
-              className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4"
+              className="mega-surface mega-surface-elevated rounded-[20px]"
             >
               <div className="flex items-start gap-3">
                 {editing ? (
-                  <button type="button" className="mt-1 cursor-grab text-white/35" aria-label="Réordonner">
+                  <button
+                    type="button"
+                    className="mt-1 cursor-grab text-[var(--mega-text-faint)]"
+                    aria-label="Réordonner"
+                  >
                     <GripVertical className="h-4 w-4" />
                   </button>
                 ) : null}
                 <div className="min-w-0 flex-1">
                   {editing ? (
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="block text-xs text-white/45">
+                      <label className="block text-xs text-[var(--mega-text-faint)]">
                         Nom
                         <input
-                          className="focus-ring mt-1 w-full rounded-2xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white"
+                          className={inputClass}
                           value={entry.name}
                           onChange={(event) => updateEntry(index, { name: event.target.value })}
                         />
                       </label>
-                      <label className="block text-xs text-white/45">
+                      <label className="block text-xs text-[var(--mega-text-faint)]">
                         Type
-                        <div className="mt-1 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70">
+                        <div className="mt-1 rounded-2xl border border-[var(--mega-cp-border)] bg-[var(--mega-card-bg)] px-3 py-2 text-sm text-[var(--mega-text-muted)]">
                           {detectPlaylistType(entry.m3uUrl)}
                         </div>
                       </label>
-                      <label className="block text-xs text-white/45 sm:col-span-2">
+                      <label className="block text-xs text-[var(--mega-text-faint)] sm:col-span-2">
                         URL M3U / Xtream
                         <input
-                          className="focus-ring mt-1 w-full rounded-2xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white"
+                          className={inputClass}
                           value={entry.m3uUrl}
                           onChange={(event) => updateEntry(index, { m3uUrl: event.target.value })}
                           placeholder="https://…"
                         />
                       </label>
-                      <label className="block text-xs text-white/45 sm:col-span-2">
+                      <label className="block text-xs text-[var(--mega-text-faint)] sm:col-span-2">
                         URL EPG (optionnel)
                         <input
-                          className="focus-ring mt-1 w-full rounded-2xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white"
+                          className={inputClass}
                           value={entry.epgUrl || ""}
                           onChange={(event) => updateEntry(index, { epgUrl: event.target.value })}
                         />
                       </label>
-                      <label className="flex items-center gap-2 text-sm text-white/70">
+                      <label className="flex items-center gap-2 text-sm text-[var(--mega-text-muted)]">
                         <input
                           type="checkbox"
                           checked={entry.enabled !== false}
@@ -212,15 +226,17 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
                   ) : (
                     <>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-white">{entry.name}</p>
-                        <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] text-white/55">
+                        <p className="font-semibold text-[var(--mega-text)]">{entry.name}</p>
+                        <span className="rounded-full border border-[var(--mega-cp-border)] bg-[var(--mega-card-bg)] px-2 py-0.5 text-[11px] text-[var(--mega-text-faint)]">
                           {detectPlaylistType(entry.m3uUrl)}
                         </span>
                         {entry.enabled === false ? (
-                          <span className="rounded-full bg-yellow-500/15 px-2 py-0.5 text-[11px] text-yellow-100">Désactivée</span>
+                          <span className="rounded-full bg-yellow-500/15 px-2 py-0.5 text-[11px] text-yellow-200">
+                            Désactivée
+                          </span>
                         ) : null}
                       </div>
-                      <p className="mt-1 font-mono text-xs text-white/45">{maskPlaylistUrl(entry.m3uUrl)}</p>
+                      <p className="mt-1 font-mono text-xs text-[var(--mega-text-faint)]">{maskPlaylistUrl(entry.m3uUrl)}</p>
                     </>
                   )}
                 </div>

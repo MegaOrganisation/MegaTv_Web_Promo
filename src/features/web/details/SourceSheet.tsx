@@ -1,10 +1,10 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Play, Star, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { Play, Star } from "lucide-react";
+import { useMemo, useState } from "react";
 
+import { MegaDialog } from "@/features/web/MegaDialog";
 import { Spinner } from "@/features/web/Spinner";
 import { presentWebSource } from "@/lib/web/source-presentation";
 
@@ -39,7 +39,7 @@ function Badge({ label, tone }: { label: string; tone: ReturnType<typeof present
     pink: "border-fuchsia-500/40 bg-fuchsia-500/12 text-fuchsia-300",
     purple: "border-violet-500/40 bg-violet-500/12 text-violet-300",
     cyan: "border-cyan-500/40 bg-cyan-500/12 text-cyan-300",
-    muted: "border-white/15 bg-white/6 text-white/65"
+    muted: "border-[var(--mega-border)] bg-[var(--mega-card-bg)] text-[var(--mega-text-muted)]"
   } as const;
 
   return (
@@ -69,122 +69,112 @@ export function SourceSheet({
   }, [sources]);
 
   const [tab, setTab] = useState("all");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const filtered = useMemo(() => {
     if (tab === "all") return sources;
     return sources.filter((source) => source.groupId === tab);
   }, [sources, tab]);
 
-  if (!open || !mounted) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center" role="dialog" aria-modal aria-label="Sources">
-      <button type="button" className="absolute inset-0 bg-black/75 backdrop-blur-sm" aria-label="Fermer" onClick={onClose} />
-      <div className="relative z-[1] flex max-h-[min(92vh,820px)] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d1114] shadow-2xl sm:rounded-[28px]">
-        <div className="shrink-0 px-5 pt-5">
-          <div className="mb-3 flex min-h-[52px] items-center justify-center">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={title} className="max-h-12 max-w-[70%] object-contain" />
-            ) : (
-              <h2 className="truncate text-center text-lg font-bold text-white">{title}</h2>
-            )}
-          </div>
-
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-white/55">{sources.length} sources disponibles</p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="focus-ring grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/90 transition hover:bg-white/15"
-              aria-label="Fermer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {tabs.length > 2 ? (
-            <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-              {tabs.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setTab(item.id)}
-                  className={clsx(
-                    "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition",
-                    tab === item.id
-                      ? "border-white/35 bg-white/18 text-white"
-                      : "border-white/12 bg-white/7 text-white/80 hover:border-white/20"
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="h-px bg-white/10" />
-
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-3">
-          {loading ? (
-            <div className="grid place-items-center py-16">
-              <Spinner size="md" />
-              <p className="mt-3 text-sm text-white/55">Recherche de sources…</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className="py-16 text-center text-sm text-white/55">{emptyHint || "Aucune source trouvée."}</p>
+  return (
+    <MegaDialog
+      open={open}
+      onClose={onClose}
+      label="Sources"
+      size="md"
+      presentation="sheet"
+      panelClassName="flex max-h-[min(92vh,820px)] flex-col overflow-hidden"
+    >
+      <div className="shrink-0 px-5 pt-5">
+        <div className="mb-3 flex min-h-[52px] items-center justify-center">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={title} className="max-h-12 max-w-[70%] object-contain" />
           ) : (
-            <div className="space-y-2 pb-4">
-              {filtered.map((source, index) => {
-                const presentation = presentWebSource(source);
-                const selected = selectedUrl === source.url;
-                return (
-                  <button
-                    key={`${source.url}-${index}`}
-                    type="button"
-                    onClick={() => onSelect(source)}
-                    className={clsx(
-                      "focus-ring w-full rounded-xl border px-3.5 py-3 text-left transition",
-                      selected
-                        ? "border-sky-500/50 bg-sky-500/12"
-                        : presentation.isCached
-                          ? "border-amber-500/25 bg-white/7 hover:bg-white/10"
-                          : "border-white/10 bg-white/4 hover:bg-white/7"
-                    )}
-                  >
-                    <div className="flex gap-2.5">
-                      <span className="mt-0.5 shrink-0 text-white/40">
-                        {presentation.isCached ? <Play className="h-3.5 w-3.5 text-amber-400" fill="currentColor" /> : <Star className="h-3.5 w-3.5" />}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-semibold text-white">{presentation.title}</p>
-                        <p className="mt-0.5 truncate text-[11px] text-white/45">▷ {presentation.addonLabel}</p>
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {presentation.badges.map((badge) => (
-                            <Badge key={`${source.url}-${badge.label}`} label={badge.label} tone={badge.tone} />
-                          ))}
-                          {presentation.sizeLabel ? (
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/40">
-                              Size {presentation.sizeLabel}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <h2 className="truncate text-center text-lg font-bold text-[var(--mega-text)]">{title}</h2>
           )}
         </div>
+
+        <p className="mb-3 text-xs text-[var(--mega-text-muted)]">{sources.length} sources disponibles</p>
+
+        {tabs.length > 2 ? (
+          <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                className={clsx(
+                  "focus-ring shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition",
+                  tab === item.id
+                    ? "border-[var(--mega-border-strong)] bg-[var(--mega-card-bg)] text-[var(--mega-text)]"
+                    : "border-[var(--mega-border)] bg-[var(--mega-input-bg)] text-[var(--mega-text-muted)] hover:border-[var(--mega-border-strong)]"
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
-    </div>,
-    document.body
+
+      <div className="h-px bg-[var(--mega-border)]" />
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-3">
+        {loading ? (
+          <div className="grid place-items-center py-16">
+            <Spinner size="md" />
+            <p className="mt-3 text-sm text-[var(--mega-text-muted)]">Recherche de sources…</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="py-16 text-center text-sm text-[var(--mega-text-muted)]">{emptyHint || "Aucune source trouvée."}</p>
+        ) : (
+          <div className="space-y-2 pb-4">
+            {filtered.map((source, index) => {
+              const presentation = presentWebSource(source);
+              const selected = selectedUrl === source.url;
+              return (
+                <button
+                  key={`${source.url}-${index}`}
+                  type="button"
+                  onClick={() => onSelect(source)}
+                  className={clsx(
+                    "focus-ring w-full rounded-xl border px-3.5 py-3 text-left transition",
+                    selected
+                      ? "border-sky-500/50 bg-sky-500/12"
+                      : presentation.isCached
+                        ? "border-amber-500/25 bg-[var(--mega-card-bg)] hover:bg-[var(--mega-input-bg)]"
+                        : "border-[var(--mega-border)] bg-[var(--mega-input-bg)] hover:bg-[var(--mega-card-bg)]"
+                  )}
+                >
+                  <div className="flex gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-[var(--mega-text-faint)]">
+                      {presentation.isCached ? (
+                        <Play className="h-3.5 w-3.5 text-amber-400" fill="currentColor" />
+                      ) : (
+                        <Star className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-[var(--mega-text)]">{presentation.title}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-[var(--mega-text-muted)]">▷ {presentation.addonLabel}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {presentation.badges.map((badge) => (
+                          <Badge key={`${source.url}-${badge.label}`} label={badge.label} tone={badge.tone} />
+                        ))}
+                        {presentation.sizeLabel ? (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--mega-text-faint)]">
+                            Size {presentation.sizeLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </MegaDialog>
   );
 }

@@ -31,7 +31,7 @@ export function MobileModalOverlay({ open, onClose, children, className }: Props
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain bg-black/75 p-3 backdrop-blur-sm sm:p-4 ${className || ""}`}
+      className={`mega-cinema-modal-scrim fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain p-3 sm:p-4 ${className || ""}`}
       style={{
         paddingTop: "max(0.75rem, var(--companion-mobile-header))",
         paddingBottom: "max(0.75rem, var(--companion-mobile-nav))"

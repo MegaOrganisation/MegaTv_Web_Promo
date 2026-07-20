@@ -1,0 +1,968 @@
+/**
+ * MegaCompagnon = UI Aurora du site promo (`public/styles.css`).
+ * Override chrome Companion : tokens, fond, nav, cartes, boutons.
+ */
+
+/* ===== Tokens promo → Companion ===== */
+html[data-mega-surface="companion"],
+html[data-mega-surface="companion"][data-theme="dark"] {
+  --c-bg: #06070a;
+  --c-bg2: #0a0c11;
+  --c-bg3: #0e1118;
+  --c-text: #eef1f7;
+  --c-text2: rgba(238, 241, 247, 0.6);
+  --c-text3: rgba(238, 241, 247, 0.33);
+  --c-border: rgba(255, 255, 255, 0.07);
+  --c-border2: rgba(255, 255, 255, 0.13);
+  --c-surface: rgba(255, 255, 255, 0.035);
+  --c-surface2: rgba(255, 255, 255, 0.06);
+
+  --r-sm: 14px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-xl: 38px;
+  --r-2xl: 52px;
+
+  --blur-glass: blur(20px) saturate(165%);
+  --lg-blur: blur(26px) saturate(185%) contrast(1.05);
+  --lg-shadow: 0 32px 88px -36px rgba(0, 0, 0, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-card: 0 30px 70px -28px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  --ease-promo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", "Outfit", sans-serif;
+  --font-body: var(--font-instrument), "Instrument Sans", "DM Sans", sans-serif;
+
+  /* Bridge mega → aurora */
+  --mega-background: var(--c-bg);
+  --mega-background-deep: var(--c-bg2);
+  --mega-surface: var(--c-bg3);
+  --mega-surface-raised: #12151c;
+  --mega-text: var(--c-text);
+  --mega-text-muted: var(--c-text2);
+  --mega-text-faint: var(--c-text3);
+  --mega-border: var(--c-border);
+  --mega-border-strong: var(--c-border2);
+  --mega-card-bg: var(--c-surface);
+  --mega-shell-nav: color-mix(in srgb, var(--c-bg) 58%, transparent);
+  --mega-input-bg: rgba(0, 0, 0, 0.28);
+  --mega-glass-blur: 26px;
+  --mega-glass-saturate: 185%;
+  --mega-dialog-radius: var(--r-lg);
+  --mega-poster-radius: var(--r-lg);
+  --mega-motion-ease: var(--ease-promo);
+
+  --mega-cp-canvas: var(--c-bg);
+  --mega-cp-surface: var(--c-surface);
+  --mega-cp-surface-2: var(--c-surface2);
+  --mega-cp-border: var(--c-border);
+  --mega-cp-text: var(--c-text);
+  --mega-cp-muted: var(--c-text2);
+}
+
+html[data-mega-surface="companion"][data-theme="light"] {
+  --c-bg: #eef0f6;
+  --c-bg2: #e6e9f2;
+  --c-bg3: #dfe3ee;
+  --c-text: #0a0c12;
+  --c-text2: rgba(10, 12, 18, 0.62);
+  --c-text3: rgba(10, 12, 18, 0.4);
+  --c-border: rgba(10, 12, 18, 0.09);
+  --c-border2: rgba(10, 12, 18, 0.16);
+  --c-surface: rgba(255, 255, 255, 0.6);
+  --c-surface2: rgba(255, 255, 255, 0.85);
+  --lg-shadow: 0 30px 60px -30px rgba(20, 24, 40, 0.4), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --shadow-card: 0 30px 60px -30px rgba(20, 24, 40, 0.4), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+html[data-mega-surface="companion"] {
+  background: var(--c-bg);
+}
+
+html[data-mega-surface="companion"] body,
+html[data-mega-surface="companion"] .companion-lg-app,
+html[data-mega-surface="companion"] .companion-shell,
+html[data-mega-surface="companion"] .companion-ambient-root {
+  font-family: var(--font-body);
+  background: transparent !important;
+  color: var(--c-text);
+}
+
+html[data-mega-surface="companion"] h1,
+html[data-mega-surface="companion"] h2,
+html[data-mega-surface="companion"] .mega-cinema-page-header h1,
+html[data-mega-surface="companion"] .mega-cinema-display,
+html[data-mega-surface="companion"] .premium-kpi-value,
+html[data-mega-surface="companion"] .mega-cinema-hero__title {
+  font-family: var(--font-display);
+}
+
+/* ===== Aurora backdrop (comme landing) ===== */
+.companion-aurora-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.companion-aurora-backdrop .aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+html[data-theme="light"][data-mega-surface="companion"] .companion-aurora-backdrop .aurora {
+  opacity: 0.34;
+  mix-blend-mode: multiply;
+}
+
+.companion-aurora-backdrop .aurora.a1 {
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(63, 154, 230, 0.55), transparent 65%);
+  top: -22vw;
+  left: -12vw;
+}
+
+.companion-aurora-backdrop .aurora.a2 {
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, rgba(216, 73, 127, 0.45), transparent 65%);
+  top: 30vh;
+  right: -18vw;
+}
+
+.companion-aurora-backdrop .aurora.a3 {
+  width: 48vw;
+  height: 48vw;
+  background: radial-gradient(circle, rgba(31, 168, 160, 0.4), transparent 65%);
+  top: 55vh;
+  left: 25vw;
+}
+
+.companion-aurora-backdrop .aurora.a4 {
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(242, 180, 60, 0.32), transparent 65%);
+  top: 80vh;
+  right: 0;
+}
+
+.companion-aurora-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--c-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--c-border) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 60%);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 60%);
+  opacity: 0.55;
+}
+
+/* Masquer mesh WebGL sous Aurora (root glass gardé pour docks mobile éventuels) */
+html[data-mega-surface="companion"] .companion-lg-scene-visual {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+html[data-mega-surface="companion"] .companion-lg-capture-canvas {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html[data-mega-surface="companion"] .companion-shell::before,
+html[data-mega-surface="companion"] .companion-shell::after {
+  display: none !important;
+}
+
+html[data-mega-surface="companion"] .companion-lg-app {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+}
+
+html[data-mega-surface="companion"] .companion-shell--filesnap,
+html[data-mega-surface="companion"] .companion-shell--promo,
+html[data-mega-surface="companion"] .companion-main-frame-wrap,
+html[data-mega-surface="companion"] .companion-calendar-page {
+  background: transparent !important;
+}
+
+/* Encarts : hauteur naturelle (pas de stretch qui crée des trous noirs) */
+html[data-mega-surface="companion"] .dashboard-layout-block {
+  align-self: start;
+}
+
+html[data-mega-surface="companion"] .dashboard-layout-grid {
+  align-items: start;
+}
+
+/* ===== Nav promo (full-bleed) ===== */
+.companion-topbar-wrap.companion-promo-nav-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: none;
+  transform: none;
+  display: block !important;
+  pointer-events: auto;
+  padding: 0;
+}
+
+.companion-promo-nav {
+  height: 70px;
+  padding: 0 clamp(18px, 5vw, 72px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: color-mix(in srgb, var(--c-bg) 58%, transparent);
+  backdrop-filter: var(--lg-blur);
+  -webkit-backdrop-filter: var(--lg-blur);
+  border-bottom: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.4s, background 0.4s;
+}
+
+.companion-promo-nav.is-scrolled {
+  border-bottom-color: var(--c-border);
+}
+
+.companion-promo-nav__brand {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.companion-promo-nav__brand img {
+  height: 30px;
+  width: auto;
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.4));
+}
+
+html[data-theme="light"] .companion-promo-nav__brand img {
+  filter: none;
+}
+
+.companion-promo-nav__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.companion-promo-nav__links {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.companion-promo-nav__links::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .companion-promo-nav__links {
+    display: flex;
+  }
+}
+
+.companion-promo-nav__link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text2);
+  padding: 8px 14px;
+  border-radius: 99px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.25s, background 0.25s;
+}
+
+.companion-promo-nav__link:hover {
+  color: var(--c-text);
+  background: var(--c-surface2);
+}
+
+.companion-promo-nav__link.is-active {
+  color: var(--c-text);
+  background: var(--c-surface2);
+  box-shadow: inset 0 0 0 1px var(--c-border2);
+}
+
+.companion-promo-nav__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text2);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: 0.35s var(--ease-promo);
+  flex-shrink: 0;
+}
+
+.companion-promo-nav__icon:hover,
+.companion-promo-nav__icon.is-active {
+  color: var(--c-text);
+  background: var(--c-surface2);
+  border-color: var(--c-border2);
+}
+
+.companion-promo-nav__search {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 99px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text2);
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+}
+
+@media (min-width: 1100px) {
+  .companion-promo-nav__search {
+    display: inline-flex;
+  }
+}
+
+.companion-promo-nav__search:hover {
+  color: var(--c-text);
+  background: var(--c-surface2);
+}
+
+.companion-promo-nav__cta {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .companion-promo-nav__cta {
+    display: inline-flex;
+  }
+}
+
+.companion-promo-nav__slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+html[data-mega-surface="companion"] .companion-sync-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 99px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text2);
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+}
+
+html[data-mega-surface="companion"] .companion-sync-pulse__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--grad-spectrum);
+  box-shadow: 0 0 10px rgba(216, 73, 127, 0.7);
+}
+
+html[data-mega-surface="companion"] .companion-sync-pulse.is-offline .companion-sync-pulse__dot {
+  background: var(--c-text3);
+  box-shadow: none;
+}
+
+@media (max-width: 899px) {
+  html[data-mega-surface="companion"] .companion-sync-pulse__label {
+    display: none;
+  }
+}
+
+/* Offset contenu sous nav 70px */
+html[data-mega-surface="companion"] .companion-shell--filesnap .companion-main-frame-wrap,
+html[data-mega-surface="companion"] .companion-shell--promo .companion-main-frame-wrap {
+  margin-top: 70px !important;
+  padding-inline: clamp(16px, 4vw, 48px) !important;
+  margin-bottom: 1.5rem !important;
+  max-width: 1240px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===== Main frame ≈ content wrap (plus de fenêtre WebGL) ===== */
+html[data-mega-surface="companion"] .companion-main-frame,
+html[data-mega-surface="companion"] .companion-main-frame--css-glass {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+html[data-mega-surface="companion"] .companion-main-frame::before,
+html[data-mega-surface="companion"] .companion-main-frame::after,
+html[data-mega-surface="companion"] .companion-main-frame__chrome {
+  display: none !important;
+}
+
+html[data-mega-surface="companion"] .companion-main-frame__body {
+  padding: clamp(12px, 2vw, 20px) 0 2rem !important;
+}
+
+/* ===== Cartes style feat-card / promo-lg ===== */
+html[data-mega-surface="companion"] .mega-liquid-glass-panel,
+html[data-mega-surface="companion"] .companion-css-glass-panel,
+html[data-mega-surface="companion"] .mega-cinema-float-tile,
+html[data-mega-surface="companion"] .premium-kpi-card,
+html[data-mega-surface="companion"] .mega-surface,
+html[data-mega-surface="companion"] [class*="dashboard-panel"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c-bg2) 42%, transparent) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r-lg) !important;
+  backdrop-filter: var(--lg-blur) !important;
+  -webkit-backdrop-filter: var(--lg-blur) !important;
+  box-shadow: var(--lg-shadow) !important;
+}
+
+/* Anti trou / hauteur morte Top contenus */
+html[data-mega-surface="companion"] .mega-landscape-rail-section--full {
+  min-height: 0 !important;
+}
+
+html[data-mega-surface="companion"] .mega-landscape-card-media {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+html[data-mega-surface="companion"] .premium-kpi-card {
+  padding: 1.15rem 1.25rem !important;
+}
+
+html[data-mega-surface="companion"] .premium-kpi-card.mega-spectrum-card {
+  box-shadow: var(--lg-shadow) !important;
+}
+
+html[data-mega-surface="companion"] .premium-kpi-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--c-text3) !important;
+}
+
+html[data-mega-surface="companion"] .premium-kpi-value {
+  font-size: clamp(1.5rem, 2.4vw, 2rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--c-text) !important;
+}
+
+html[data-mega-surface="companion"] .mega-cinema-page-header h1 {
+  font-size: clamp(28px, 4vw, 42px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+}
+
+html[data-mega-surface="companion"] .mega-cinema-page-header p,
+html[data-mega-surface="companion"] .mega-cinema-eyebrow {
+  color: var(--c-text2) !important;
+}
+
+/* Spectrum CTA = btn-spectrum promo */
+html[data-mega-surface="companion"] .mega-spectrum-btn,
+html[data-mega-surface="companion"] .btn-spectrum {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 11px 22px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff !important;
+  background: var(--grad-spectrum) !important;
+  background-size: 180% 100% !important;
+  background-position: 0% 50% !important;
+  border: none !important;
+  box-shadow: 0 8px 30px -8px rgba(216, 73, 127, 0.55), 0 1px 0 rgba(255, 255, 255, 0.28) inset !important;
+  text-decoration: none;
+  transition: transform 0.4s var(--ease-promo), background-position 0.6s var(--ease-promo), box-shadow 0.4s var(--ease-promo);
+}
+
+html[data-mega-surface="companion"] .mega-spectrum-btn::after,
+html[data-mega-surface="companion"] .btn-spectrum::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.35) 50%, transparent 62%);
+  transform: translateX(-120%) skewX(-12deg);
+  pointer-events: none;
+}
+
+html[data-mega-surface="companion"] .mega-spectrum-btn:hover,
+html[data-mega-surface="companion"] .btn-spectrum:hover {
+  transform: translateY(-2px);
+  background-position: 100% 50% !important;
+  box-shadow: 0 14px 40px -10px rgba(216, 73, 127, 0.7) !important;
+}
+
+@keyframes companion-promo-shimmer {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(220%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+html[data-mega-surface="companion"] .mega-spectrum-btn:hover::after,
+html[data-mega-surface="companion"] .btn-spectrum:hover::after {
+  animation: companion-promo-shimmer 0.85s var(--ease-promo);
+}
+
+/* Hero Companion — coins + glow spectrum soft */
+html[data-mega-surface="companion"] .mega-cinema-hero__frame {
+  border-radius: var(--r-xl) !important;
+  border: 1px solid var(--c-border2) !important;
+  box-shadow: var(--shadow-card) !important;
+  overflow: hidden;
+}
+
+html[data-mega-surface="companion"] .tonight-pick__card,
+html[data-mega-surface="companion"] .cinema-rail-panel,
+html[data-mega-surface="companion"] .rail-cw-infuse {
+  border-radius: var(--r-lg) !important;
+}
+
+html[data-mega-surface="companion"] .watch-history-day-pill {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border2) !important;
+  color: var(--c-text2) !important;
+}
+
+/* Subnav / dock mobile — pills promo */
+html[data-mega-surface="companion"] .v10-subnav,
+html[data-mega-surface="companion"] .cinema-page-subnav {
+  background: transparent !important;
+  border: none !important;
+}
+
+@media (max-width: 1023px) {
+  .companion-promo-nav {
+    height: 60px;
+    padding: 0 14px;
+  }
+
+  html[data-mega-surface="companion"] .companion-shell--filesnap .companion-main-frame-wrap,
+  html[data-mega-surface="companion"] .companion-shell--promo .companion-main-frame-wrap {
+    margin-top: 60px !important;
+  }
+}
+
+/* ===== Fonds configurables (impact réel sur aurora) ===== */
+html[data-companion-bg="cosmic"] .companion-aurora-backdrop .aurora.a1 {
+  background: radial-gradient(circle, rgba(216, 73, 127, 0.62), transparent 65%);
+}
+html[data-companion-bg="cosmic"] .companion-aurora-backdrop .aurora.a2 {
+  background: radial-gradient(circle, rgba(63, 154, 230, 0.55), transparent 65%);
+}
+html[data-companion-bg="cosmic"] .companion-aurora-backdrop .aurora.a3 {
+  background: radial-gradient(circle, rgba(140, 90, 220, 0.4), transparent 65%);
+}
+html[data-companion-bg="cosmic"] .companion-aurora-backdrop .aurora.a4 {
+  background: radial-gradient(circle, rgba(216, 73, 127, 0.28), transparent 65%);
+}
+
+html[data-companion-bg="ember"] .companion-aurora-backdrop .aurora.a1 {
+  background: radial-gradient(circle, rgba(242, 180, 60, 0.55), transparent 65%);
+}
+html[data-companion-bg="ember"] .companion-aurora-backdrop .aurora.a2 {
+  background: radial-gradient(circle, rgba(238, 106, 84, 0.48), transparent 65%);
+}
+html[data-companion-bg="ember"] .companion-aurora-backdrop .aurora.a3 {
+  background: radial-gradient(circle, rgba(180, 80, 40, 0.35), transparent 65%);
+}
+html[data-companion-bg="ember"] .companion-aurora-backdrop .aurora.a4 {
+  background: radial-gradient(circle, rgba(242, 180, 60, 0.28), transparent 65%);
+}
+
+html[data-companion-bg="dotgrid"] .companion-aurora-backdrop .aurora {
+  opacity: 0.22;
+}
+html[data-companion-bg="dotgrid"] .companion-aurora-grid {
+  opacity: 0.9;
+  background-size: 28px 28px;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+html[data-companion-bg="spectrum"] .companion-aurora-backdrop .aurora.a1 {
+  background: radial-gradient(circle, rgba(63, 154, 230, 0.55), transparent 65%);
+}
+html[data-companion-bg="spectrum"] .companion-aurora-backdrop .aurora.a2 {
+  background: radial-gradient(circle, rgba(216, 73, 127, 0.5), transparent 65%);
+}
+html[data-companion-bg="spectrum"] .companion-aurora-backdrop .aurora.a3 {
+  background: radial-gradient(circle, rgba(31, 168, 160, 0.45), transparent 65%);
+}
+html[data-companion-bg="spectrum"] .companion-aurora-backdrop .aurora.a4 {
+  background: radial-gradient(circle, rgba(242, 180, 60, 0.42), transparent 65%);
+}
+
+html[data-companion-bg="midnight"] .companion-aurora-backdrop .aurora {
+  opacity: 0.08;
+}
+html[data-companion-bg="midnight"] .companion-aurora-grid {
+  opacity: 0.15;
+}
+html[data-companion-bg="midnight"][data-mega-surface="companion"] body,
+html[data-companion-bg="midnight"][data-mega-surface="companion"] .companion-ambient-root {
+  background: #000 !important;
+}
+
+html[data-companion-bg="posters"] .companion-aurora-grid {
+  display: none;
+}
+
+/* Flip modal : ne pas hériter overflow/glass des cartes */
+html[data-mega-surface="companion"] .media-flip-glass,
+html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel {
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ===== Ce soir TV ===== */
+.tonight-tv {
+  position: relative;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-border);
+  background: color-mix(in srgb, var(--c-bg2) 48%, transparent);
+  backdrop-filter: var(--lg-blur);
+  -webkit-backdrop-filter: var(--lg-blur);
+  padding: 14px 16px 16px;
+  box-shadow: var(--lg-shadow);
+}
+.tonight-tv__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.tonight-tv__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+}
+.tonight-tv__channels {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--c-text3);
+}
+.tonight-tv__country {
+  border-radius: 999px;
+  border: 1px solid var(--c-border2);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--c-text);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+.tonight-tv__stage {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.tonight-tv__nav {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text);
+  display: grid;
+  place-items: center;
+}
+.tonight-tv__card {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid var(--c-border);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 10px;
+  color: inherit;
+}
+.tonight-tv__poster-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+  background: #12161a;
+}
+.tonight-tv__poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tonight-tv__poster--empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.tonight-tv__network {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text3);
+}
+.tonight-tv__network span {
+  border-radius: 999px;
+  border: 1px solid var(--c-border2);
+  padding: 2px 8px;
+  color: var(--brand-gold);
+}
+.tonight-tv__title {
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--c-text);
+}
+.tonight-tv__sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--c-text2);
+}
+.tonight-tv__empty {
+  font-size: 13px;
+  color: var(--c-text3);
+  padding: 8px 0 4px;
+}
+.tonight-tv__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.tonight-tv__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.tonight-tv__dot.is-active {
+  background: var(--brand-gold);
+  width: 18px;
+}
+.tonight-tv__local-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.55);
+}
+.tonight-tv__local-panel {
+  width: min(420px, 92vw);
+  border-radius: 22px;
+  border: 1px solid var(--c-border2);
+  background: color-mix(in srgb, var(--c-bg2) 88%, #000);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+.tonight-tv__local-summary {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-text2);
+}
+
+/* ===== Popup jour calendrier ===== */
+.cal-day-cell {
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-promo), border-color 0.2s;
+}
+.cal-day-cell:hover {
+  transform: translateY(-2px);
+  border-color: var(--c-border2) !important;
+}
+.cal-day-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 125;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.55);
+}
+.cal-day-modal {
+  width: min(480px, 94vw);
+  max-height: min(78vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  border: 1px solid var(--c-border2);
+  background: color-mix(in srgb, var(--c-bg2) 92%, #000);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.cal-day-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 1.1rem 1.15rem 0.75rem;
+  border-bottom: 1px solid var(--c-border);
+}
+.cal-day-modal__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+}
+.cal-day-modal__title {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-transform: capitalize;
+  color: var(--c-text);
+}
+.cal-day-modal__count {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--c-text3);
+}
+.cal-day-modal__close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--c-border2);
+  display: grid;
+  place-items: center;
+  color: var(--c-text);
+  background: rgba(255, 255, 255, 0.06);
+}
+.cal-day-modal__list {
+  overflow: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.cal-day-modal__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 10px;
+  color: inherit;
+}
+.cal-day-modal__row:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.cal-day-modal__poster {
+  width: 44px;
+  height: 66px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #12161a;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-text3);
+}
+.cal-day-modal__poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cal-day-modal__row-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-day-modal__row-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--c-text3);
+}
+.cal-day-modal__empty {
+  padding: 1.5rem;
+  font-size: 14px;
+  color: var(--c-text3);
+}

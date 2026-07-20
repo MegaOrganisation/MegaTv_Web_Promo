@@ -7,7 +7,7 @@ const baseClass =
 
 const variants = {
   primary:
-    "bg-[linear-gradient(110deg,#3f9ae6,#1fa8a0,#5fbf5a,#f2b43c,#ee6a54,#d8497f)] text-white shadow-[0_16px_42px_-18px_rgba(216,73,127,0.85)] hover:-translate-y-0.5",
+    "bg-[var(--brand-gold)] text-[#0c0e12] shadow-[0_12px_28px_-14px_rgba(242,180,60,0.75)] hover:-translate-y-0.5 hover:brightness-105",
   ghost: "border border-white/12 bg-white/[0.055] text-white hover:border-white/24 hover:bg-white/[0.09]",
   danger: "border border-red-400/30 bg-red-500/12 text-red-100 hover:bg-red-500/18"
 };

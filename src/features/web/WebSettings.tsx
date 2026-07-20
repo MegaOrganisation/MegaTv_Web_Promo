@@ -28,9 +28,9 @@ const COMPANION_ROUTES = {
 
 function Row({ icon, title, description, children }: { icon: ReactNode; title: string; description?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[var(--mega-border)] px-1 py-4 last:border-b-0">
+    <div className="mega-settings-row border-b border-[var(--mega-border)] last:border-b-0">
       <div className="flex min-w-0 items-start gap-3">
-        <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--mega-card-bg)] text-[var(--mega-text)]">{icon}</span>
+        <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--mega-border)] bg-[var(--mega-card-bg)] text-[var(--mega-accent-bright)]">{icon}</span>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[var(--mega-text)]">{title}</p>
           {description ? <p className="text-xs text-[var(--mega-text-faint)]">{description}</p> : null}

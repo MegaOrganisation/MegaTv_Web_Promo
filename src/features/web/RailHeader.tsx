@@ -30,8 +30,8 @@ export function RailHeader({
   return (
     <div className="flex items-center justify-between gap-3 px-1">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="mega-rail-bar h-[18px] w-1 shrink-0 rounded-sm bg-white/90" aria-hidden />
-        <h2 className="truncate text-lg font-bold text-[var(--mega-text)]">{title}</h2>
+        <span className="mega-rail-bar h-[18px] w-[3px] shrink-0 rounded-full" aria-hidden />
+        <h2 className="truncate text-base font-extrabold tracking-tight text-[var(--mega-text)] sm:text-lg">{title}</h2>
       </div>
       {showNav ? (
         <div className="flex shrink-0 items-center gap-1">
@@ -41,7 +41,7 @@ export function RailHeader({
             disabled={!canScrollLeft}
             onClick={onScrollLeft}
             className={clsx(
-              "focus-ring grid h-8 w-8 place-items-center rounded-full border border-[var(--mega-border)] transition",
+              "focus-ring mega-pro-icon-btn grid h-8 w-8 place-items-center rounded-full",
               canScrollLeft
                 ? "text-[var(--mega-text)] hover:border-[var(--mega-border-strong)] hover:bg-white/5"
                 : "cursor-not-allowed text-[var(--mega-text-faint)] opacity-40"

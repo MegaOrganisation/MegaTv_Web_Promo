@@ -1,4 +1,4 @@
-import { tmdbImageUrl } from "@/lib/tmdb";
+import { tmdbBackdropUrl, tmdbImageUrl } from "@/lib/tmdb";
 import type { ContinueWatchingRow, TopContentRow } from "@/lib/supabase/types";
 import { formatResumeClock } from "@/lib/web/playbackTime";
 
@@ -73,7 +73,7 @@ export function continueWatchingToItem(row: ContinueWatchingRow): WebMediaItem |
     title: row.title || row.episode_title || "Contenu MegaTv",
     subtitle: continueWatchingSubtitle(row),
     posterUrl: tmdbImageUrl(row.poster_path, "w342"),
-    backdropUrl: tmdbImageUrl(row.backdrop_path, "w780"),
+    backdropUrl: tmdbBackdropUrl(row.backdrop_path),
     progress: typeof row.progress === "number" ? row.progress : null,
     progressSeconds: row.progress_seconds,
     totalDurationSeconds: row.total_duration_seconds,
@@ -109,7 +109,7 @@ export function topContentToItem(row: TopContentRow): WebMediaItem | null {
     tmdbId: row.tmdb_id,
     title: row.title || row.episode_title || "Contenu MegaTv",
     posterUrl: tmdbImageUrl(row.poster_path, "w342"),
-    backdropUrl: tmdbImageUrl(row.backdrop_path, "w780"),
+    backdropUrl: tmdbBackdropUrl(row.backdrop_path),
     progress: typeof row.progress === "number" ? row.progress : null,
     season: row.season,
     episode: row.episode

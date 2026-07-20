@@ -103,10 +103,67 @@ export type TmdbPerson = {
   combined_credits?: { cast?: TmdbPersonCredit[] };
 };
 
-export function tmdbImageUrl(path: string | null | undefined, size: "w185" | "w342" | "w500" | "w780" | "original" = "w342") {
+export type TmdbImageSize = "w185" | "w300" | "w342" | "w500" | "w780" | "w1280" | "original";
+
+export function tmdbImageUrl(path: string | null | undefined, size: TmdbImageSize = "w342") {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   return `${IMAGE_BASE}/${size}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/** Same-origin proxy — canvas color extraction + CORS-safe client images. */
+export function tmdbProxiedImageUrl(path: string | null | undefined, size: TmdbImageSize = "w342") {
+  if (!path) return null;
+  if (path.startsWith("/api/tmdb/image")) return path;
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    const match = path.match(/\/t\/p\/(w\d+|original)(\/[^?]+)/);
+    if (match) {
+      const size = (match[1] === "original" ? "w1280" : match[1]) as TmdbImageSize;
+      return `/api/tmdb/image?size=${size}&path=${encodeURIComponent(match[2])}`;
+    }
+    return path;
+  }
+  return `/api/tmdb/image?size=${size}&path=${encodeURIComponent(clean)}`;
+}
+
+/** Backdrop plein écran — parité Android `Constants.BACKDROP_BASE` (w1280, pas w780). */
+export function tmdbBackdropUrl(path: string | null | undefined) {
+  return tmdbImageUrl(path, "w1280");
+}
+
+/** src + srcSet pour hero/detail : w780 mobile, w1280 desktop (évite upscale + économise mobile). */
+export function tmdbBackdropPicture(path: string | null | undefined): {
+  src: string;
+  srcSet: string;
+  sizes: string;
+} | null {
+  const sd = tmdbImageUrl(path, "w780");
+  const hd = tmdbImageUrl(path, "w1280");
+  if (!hd) return null;
+  return {
+    src: hd,
+    srcSet: sd ? `${sd} 780w, ${hd} 1280w` : `${hd} 1280w`,
+    sizes: "100vw"
+  };
+}
+
+/** Upgrade une URL TMDB déjà résolue (ex. données cache w780) vers w1280 + srcSet. */
+export function tmdbBackdropPictureFromUrl(url: string | null | undefined): {
+  src: string;
+  srcSet?: string;
+  sizes?: string;
+} | null {
+  if (!url) return null;
+  if (!url.includes("image.tmdb.org/t/p/")) return { src: url };
+
+  const hd = url.replace(/\/t\/p\/w\d+\//, "/t/p/w1280/");
+  const sd = url.replace(/\/t\/p\/w\d+\//, "/t/p/w780/");
+  return {
+    src: hd,
+    srcSet: sd !== hd ? `${sd} 780w, ${hd} 1280w` : undefined,
+    sizes: "100vw"
+  };
 }
 
 async function fetchTmdbProxy(path: string, append = "", extraParams?: Record<string, string>, revalidate = 60 * 60 * 12) {
@@ -142,6 +199,7 @@ export type TmdbSearchResult = {
   backdrop_path?: string | null;
   overview?: string;
   vote_average?: number;
+  popularity?: number;
   release_date?: string;
   first_air_date?: string;
 };
@@ -263,4 +321,102 @@ export function formatRuntimeMinutes(minutes: number | null | undefined) {
   const hours = Math.floor(value / 60);
   const mins = value % 60;
   return mins > 0 ? `${hours} h ${mins.toString().padStart(2, "0")}` : `${hours} h`;
+}
+
+export type TmdbCalendarRelease = {
+  date: string;
+  title: string;
+  mediaType: "movie" | "tv";
+  posterPath: string | null;
+  tmdbId: number;
+  popularity: number;
+  voteAverage: number;
+};
+
+/** Date locale YYYY-MM-DD (évite le décalage UTC qui concentrait tout sur « hier »). */
+function localIsoDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Sorties film/série à venir — tri popularité (pas date.asc page 1 = un seul jour).
+ * Fenêtre ~60 jours, 2 pages × movie/tv max (Free Tier).
+ */
+export async function fetchTmdbUpcomingCalendar(limit = 80): Promise<TmdbCalendarRelease[]> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 60);
+  const gte = localIsoDate(start);
+  const lte = localIsoDate(end);
+
+  const fetchPage = (path: string, params: Record<string, string>, page: number) =>
+    fetchTmdbProxy(path, "", { ...params, page: String(page) }, 60 * 60 * 6) as Promise<{
+      results?: TmdbSearchResult[];
+    } | null>;
+
+  // Pas de vote_count.gte : les sorties à venir ont souvent 0 vote → liste vide.
+  const movieBase = {
+    sort_by: "popularity.desc",
+    "primary_release_date.gte": gte,
+    "primary_release_date.lte": lte,
+    include_adult: "false",
+    region: "FR"
+  };
+  const tvBase = {
+    sort_by: "popularity.desc",
+    "first_air_date.gte": gte,
+    "first_air_date.lte": lte,
+    include_adult: "false"
+  };
+
+  const [m1, m2, t1, t2] = await Promise.all([
+    fetchPage("/discover/movie", movieBase, 1),
+    fetchPage("/discover/movie", movieBase, 2),
+    fetchPage("/discover/tv", tvBase, 1),
+    fetchPage("/discover/tv", tvBase, 2)
+  ]);
+
+  const seen = new Set<string>();
+  const mapped: TmdbCalendarRelease[] = [];
+
+  const pushMovie = (item: TmdbSearchResult) => {
+    if (!item.id || !item.release_date) return;
+    const key = `movie:${item.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    mapped.push({
+      date: item.release_date,
+      title: item.title || item.name || `Film ${item.id}`,
+      mediaType: "movie",
+      posterPath: item.poster_path || null,
+      tmdbId: item.id,
+      popularity: Number(item.popularity) || 0,
+      voteAverage: Number(item.vote_average) || 0
+    });
+  };
+  const pushTv = (item: TmdbSearchResult) => {
+    if (!item.id || !item.first_air_date) return;
+    const key = `tv:${item.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    mapped.push({
+      date: item.first_air_date,
+      title: item.name || item.title || `Série ${item.id}`,
+      mediaType: "tv",
+      posterPath: item.poster_path || null,
+      tmdbId: item.id,
+      popularity: Number(item.popularity) || 0,
+      voteAverage: Number(item.vote_average) || 0
+    });
+  };
+
+  for (const item of [...(m1?.results || []), ...(m2?.results || [])]) pushMovie(item);
+  for (const item of [...(t1?.results || []), ...(t2?.results || [])]) pushTv(item);
+
+  mapped.sort((a, b) => b.popularity - a.popularity || a.date.localeCompare(b.date));
+  return mapped.slice(0, limit);
 }

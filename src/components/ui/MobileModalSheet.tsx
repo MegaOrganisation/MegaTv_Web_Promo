@@ -32,9 +32,9 @@ export function MobileModalSheet({ open, onClose, title, children }: Props) {
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex flex-col overscroll-contain lg:hidden" role="dialog" aria-modal="true">
-      <button type="button" aria-label="Fermer" className="min-h-0 flex-1 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <button type="button" aria-label="Fermer" className="mega-lg-scrim min-h-0 flex-1" onClick={onClose} />
       <div
-        className="shrink-0 overflow-y-auto overscroll-contain rounded-t-[28px] border border-[var(--mega-border)] bg-[var(--mega-surface)] shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.75)]"
+        className="mega-lg-sheet shrink-0 overflow-y-auto overscroll-contain rounded-t-[28px]"
         style={{
           maxHeight: "min(78dvh, calc(100dvh - var(--companion-mobile-header) - var(--companion-mobile-nav)))",
           marginBottom: "var(--companion-mobile-nav)",
@@ -42,9 +42,9 @@ export function MobileModalSheet({ open, onClose, title, children }: Props) {
         }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--mega-border)] bg-[var(--mega-surface)] px-4 py-3">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--mega-border)] bg-[color-mix(in_srgb,var(--mega-surface)_72%,transparent)] px-4 py-3 backdrop-blur-xl">
           <p className="text-sm font-semibold text-[var(--mega-text)]">{title || "Détails"}</p>
-          <button type="button" onClick={onClose} className="focus-ring grid h-10 w-10 place-items-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-card-bg)]">
+          <button type="button" onClick={onClose} className="mega-lg-icon-btn focus-ring grid h-10 w-10 place-items-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-card-bg)]">
             <X className="h-4 w-4" />
           </button>
         </div>

@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { ImageOff } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { PosterContextMenu } from "@/features/web/PosterContextMenu";
+import { MEGA_SPRING_LAYOUT, MEGA_SPRING_SNAPPY } from "@/features/web/motion/mega-motion";
 import { MegaTvIcon } from "@/features/web/icons/MegaTvIcon";
 import { fetchCardEnrich, fetchTitleLogo, fetchTrailerKey } from "@/features/web/mediaClient";
 import { useYoutubeTrailerSound } from "@/features/web/useYoutubeTrailerSound";
@@ -37,6 +39,7 @@ export function PosterCard({
 }) {
   const { withProfile, activeProfileId } = useWebProfile();
   const { prefs } = useWebPrefs(activeProfileId);
+  const reduceMotion = useReducedMotion();
 
   const landscape = layout === "landscape";
   const displayTitle = isGenericPosterLabel(item.title) ? "" : item.title;
@@ -111,9 +114,12 @@ export function PosterCard({
   const label = resolvedTitle || displayTitle || "Contenu";
 
   return (
-    <div
+    <motion.div
+      layout={!reduceMotion}
+      layoutId={expanded ? `poster-expand-${item.mediaId}` : undefined}
       className={clsx("group/poster relative", fullWidth && !expanded ? "" : "shrink-0", expanded && "mega-poster-expanded", className)}
       style={expanded ? { width: "var(--mega-poster-expand-w)" } : undefined}
+      transition={MEGA_SPRING_LAYOUT}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={onEnter}
@@ -123,13 +129,16 @@ export function PosterCard({
         setMenu({ x: event.clientX, y: event.clientY });
       }}
     >
-      <div className={clsx("transition-[width] duration-500 ease-out", expanded ? "w-full" : widthClass)}>
+      <motion.div
+        layout={!reduceMotion}
+        className={clsx(expanded ? "w-full" : widthClass)}
+        transition={MEGA_SPRING_LAYOUT}
+      >
         <Link href={detailsHref} prefetch={false} className="focus-ring block" title={label}>
-          <div
-            className={clsx(
-              "mega-poster-shell mega-poster-hover-glow transition-transform duration-500 ease-out",
-              !showVideo && !expanded && !fullWidth ? "group-hover/poster:scale-[1.05]" : ""
-            )}
+          <motion.div
+            className="mega-poster-shell mega-poster-hover-glow"
+            whileHover={!showVideo && !expanded && !fullWidth && !reduceMotion ? { scale: 1.05 } : undefined}
+            transition={MEGA_SPRING_SNAPPY}
           >
             <div className={clsx("mega-poster-frame", videoLandscape ? "aspect-video" : "aspect-[2/3]")}>
             {image ? (
@@ -192,7 +201,7 @@ export function PosterCard({
               </div>
             ) : null}
             </div>
-          </div>
+          </motion.div>
         </Link>
 
         {showPlay ? (
@@ -214,9 +223,9 @@ export function PosterCard({
             {item.subtitle ? <p className="line-clamp-1 text-[10px] text-[var(--mega-text-faint)]">{item.subtitle}</p> : null}
           </Link>
         ) : null}
-      </div>
+      </motion.div>
 
       {menu ? <PosterContextMenu item={item} x={menu.x} y={menu.y} onClose={() => setMenu(null)} /> : null}
-    </div>
+    </motion.div>
   );
 }

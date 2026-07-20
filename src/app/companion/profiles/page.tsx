@@ -14,14 +14,21 @@ export default async function CompanionProfilesPage() {
   const { profiles, isAdmin } = await getDashboardData(null, { skipAvatarUrls: true });
 
   return (
-    <ResponsiveShell title="Profils" subtitle="Gérez les profils MegaTv : avatars, mode Kids et code PIN." isAdmin={isAdmin}>
+    <ResponsiveShell
+      title="Profils"
+      subtitle="Avatars, mode Kids et code PIN synchronisés avec l'application."
+      isAdmin={isAdmin}
+      hidePageHeader
+    >
       <PageEventTracker page="Companion Profiles" />
       <GlassCard as="section">
         <div className="mb-5 flex items-center gap-3">
-          <UserRound className="h-6 w-6 text-white/70" />
+          <div className="mega-metric-icon-wrap">
+            <UserRound className="h-5 w-5" strokeWidth={2} />
+          </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Profils cloud</h2>
-            <p className="mt-1 text-sm text-white/45">Avatars MegaTv, photo personnalisée, Kids et PIN synchronisés avec l&apos;application.</p>
+            <h2 className="mega-section-title">Profils cloud</h2>
+            <p className="mega-section-sub">Avatars MegaTv, photo personnalisée, Kids et PIN synchronisés avec l&apos;application.</p>
           </div>
         </div>
         <ProfileManagementPanel profiles={profiles} />

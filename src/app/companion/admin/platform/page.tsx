@@ -8,7 +8,13 @@ export default async function AdminPlatformPage() {
   await requireAdmin();
 
   return (
-    <ResponsiveShell title="Config plateforme" subtitle="Publier des defaults addons / IPTV / catalogues pour cold-start Android." isAdmin>
+    <ResponsiveShell
+      title="Config plateforme"
+      subtitle="Defaults addons / IPTV / catalogues pour cold-start Android."
+      isAdmin
+      showRail={false}
+      hidePageHeader
+    >
       <PlatformConfigConsole />
     </ResponsiveShell>
   );

@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { clsx } from "clsx";
-import { Check, Clock3, Film, GripVertical, Maximize2, Minimize2, PlayCircle, Plus, Trash2, Tv, X } from "lucide-react";
+import {
+  Check,
+  Clock3,
+  Film,
+  GripVertical,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Tv,
+  PlayCircle,
+  Eye,
+  EyeOff,
+  X
+} from "lucide-react";
 
 import { KpiCard } from "@/components/ui/KpiCard";
 import { formatDuration, formatNumber } from "@/lib/format";
@@ -19,7 +32,7 @@ export type DashboardBlockId =
   | "history"
   | `custom-${string}`;
 
-export type BlockSize = "compact" | "default" | "wide" | "full";
+export type ColSpan = 1 | 2 | 3 | 4;
 
 export type CustomKpiConfig = {
   id: string;
@@ -29,12 +42,27 @@ export type CustomKpiConfig = {
 
 type LayoutState = {
   order: DashboardBlockId[];
-  sizes: Partial<Record<DashboardBlockId, BlockSize>>;
+  hidden: DashboardBlockId[];
+  spans: Partial<Record<string, ColSpan>>;
   customKpis: CustomKpiConfig[];
 };
 
-const storageKey = "megacompanion_dashboard_layout_v2";
+const storageKey = "megacompanion_dashboard_layout_v4";
+const legacyKeys = ["megacompanion_dashboard_layout_v3", "megacompanion_dashboard_layout_v2"];
 
+const BLOCK_LABELS: Record<string, string> = {
+  "kpi-movies": "KPI Films",
+  "kpi-episodes": "KPI Épisodes",
+  "kpi-time": "KPI Temps",
+  "kpi-continue": "KPI Reprises",
+  "continue-watching": "Reprendre",
+  "donut-chart": "Répartition",
+  "top-content": "Top contenus",
+  "activity-chart": "Progression",
+  history: "Historique"
+};
+
+/** Grille 4 cols sans trou : CW|donut 2+2, top full, activity|history 2+2 */
 const defaultOrder: DashboardBlockId[] = [
   "kpi-movies",
   "kpi-episodes",
@@ -47,11 +75,23 @@ const defaultOrder: DashboardBlockId[] = [
   "history"
 ];
 
-const sizeClasses: Record<BlockSize, string> = {
-  compact: "max-w-sm",
-  default: "max-w-none",
-  wide: "xl:col-span-2",
-  full: "w-full xl:col-span-2"
+const defaultSpans: Partial<Record<DashboardBlockId, ColSpan>> = {
+  "kpi-movies": 1,
+  "kpi-episodes": 1,
+  "kpi-time": 1,
+  "kpi-continue": 1,
+  "continue-watching": 2,
+  "donut-chart": 2,
+  "top-content": 4,
+  "activity-chart": 2,
+  history: 2
+};
+
+const spanClass: Record<ColSpan, string> = {
+  1: "col-span-1",
+  2: "col-span-1 sm:col-span-2",
+  3: "col-span-1 sm:col-span-2 xl:col-span-3",
+  4: "col-span-1 sm:col-span-2 xl:col-span-4"
 };
 
 type Props = {
@@ -69,23 +109,79 @@ type Props = {
   };
 };
 
+function clampSpan(n: number): ColSpan {
+  if (n <= 1) return 1;
+  if (n === 2) return 2;
+  if (n === 3) return 3;
+  return 4;
+}
+
+function migrateLegacy(raw: string): LayoutState | null {
+  try {
+    const parsed = JSON.parse(raw) as {
+      order?: DashboardBlockId[];
+      sizes?: Partial<Record<string, string>>;
+      customKpis?: CustomKpiConfig[];
+    };
+    if (!Array.isArray(parsed.order)) return null;
+    const order = [...parsed.order];
+    if (!order.includes("continue-watching")) {
+      const afterKpi = order.findIndex((id) => !id.startsWith("kpi-") && !id.startsWith("custom-"));
+      order.splice(afterKpi >= 0 ? afterKpi : order.length, 0, "continue-watching");
+    }
+    const spans: Partial<Record<string, ColSpan>> = { ...defaultSpans };
+    for (const [id, size] of Object.entries(parsed.sizes || {})) {
+      if (size === "wide" || size === "full") spans[id] = id.startsWith("kpi-") || id.startsWith("custom-") ? 2 : 4;
+      else if (size === "compact") spans[id] = 1;
+    }
+    return { order, hidden: [], spans, customKpis: parsed.customKpis || [] };
+  } catch {
+    return null;
+  }
+}
+
 export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showEditChrome = true, metrics }: Props) {
-  const [layout, setLayout] = useState<LayoutState>({ order: defaultOrder, sizes: {}, customKpis: [] });
+  const [layout, setLayout] = useState<LayoutState>({
+    order: defaultOrder,
+    hidden: [],
+    spans: defaultSpans,
+    customKpis: []
+  });
   const [dragId, setDragId] = useState<DashboardBlockId | null>(null);
-  const [touchDragId, setTouchDragId] = useState<DashboardBlockId | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const touchTargetRef = useRef<DashboardBlockId | null>(null);
+  const [touchDragId, setTouchDragId] = useState<DashboardBlockId | null>(null);
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as LayoutState;
-      if (Array.isArray(parsed.order)) {
-        setLayout({
-          order: parsed.order,
-          sizes: parsed.sizes || {},
-          customKpis: parsed.customKpis || []
-        });
+      const v4 = window.localStorage.getItem(storageKey);
+      if (v4) {
+        const parsed = JSON.parse(v4) as LayoutState;
+        if (Array.isArray(parsed.order)) {
+          setLayout({
+            order: parsed.order,
+            hidden: parsed.hidden || [],
+            spans: { ...defaultSpans, ...(parsed.spans || {}) },
+            customKpis: parsed.customKpis || []
+          });
+          return;
+        }
+      }
+      // Migration : ordre/KPI custom, spans = défauts propres (anti trous v3)
+      for (const key of legacyKeys) {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) continue;
+        const migrated = migrateLegacy(raw);
+        if (migrated) {
+          setLayout({
+            ...migrated,
+            spans: { ...defaultSpans },
+            order: migrated.order.includes("continue-watching")
+              ? migrated.order
+              : defaultOrder
+          });
+          break;
+        }
       }
     } catch {
       // ignore
@@ -96,11 +192,14 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
     window.localStorage.setItem(storageKey, JSON.stringify(layout));
   }, [layout]);
 
-  const ordered = useMemo(() => {
-    const known = layout.order.filter((id) => blocks[id] || id.startsWith("custom-"));
-    const missing = Object.keys(blocks).filter((id) => !known.includes(id as DashboardBlockId));
-    return [...known, ...missing] as DashboardBlockId[];
-  }, [blocks, layout.order]);
+  const visibleOrder = useMemo(() => {
+    const hidden = new Set(layout.hidden);
+    const known = layout.order.filter((id) => (blocks[id] || id.startsWith("custom-")) && !hidden.has(id));
+    const missing = Object.keys(blocks).filter(
+      (id) => !layout.order.includes(id as DashboardBlockId) && !hidden.has(id as DashboardBlockId)
+    ) as DashboardBlockId[];
+    return [...known, ...missing];
+  }, [blocks, layout.hidden, layout.order]);
 
   function renderCustomKpi(config: CustomKpiConfig) {
     if (!metrics) return null;
@@ -153,25 +252,36 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
     });
   }
 
-  function setBlockSize(id: DashboardBlockId, size: BlockSize) {
-    setLayout((current) => ({ ...current, sizes: { ...current.sizes, [id]: size } }));
+  function setSpan(id: DashboardBlockId, span: ColSpan) {
+    setLayout((current) => ({ ...current, spans: { ...current.spans, [id]: span } }));
+  }
+
+  function hideBlock(id: DashboardBlockId) {
+    setLayout((current) => ({
+      ...current,
+      hidden: current.hidden.includes(id) ? current.hidden : [...current.hidden, id],
+      customKpis: id.startsWith("custom-") ? current.customKpis.filter((k) => k.id !== id) : current.customKpis,
+      order: id.startsWith("custom-") ? current.order.filter((item) => item !== id) : current.order
+    }));
+  }
+
+  function showBlock(id: DashboardBlockId) {
+    setLayout((current) => ({
+      ...current,
+      hidden: current.hidden.filter((item) => item !== id),
+      order: current.order.includes(id) ? current.order : [...current.order, id]
+    }));
   }
 
   function addCustomKpi() {
-    const id = `custom-${Date.now()}`;
+    const id = `custom-${Date.now()}` as DashboardBlockId;
     const entry: CustomKpiConfig = { id, label: "Nouveau KPI", metric: "movies" };
     setLayout((current) => ({
       ...current,
       customKpis: [...current.customKpis, entry],
-      order: [...current.order, id as DashboardBlockId]
-    }));
-  }
-
-  function removeCustomKpi(id: string) {
-    setLayout((current) => ({
-      ...current,
-      customKpis: current.customKpis.filter((item) => item.id !== id),
-      order: current.order.filter((item) => item !== id)
+      order: [...current.order, id],
+      spans: { ...current.spans, [id]: 1 },
+      hidden: current.hidden.filter((item) => item !== id)
     }));
   }
 
@@ -182,20 +292,52 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
     }));
   }
 
-  const kpiIds = ordered.filter((id) => id.startsWith("kpi-") || id.startsWith("custom-"));
-  const panelIds = ordered.filter((id) => !id.startsWith("kpi-") && !id.startsWith("custom-"));
+  function resetLayout() {
+    setLayout({ order: defaultOrder, hidden: [], spans: defaultSpans, customKpis: [] });
+  }
+
+  const availableToAdd = useMemo(() => {
+    const hiddenBuiltins = defaultOrder.filter((id) => layout.hidden.includes(id));
+    return hiddenBuiltins;
+  }, [layout.hidden]);
 
   return (
-    <div className="min-w-0 max-w-full space-y-6">
+    <div className="min-w-0 max-w-full space-y-4">
       {showEditChrome && editMode ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-[var(--mega-border)] bg-[var(--mega-card-bg)] px-4 py-3">
-          <p className="text-sm text-[var(--mega-text-muted)]">Mode édition — glissez-déposez les cartes, redimensionnez ou ajoutez un KPI.</p>
+        <div className="dashboard-edit-chrome flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-[var(--mega-border)] bg-[var(--mega-card-bg)] px-4 py-3">
+          <p className="text-sm text-[var(--mega-text-muted)]">
+            Mode édition — glissez, redimensionnez (bord droit), masquez ou ajoutez des encarts (dont Reprendre).
+          </p>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={addCustomKpi} className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border)] px-3 py-1.5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setPaletteOpen((v) => !v)}
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border)] px-3 py-1.5 text-xs font-semibold"
+            >
               <Plus className="h-3.5 w-3.5" />
-              KPI custom
+              Ajouter
             </button>
-            <button type="button" onClick={() => onEditModeChange?.(false)} className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border)] px-3 py-1.5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={addCustomKpi}
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border)] px-3 py-1.5 text-xs font-semibold"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              KPI
+            </button>
+            <button
+              type="button"
+              onClick={resetLayout}
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border)] px-3 py-1.5 text-xs font-semibold"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => onEditModeChange?.(false)}
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border)] px-3 py-1.5 text-xs font-semibold"
+            >
               <Check className="h-3.5 w-3.5" />
               Terminer
             </button>
@@ -203,79 +345,72 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
         </div>
       ) : null}
 
-      <div className={clsx("grid min-w-0 max-w-full gap-4", editMode ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2 xl:grid-cols-4")}>
-        {kpiIds.map((id) => (
-          <DashboardBlock
-            key={id}
-            id={id}
-            editMode={editMode}
-            size={layout.sizes[id] || "default"}
-            dragging={dragId === id || touchDragId === id}
-            customKpi={layout.customKpis.find((item) => item.id === id)}
-            onCustomKpiChange={(patch) => updateCustomKpi(id, patch)}
-            onRemoveCustom={() => removeCustomKpi(id)}
-            onDragStart={() => setDragId(id)}
-            onDragEnd={() => setDragId(null)}
-            onDropOn={() => {
-              if (dragId) reorder(dragId, id);
-              if (touchDragId) reorder(touchDragId, id);
-              setDragId(null);
-              setTouchDragId(null);
-            }}
-            onTouchDragStart={() => {
-              setTouchDragId(id);
-              touchTargetRef.current = id;
-            }}
-            onTouchDragEnter={() => {
-              if (touchDragId && touchDragId !== id) touchTargetRef.current = id;
-            }}
-            onTouchDragEnd={() => {
-              if (touchDragId && touchTargetRef.current) reorder(touchDragId, touchTargetRef.current);
-              setTouchDragId(null);
-              touchTargetRef.current = null;
-            }}
-            onResize={(size) => setBlockSize(id, size)}
-          >
-            {blocks[id] ?? (layout.customKpis.find((item) => item.id === id) ? renderCustomKpi(layout.customKpis.find((item) => item.id === id)!) : null)}
-          </DashboardBlock>
-        ))}
+      {editMode && paletteOpen ? (
+        <div className="dashboard-edit-palette rounded-[22px] border border-[var(--mega-border)] bg-[var(--mega-card-bg)] p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[var(--mega-text-faint)]">Encarts masqués</p>
+          {availableToAdd.length === 0 ? (
+            <p className="text-sm text-[var(--mega-text-muted)]">Tous les encarts sont visibles. Masquez-en un pour le retrouver ici.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {availableToAdd.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => showBlock(id)}
+                  className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--brand-gold)]/40 bg-[var(--brand-gold)]/10 px-3 py-1.5 text-xs font-semibold text-[var(--brand-gold)]"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  {BLOCK_LABELS[id] || id}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <div className="dashboard-layout-grid grid min-w-0 max-w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+        {visibleOrder.map((id) => {
+          const span = clampSpan(layout.spans[id] ?? defaultSpans[id as DashboardBlockId] ?? (id.startsWith("kpi-") || id.startsWith("custom-") ? 1 : 2));
+          const custom = layout.customKpis.find((item) => item.id === id);
+          return (
+            <DashboardBlock
+              key={id}
+              id={id}
+              editMode={editMode}
+              span={span}
+              dragging={dragId === id || touchDragId === id}
+              customKpi={custom}
+              onCustomKpiChange={(patch) => updateCustomKpi(id, patch)}
+              onHide={() => hideBlock(id)}
+              onDragStart={() => setDragId(id)}
+              onDragEnd={() => setDragId(null)}
+              onDropOn={() => {
+                if (dragId) reorder(dragId, id);
+                if (touchDragId) reorder(touchDragId, id);
+                setDragId(null);
+                setTouchDragId(null);
+              }}
+              onTouchDragStart={() => {
+                setTouchDragId(id);
+                touchTargetRef.current = id;
+              }}
+              onTouchDragEnter={() => {
+                if (touchDragId && touchDragId !== id) touchTargetRef.current = id;
+              }}
+              onTouchDragEnd={() => {
+                if (touchDragId && touchTargetRef.current) reorder(touchDragId, touchTargetRef.current);
+                setTouchDragId(null);
+                touchTargetRef.current = null;
+              }}
+              onSpanChange={(next) => setSpan(id, next)}
+              className={spanClass[span]}
+            >
+              {blocks[id] ?? (custom ? renderCustomKpi(custom) : null)}
+            </DashboardBlock>
+          );
+        })}
       </div>
 
-      <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-2">
-        {panelIds.map((id) => (
-          <DashboardBlock
-            key={id}
-            id={id}
-            editMode={editMode}
-            size={layout.sizes[id] || (id === "continue-watching" || id === "activity-chart" ? "wide" : "default")}
-            dragging={dragId === id || touchDragId === id}
-            onDragStart={() => setDragId(id)}
-            onDragEnd={() => setDragId(null)}
-            onDropOn={() => {
-              if (dragId) reorder(dragId, id);
-              if (touchDragId) reorder(touchDragId, id);
-              setDragId(null);
-              setTouchDragId(null);
-            }}
-            onTouchDragStart={() => {
-              setTouchDragId(id);
-              touchTargetRef.current = id;
-            }}
-            onTouchDragEnter={() => {
-              if (touchDragId && touchDragId !== id) touchTargetRef.current = id;
-            }}
-            onTouchDragEnd={() => {
-              if (touchDragId && touchTargetRef.current) reorder(touchDragId, touchTargetRef.current);
-              setTouchDragId(null);
-              touchTargetRef.current = null;
-            }}
-            onResize={(size) => setBlockSize(id, size)}
-            className={clsx(sizeClasses[layout.sizes[id] || "default"], layout.sizes[id] === "full" && "xl:col-span-2")}
-          >
-            {blocks[id]}
-          </DashboardBlock>
-        ))}
-      </div>
     </div>
   );
 }
@@ -283,52 +418,84 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
 function DashboardBlock({
   id,
   editMode,
-  size,
+  span,
   dragging,
   customKpi,
   onCustomKpiChange,
-  onRemoveCustom,
+  onHide,
   onDragStart,
   onDragEnd,
   onDropOn,
   onTouchDragStart,
   onTouchDragEnter,
   onTouchDragEnd,
-  onResize,
+  onSpanChange,
   className,
   children
 }: {
   id: DashboardBlockId;
   editMode: boolean;
-  size: BlockSize;
+  span: ColSpan;
   dragging?: boolean;
   customKpi?: CustomKpiConfig;
   onCustomKpiChange?: (patch: Partial<CustomKpiConfig>) => void;
-  onRemoveCustom?: () => void;
+  onHide: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
   onDropOn: () => void;
   onTouchDragStart: () => void;
   onTouchDragEnter: () => void;
   onTouchDragEnd: () => void;
-  onResize: (size: BlockSize) => void;
+  onSpanChange: (span: ColSpan) => void;
   className?: string;
   children: ReactNode;
 }) {
-  const isCustom = id.startsWith("custom-");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const resizing = useRef(false);
+
+  function onResizePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!editMode) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const el = rootRef.current;
+    if (!el) return;
+    resizing.current = true;
+    el.setPointerCapture(event.pointerId);
+    const startX = event.clientX;
+    const startSpan = span;
+    const cellW = el.parentElement ? el.parentElement.getBoundingClientRect().width / 4 : 280;
+
+    function onMove(e: PointerEvent) {
+      if (!resizing.current) return;
+      const delta = e.clientX - startX;
+      const steps = Math.round(delta / Math.max(80, cellW * 0.85));
+      onSpanChange(clampSpan(startSpan + steps));
+    }
+    function onUp(e: PointerEvent) {
+      resizing.current = false;
+      el?.releasePointerCapture(e.pointerId);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
 
   return (
     <div
+      ref={rootRef}
       className={clsx(
-        "relative min-w-0 max-w-full transition",
+        "dashboard-layout-block relative min-w-0 max-w-full transition",
         className,
-        sizeClasses[size],
-        editMode && "rounded-[28px] ring-2 ring-[var(--mega-border-strong)] ring-offset-2 ring-offset-transparent max-lg:ring-offset-0 lg:dashboard-edit-shake",
-        dragging && "opacity-70"
+        editMode && "dashboard-layout-block--edit rounded-[28px] ring-2 ring-[var(--mega-border-strong)] ring-offset-2 ring-offset-transparent",
+        dragging && "opacity-60 scale-[0.98]"
       )}
-      draggable={editMode}
+      draggable={editMode && !resizing.current}
       onDragStart={(event) => {
-        if (!editMode) return;
+        if (!editMode || resizing.current) {
+          event.preventDefault();
+          return;
+        }
         event.dataTransfer.effectAllowed = "move";
         onDragStart();
       }}
@@ -353,22 +520,51 @@ function DashboardBlock({
       }}
     >
       {editMode ? (
-        <div className="absolute right-3 top-3 z-20 flex flex-wrap items-center gap-1">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-shell-nav)] text-[var(--mega-text-muted)]">
+        <div className="dashboard-layout-block__toolbar absolute right-2 top-2 z-20 flex flex-wrap items-center gap-1">
+          <span
+            className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-shell-nav)] text-[var(--mega-text-muted)] active:cursor-grabbing"
+            title="Glisser"
+          >
             <GripVertical className="h-4 w-4" />
           </span>
-          <button type="button" className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-shell-nav)]" onClick={() => onResize(size === "wide" ? "default" : "wide")} aria-label="Redimensionner">
-            {size === "wide" || size === "full" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          <div className="inline-flex overflow-hidden rounded-full border border-[var(--mega-border)] bg-[var(--mega-shell-nav)]">
+            {([1, 2, 3, 4] as const).map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={clsx(
+                  "focus-ring h-8 min-w-7 px-1.5 text-[10px] font-bold",
+                  span === n ? "bg-[var(--brand-gold)] text-[#0c0e12]" : "text-[var(--mega-text-muted)]"
+                )}
+                onClick={() => onSpanChange(n)}
+                aria-label={`Largeur ${n} colonnes`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-300/30 bg-red-500/10 text-red-100"
+            onClick={onHide}
+            aria-label="Masquer l'encart"
+            title="Masquer"
+          >
+            {id.startsWith("custom-") ? <Trash2 className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
-          {isCustom ? (
-            <button type="button" className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-300/30 bg-red-500/10 text-red-100" onClick={onRemoveCustom} aria-label="Supprimer le KPI">
-              <Trash2 className="h-4 w-4" />
-            </button>
-          ) : null}
         </div>
       ) : null}
 
-      {editMode && isCustom && customKpi ? (
+      {editMode ? (
+        <div
+          className="dashboard-layout-block__resize"
+          onPointerDown={onResizePointerDown}
+          title="Glisser pour redimensionner"
+          aria-hidden
+        />
+      ) : null}
+
+      {editMode && customKpi ? (
         <div className="mb-3 grid gap-2 rounded-2xl border border-[var(--mega-border)] bg-[var(--mega-card-bg)] p-3">
           <input
             value={customKpi.label}
@@ -391,7 +587,13 @@ function DashboardBlock({
         </div>
       ) : null}
 
-      {children}
+      {editMode ? (
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mega-text-faint)]">
+          {BLOCK_LABELS[id] || "KPI custom"} · {span}/4
+        </p>
+      ) : null}
+
+      <div className={clsx(editMode && "pointer-events-none select-none")}>{children}</div>
     </div>
   );
 }

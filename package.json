@@ -11,17 +11,24 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dpawlikowski/liquid-glass": "^0.3.0",
+    "@fontsource-variable/nunito": "^5.2.7",
+    "@lottiefiles/dotlottie-react": "^0.19.9",
     "@sentry/nextjs": "^10.62.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.55.0",
     "@vercel/analytics": "^2.0.1",
+    "@ybouane/liquidglass": "^1.0.3",
     "clsx": "^2.1.1",
     "hls.js": "^1.6.16",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.468.0",
+    "motion": "^12.42.2",
     "next": "^16.2.9",
     "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "react-dom": "19.1.1",
+    "react-parallax-tilt": "^1.7.333",
+    "recharts": "^3.9.2"
   },
   "overrides": {
     "postcss": "^8.5.10"

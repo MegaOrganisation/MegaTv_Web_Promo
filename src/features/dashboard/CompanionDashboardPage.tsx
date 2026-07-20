@@ -4,10 +4,11 @@ import { useState } from "react";
 
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { CinemaHeroCarousel } from "@/features/companion/ui/CinemaHeroCarousel";
 import { CompanionDashboardView } from "@/features/dashboard/CompanionDashboardView";
 import { DashboardEditHeaderButton } from "@/features/dashboard/DashboardEditHeaderButton";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
-import { SelectedProfileBanner } from "@/features/dashboard/SelectedProfileBanner";
+import { tmdbProxiedImageUrl } from "@/lib/tmdb";
 import type { ContinueWatchingRow, DashboardSummary, ProfileRow, TopContentRow } from "@/lib/supabase/types";
 import type { WatchHistoryRow } from "@/lib/dashboard/watch-data";
 
@@ -36,16 +37,36 @@ export function CompanionDashboardPage({
 }: Props) {
   const [editMode, setEditMode] = useState(false);
 
+  const heroImage = tmdbProxiedImageUrl(
+    continueWatching[0]?.backdrop_path || continueWatching[0]?.poster_path || topContent[0]?.backdrop_path || topContent[0]?.poster_path,
+    "w780"
+  );
+  const heroTitle = activeProfile?.name ? `Bonjour, ${activeProfile.name}` : "Votre espace MegaTv";
+  const heroSub = `${summary.continue_watching_count} reprises · ${summary.movies_watched} films · ${summary.episodes_watched} épisodes`;
+
   return (
     <ResponsiveShell
       title="Dashboard"
-      subtitle="Vos métriques MegaTv, isolées par compte et profil grâce à Supabase RLS."
+      subtitle="Métriques, reprises et historique — synchronisés par profil."
       isAdmin={isAdmin}
-      headerEnd={<DashboardEditHeaderButton editMode={editMode} onEditModeChange={setEditMode} />}
+      continueWatching={continueWatching}
+      showRail={false}
+      hidePageHeader
+      headerEnd={
+        activeProfile?.is_kids_profile ? null : (
+          <DashboardEditHeaderButton editMode={editMode} onEditModeChange={setEditMode} />
+        )
+      }
+      hero={
+        <CinemaHeroCarousel
+          items={continueWatching}
+          fallbackTitle={heroTitle}
+          fallbackSubtitle={heroSub}
+          fallbackImage={heroImage}
+        />
+      }
     >
       <PageEventTracker page="Companion Dashboard" />
-
-      <SelectedProfileBanner activeProfile={activeProfile} avatarUrl={activeProfile ? profileAvatarUrlsById[activeProfile.profile_id] : null} summary={summary} />
 
       {errors.length > 0 ? (
         <GlassCard className="mb-6 border-yellow-300/20 bg-yellow-300/8">
@@ -60,7 +81,8 @@ export function CompanionDashboardPage({
         continueWatching={continueWatching}
         watchHistory={watchHistory}
         activeProfileId={activeProfileId}
-        editMode={editMode}
+        isKids={Boolean(activeProfile?.is_kids_profile)}
+        editMode={editMode && !activeProfile?.is_kids_profile}
         onEditModeChange={setEditMode}
       />
     </ResponsiveShell>

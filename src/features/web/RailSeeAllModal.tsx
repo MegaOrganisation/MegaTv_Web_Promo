@@ -2,8 +2,8 @@
 
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 
+import { MegaDialog } from "@/features/web/MegaDialog";
 import { PosterCard } from "@/features/web/PosterCard";
 import { useRailMeta } from "@/features/web/useRailMeta";
 import type { WebLayout } from "@/lib/web/prefs";
@@ -45,11 +45,6 @@ export function RailSeeAllModal({
   const [ratingMin, setRatingMin] = useState(0);
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const mediaIds = useMemo(() => items.map((item) => item.mediaId), [items]);
   const { meta, loading: metaLoading } = useRailMeta(mediaIds, open);
@@ -61,20 +56,6 @@ export function RailSeeAllModal({
     }
     return [...set].sort((a, b) => a.localeCompare(b, "fr"));
   }, [mediaIds, meta]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
 
   useEffect(() => {
     if (!open) {
@@ -127,17 +108,17 @@ export function RailSeeAllModal({
     return next;
   }, [items, query, sort, genreFilter, ratingMin, dateFilter, meta, orderIndex]);
 
-  if (!open || !mounted) return null;
-
-  return createPortal(
-    <div
-      className="mega-rail-modal fixed inset-0 z-[200] flex items-stretch justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5"
-      role="dialog"
-      aria-modal
-      aria-label={title}
+  return (
+    <MegaDialog
+      open={open}
+      onClose={onClose}
+      label={title}
+      size="fullscreen"
+      showClose={false}
+      className="p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5"
+      panelClassName="mega-rail-modal-panel flex min-h-0 max-h-full flex-col overflow-hidden"
     >
-      <div className="mega-rail-modal-panel flex min-h-0 w-full max-w-[1500px] flex-col overflow-hidden">
-        <header className="mega-rail-modal-header shrink-0 border-b border-[var(--mega-border)] px-4 py-3 sm:px-5">
+      <header className="mega-rail-modal-header shrink-0 border-b border-[var(--mega-border)] px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <span className="mega-rail-bar hidden h-5 w-1 shrink-0 rounded-sm bg-white/90 sm:block" aria-hidden />
@@ -251,8 +232,6 @@ export function RailSeeAllModal({
           </div>
         )}
       </div>
-      </div>
-    </div>,
-    document.body
+    </MegaDialog>
   );
 }

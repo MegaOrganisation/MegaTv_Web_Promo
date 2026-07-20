@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { clsx } from "clsx";
 import { UsersRound } from "lucide-react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
-import { RouteTransition } from "@/features/web/RouteTransition";
+import { ProfileAccentSync } from "@/features/web/ProfileAccentSync";
+import { RouteTransition, WebMotionProvider } from "@/features/web/RouteTransition";
+import { WebMobileHeader } from "@/features/web/WebMobileHeader";
+import { MEGA_SPRING_SNAPPY } from "@/features/web/motion/mega-motion";
 import { MegaTvIcon, type MegaTvIconName } from "@/features/web/icons/MegaTvIcon";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
 import { useWebPrefs, type WebNavLayout } from "@/lib/web/prefs";
@@ -59,7 +63,7 @@ function ProfileAvatarLink({ className, size = "sm" }: { className?: string; siz
   return (
     <Link
       href="/web?switch=1"
-      className={clsx("mega-profile-ring focus-ring shrink-0 transition", className)}
+      className={clsx("mega-profile-ring mega-nav-avatar-link focus-ring shrink-0 transition", className)}
       title="Changer de profil"
     >
       {activeProfile ? (
@@ -86,6 +90,7 @@ function NavChip({
   className?: string;
 }) {
   const { withProfile } = useWebProfile();
+  const reduceMotion = useReducedMotion();
 
   return (
     <Link
@@ -94,20 +99,28 @@ function NavChip({
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
       className={clsx(
-        "mega-nav-chip focus-ring",
-        active && "mega-nav-chip-active",
+        "mega-nav-chip focus-ring relative",
+        active && (reduceMotion ? "mega-nav-chip-active" : "text-[var(--mega-text)]"),
         showLabel === "hover" && "mega-nav-chip-expand",
         showLabel === "rail" && "mega-nav-chip-rail",
         showLabel === "always" && "mega-nav-chip-mobile",
         className
       )}
     >
+      {active && !reduceMotion ? (
+        <motion.span
+          layoutId="web-nav-active-pill"
+          className="absolute inset-0 rounded-full bg-[var(--mega-card-bg)]"
+          transition={MEGA_SPRING_SNAPPY}
+          aria-hidden
+        />
+      ) : null}
       <MegaTvIcon
         name={item.icon}
         filled={active}
-        className={showLabel === "always" ? "h-6 w-6 shrink-0" : "mega-nav-chip-icon"}
+        className={clsx("relative z-[1]", showLabel === "always" ? "h-6 w-6 shrink-0" : "mega-nav-chip-icon")}
       />
-      <span className="mega-nav-chip-label">{item.label}</span>
+      <span className="mega-nav-chip-label relative z-[1]">{item.label}</span>
     </Link>
   );
 }
@@ -135,30 +148,32 @@ function HorizontalTopNav() {
   return (
     <header className={clsx("mega-topnav-bar fixed left-0 right-0 top-0 z-40 hidden lg:block", scrolled && "mega-topnav-scrolled")}>
       <div className="mega-topnav-scrim" aria-hidden />
-      <div className="relative flex w-full items-center gap-4 px-4 py-3 sm:px-5">
+      <div className="mega-topnav-row relative">
         <ProfileAvatarLink size="md" className="pointer-events-auto" />
 
-        <div className="pointer-events-auto flex flex-1 items-center gap-3">
-          <nav aria-label="Navigation principale" className="mega-nav-glass flex items-center gap-0.5 rounded-full p-1.5">
-            {MAIN_NAV.map((item) => (
-              <NavChip key={item.href} item={item} active={isActive(pathname, item)} showLabel="hover" />
-            ))}
-          </nav>
+        <div className="pointer-events-auto flex flex-1 items-center gap-2">
+          <LayoutGroup id="web-top-nav">
+            <nav aria-label="Navigation principale" className="mega-nav-glass mega-topnav-glass flex items-center rounded-full">
+              {MAIN_NAV.map((item) => (
+                <NavChip key={item.href} item={item} active={isActive(pathname, item)} showLabel="hover" />
+              ))}
+            </nav>
 
-          <nav aria-label="Réglages" className="mega-nav-glass rounded-full p-1.5">
-            <NavChip item={SETTINGS_NAV} active={isActive(pathname, SETTINGS_NAV)} showLabel="hover" />
-          </nav>
+            <nav aria-label="Réglages" className="mega-nav-glass mega-topnav-glass flex items-center rounded-full">
+              <NavChip item={SETTINGS_NAV} active={isActive(pathname, SETTINGS_NAV)} showLabel="hover" />
+            </nav>
+          </LayoutGroup>
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
           {activeProfile ? (
-            <span className="max-w-[9rem] truncate text-sm font-semibold text-[var(--mega-text-muted)]">{activeProfile.name}</span>
+            <span className="max-w-[8rem] truncate text-xs font-semibold text-[var(--mega-text-muted)]">{activeProfile.name}</span>
           ) : null}
           <button
             type="button"
             onClick={signOut}
             aria-label="Se déconnecter"
-            className="focus-ring mega-nav-glass grid h-[var(--mega-nav-rail-chip)] w-[var(--mega-nav-rail-chip)] place-items-center rounded-full text-[var(--mega-text-muted)] transition hover:text-[var(--mega-text)]"
+            className="focus-ring mega-nav-glass mega-topnav-glass grid h-[var(--mega-nav-chip)] w-[var(--mega-nav-chip)] place-items-center rounded-full text-[var(--mega-text-muted)] transition hover:text-[var(--mega-text)]"
           >
             <MegaTvIcon name="logout" className="mega-nav-chip-icon" />
           </button>
@@ -221,6 +236,7 @@ function VerticalSideNav() {
 function MobileBottomNav() {
   const pathname = usePathname();
   const { withProfile } = useWebProfile();
+  const reduceMotion = useReducedMotion();
 
   return (
     <div className="mega-bottomnav-shell pointer-events-none fixed inset-x-0 bottom-0 z-[85] lg:hidden">
@@ -236,21 +252,31 @@ function MobileBottomNav() {
               prefetch
               aria-current={active ? "page" : undefined}
               className={clsx(
-                "focus-ring flex min-w-0 flex-col items-center justify-center rounded-[18px] px-1 py-2 text-[10px] font-semibold transition-colors duration-300",
-                active ? "bg-[var(--mega-card-bg)] text-[var(--mega-text)]" : "text-[var(--mega-text-faint)] hover:text-[var(--mega-text)]"
+                "focus-ring relative flex min-w-0 flex-col items-center justify-center rounded-[18px] px-1 py-2 text-[10px] font-semibold",
+                active ? "text-[var(--mega-text)]" : "text-[var(--mega-text-faint)] hover:text-[var(--mega-text)]"
               )}
             >
+              {active && !reduceMotion ? (
+                <motion.span
+                  layoutId="mobile-nav-pill"
+                  className="absolute inset-0 rounded-[18px] bg-[var(--mega-card-bg)]"
+                  transition={MEGA_SPRING_SNAPPY}
+                  aria-hidden
+                />
+              ) : active ? (
+                <span className="absolute inset-0 rounded-[18px] bg-[var(--mega-card-bg)]" aria-hidden />
+              ) : null}
               <MegaTvIcon
                 name={item.icon}
                 filled={active}
                 className={clsx(
-                  "h-6 w-6 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "relative z-[1] h-6 w-6 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   active ? "-translate-y-0.5 scale-[0.8]" : "scale-100"
                 )}
               />
               <span
                 className={clsx(
-                  "block w-full overflow-hidden truncate text-center leading-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "relative z-[1] block w-full overflow-hidden truncate text-center leading-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   active ? "mt-0.5 max-h-4 opacity-100" : "max-h-0 opacity-0"
                 )}
               >
@@ -282,18 +308,23 @@ export function WebAppChrome({ children }: { children: ReactNode }) {
   const vertical = prefs.navLayout === "vertical";
 
   return (
-    <div className="min-h-screen">
-      <WebShellNav layout={prefs.navLayout} />
-      <main
+    <WebMotionProvider>
+      <div className="min-h-screen mega-web-app bg-[var(--mega-background)]">
+        <ProfileAccentSync />
+        <WebMobileHeader />
+        <WebShellNav layout={prefs.navLayout} />
+        <main
         className={clsx(
-          "w-full max-w-[100vw] overflow-x-hidden pb-28 pt-3 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:pt-4 lg:pb-10",
+          "w-full max-w-[100vw] overflow-x-hidden pb-28 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:pb-10",
+          "pt-[calc(var(--mega-mobile-header-height)+0.5rem)] lg:pt-4",
           vertical
             ? "pl-3 pr-3 max-lg:pl-3 max-lg:pr-3 sm:pl-4 sm:pr-4 lg:pl-[calc(var(--mega-nav-rail-collapsed)+var(--mega-nav-rail-gutter))] lg:pr-4 lg:peer-hover/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))] lg:peer-focus-within/nav:pl-[calc(var(--mega-nav-rail-expanded)+var(--mega-nav-rail-gutter))]"
-            : "px-3 pt-0 sm:px-4 lg:pt-[var(--mega-topnav-height)]"
+            : "px-3 sm:px-4 lg:pt-[var(--mega-topnav-height)]"
         )}
       >
         <RouteTransition>{children}</RouteTransition>
       </main>
     </div>
+    </WebMotionProvider>
   );
 }

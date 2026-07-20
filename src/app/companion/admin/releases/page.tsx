@@ -10,7 +10,10 @@ export default async function AdminReleasesPage() {
   return (
     <ResponsiveShell
       title="Console OTA"
-      subtitle="Manifeste version.json (Supabase Storage) et statut release GitHub MegaTv_Web_Auth."
+      subtitle="Manifeste version.json et statut release GitHub MegaTv_Web_Auth."
+      isAdmin
+      showRail={false}
+      hidePageHeader
     >
       <ReleasesConsole />
     </ResponsiveShell>

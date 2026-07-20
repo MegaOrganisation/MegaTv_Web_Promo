@@ -1,23 +1,37 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { MegaLink } from "@/components/ui/MegaButton";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { ManageTabs } from "@/features/companion/ManageTabs";
 
-export function ManageLayoutChrome({ children }: { children: ReactNode }) {
+export function ManageLayoutChrome({
+  children,
+  isAdmin = false,
+  hideHero = true
+}: {
+  children: ReactNode;
+  isAdmin?: boolean;
+  hideHero?: boolean;
+}) {
   return (
     <ResponsiveShell
       title="Gestion cloud"
-      subtitle="Addons, catalogues et IPTV par profil — écritures batch, lectures slice v_account_sync_*."
+      subtitle="Addons, catalogues et IPTV par profil — écritures batch, lectures slice."
+      isAdmin={isAdmin}
+      hidePageHeader={hideHero}
     >
       <div className="mb-4 flex justify-end">
-        <Link href="/companion/profiles" className="text-sm text-[var(--mega-text-muted)] hover:text-[var(--mega-text)]">
-          Gérer les profils →
-        </Link>
+        <nav className="mega-pill-nav" aria-label="Actions profils">
+          <MegaLink href="/companion/profiles" variant="ghost">
+            Gérer les profils →
+          </MegaLink>
+        </nav>
       </div>
+
       <ManageTabs />
+
       {children}
     </ResponsiveShell>
   );

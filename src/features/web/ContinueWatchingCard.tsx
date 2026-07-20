@@ -19,7 +19,6 @@ import {
 import type { WebMediaItem } from "@/lib/web/media";
 
 const HOVER_STABLE_MS = 700;
-const CARD_BG = "#151618";
 
 /**
  * "Reprendre" card — horizontal Infuse layout (poster left, metadata + progress right),
@@ -43,7 +42,9 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
 
   const posterUrl = item.posterUrl;
   const backdropUrl =
-    item.backdropUrl && item.backdropUrl !== posterUrl ? item.backdropUrl : null;
+    item.backdropUrl && item.backdropUrl !== posterUrl
+      ? item.backdropUrl.replace("/t/p/w1280/", "/t/p/w780/")
+      : null;
   const showVideo = phase === "playing" && Boolean(trailerKey);
 
   const episodeInfo =
@@ -105,8 +106,8 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
         title={item.title}
       >
         <div
-          className="mega-cw-shell relative flex overflow-hidden rounded-[28px] border border-white/10 bg-[#151618] transition duration-300"
-          style={{ backgroundColor: CARD_BG, height: "var(--mega-cw-h)" }}
+          className="mega-cw-shell mega-pro-glass relative flex overflow-hidden rounded-[var(--mega-poster-radius)] border transition duration-300"
+          style={{ height: "var(--mega-cw-h)" }}
         >
           {backdropUrl ? (
             <div className="pointer-events-none absolute inset-y-0 right-0 w-[65%] overflow-hidden">
@@ -160,19 +161,19 @@ export function ContinueWatchingCard({ item }: { item: WebMediaItem }) {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col px-3 pt-2.5 pb-2">
-              <p className="line-clamp-1 text-base font-bold leading-tight text-white sm:text-[17px]">{item.title}</p>
+              <p className="line-clamp-1 text-base font-bold leading-tight text-[var(--mega-text)] sm:text-[17px]">{item.title}</p>
               {episodeInfo ? (
-                <p className="mt-0.5 line-clamp-1 text-xs leading-snug text-white/60 sm:text-[13px]">{episodeInfo}</p>
+                <p className="mt-0.5 line-clamp-1 text-xs leading-snug text-[var(--mega-text-muted)] sm:text-[13px]">{episodeInfo}</p>
               ) : null}
 
               <div className="min-h-[0.35rem] flex-1" />
 
-              <div className="relative mt-1 h-4 w-full rounded-full bg-[#52565E] p-px">
+              <div className="relative mt-1 h-4 w-full rounded-full bg-[var(--mega-row)] p-px">
                 <div
-                  className="absolute inset-y-px left-px flex min-w-[48px] items-center justify-center rounded-full bg-[#0D0E10]"
+                  className="absolute inset-y-px left-px flex min-w-[48px] items-center justify-center rounded-full bg-[var(--mega-accent-gradient)]"
                   style={{ width: elapsedWidth }}
                 >
-                  <span className="px-1 text-[8px] font-bold leading-none text-white sm:text-[9px]">
+                  <span className="px-1 text-[8px] font-bold leading-none text-[#041014] sm:text-[9px]">
                     {elapsedLabel}
                   </span>
                 </div>

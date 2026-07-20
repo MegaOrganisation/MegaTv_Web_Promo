@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { fetchTmdbDetails, tmdbImageUrl } from "@/lib/tmdb";
+import { fetchTmdbDetails, tmdbBackdropUrl, tmdbImageUrl } from "@/lib/tmdb";
 
 /**
  * Lightweight TMDB card enrich for landscape `PosterCard` (backdrop + title).
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       title: details.title || details.name || null,
-      backdropUrl: tmdbImageUrl(details.backdrop_path, "w780")
+      backdropUrl: tmdbBackdropUrl(details.backdrop_path)
     },
     {
       headers: {

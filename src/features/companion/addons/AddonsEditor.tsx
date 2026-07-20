@@ -93,7 +93,7 @@ export function AddonsEditor({ profileId, initialAddons, initialHiddenBuiltIn }:
       const res = await fetch("/api/companion/sync/force", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scopes: ["addons", "catalogs", "iptv"] })
+        body: JSON.stringify({ scopes: ["watchlist", "catalogs", "iptv", "settings", "addons", "devices"] })
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Échec force sync");

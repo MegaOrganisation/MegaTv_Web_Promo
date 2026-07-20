@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { clsx } from "clsx";
+import { motion } from "motion/react";
+
+const spectrum = "linear-gradient(110deg,#3f9ae6 0%,#1fa8a0 19%,#5fbf5a 35%,#f2b43c 55%,#ee6a54 76%,#d8497f 100%)";
 
 export function BarRankingChart({
   rows
@@ -10,22 +13,25 @@ export function BarRankingChart({
 }) {
   const max = Math.max(...rows.map((row) => row.value), 1);
   return (
-    <div className="space-y-4">
+    <div className="mega-chart-ranking space-y-5">
       {rows.map((row, index) => (
-        <div key={`${row.label}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-              <span className="truncate font-medium text-white">{row.label}</span>
-              <span className="text-xs text-white/45">{formatCompact(row.value)}</span>
-            </div>
-            <div className="h-3 overflow-hidden rounded-full bg-white/[0.065]">
-              <div
-                className={clsx("h-full rounded-full", row.accent || "bg-[linear-gradient(110deg,#3f9ae6,#d8497f)]")}
-                style={{ width: `${Math.max(8, (row.value / max) * 100)}%` }}
-              />
-            </div>
-            {row.sublabel ? <p className="mt-1 text-xs text-white/35">{row.sublabel}</p> : null}
+        <div key={`${row.label}-${index}`}>
+          <div className="mb-2.5 flex items-center justify-between gap-3 text-sm">
+            <span className="truncate font-semibold text-[var(--mega-text)]">{row.label}</span>
+            <span className="shrink-0 rounded-full border border-[var(--mega-cp-border)] bg-[var(--mega-card-bg)] px-2 py-0.5 text-xs font-bold text-[var(--mega-text-muted)]">
+              {formatCompact(row.value)}
+            </span>
           </div>
+          <div className="mega-chart-track h-3.5 overflow-hidden rounded-full bg-[var(--mega-card-bg)]">
+            <motion.div
+              className={clsx("mega-chart-fill h-full rounded-full", !row.accent && "mega-chart-fill-spectrum")}
+              style={row.accent ? { background: row.accent } : undefined}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.max(10, (row.value / max) * 100)}%` }}
+              transition={{ delay: index * 0.06, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+          {row.sublabel ? <p className="mt-1.5 text-xs text-[var(--mega-text-faint)]">{row.sublabel}</p> : null}
         </div>
       ))}
     </div>
@@ -44,46 +50,50 @@ export function DonutChart({
   onActiveLabelChange?: (label: string | null) => void;
 }) {
   const total = Math.max(segments.reduce((sum, item) => sum + item.value, 0), 1);
-  const radius = 42;
+  const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const renderedSegments = segments.map((segment, index) => {
     const previous = segments.slice(0, index).reduce((sum, item) => sum + (item.value / total) * circumference, 0);
     const length = (segment.value / total) * circumference;
-    return {
-      ...segment,
-      dash: `${length} ${circumference - length}`,
-      dashOffset: -previous
-    };
+    return { ...segment, dash: `${length} ${circumference - length}`, dashOffset: -previous };
   });
+  const active = segments.find((s) => s.label === activeLabel);
 
   return (
-    <div className="grid items-center gap-6 sm:grid-cols-[160px_minmax(0,1fr)]">
-      <svg className="mx-auto h-40 w-40 -rotate-90" viewBox="0 0 120 120" role="img" aria-label={label}>
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="18" />
-        {renderedSegments.map((segment) => {
-          const active = !activeLabel || activeLabel === segment.label;
-          return (
-            <circle
-              key={segment.label}
-              cx="60"
-              cy="60"
-              r={radius}
-              fill="none"
-              stroke={segment.color}
-              strokeLinecap="round"
-              strokeWidth={active ? 20 : 16}
-              strokeDasharray={segment.dash}
-              strokeDashoffset={segment.dashOffset}
-              className={onActiveLabelChange ? "cursor-pointer transition-all duration-200" : undefined}
-              style={{ opacity: active ? 1 : 0.28 }}
-              onMouseEnter={() => onActiveLabelChange?.(segment.label)}
-              onMouseLeave={() => onActiveLabelChange?.(null)}
-              onClick={() => onActiveLabelChange?.(activeLabel === segment.label ? null : segment.label)}
-            />
-          );
-        })}
-      </svg>
-      <div className="space-y-3">
+    <div className="mega-donut grid items-center gap-6 sm:grid-cols-[minmax(0,168px)_1fr]">
+      <div className="relative mx-auto grid h-44 w-44 place-items-center">
+        <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 120 120" role="img" aria-label={label}>
+          <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="16" />
+          {renderedSegments.map((segment) => {
+            const isActive = !activeLabel || activeLabel === segment.label;
+            return (
+              <motion.circle
+                key={segment.label}
+                cx="60"
+                cy="60"
+                r={radius}
+                fill="none"
+                stroke={segment.color}
+                strokeLinecap="round"
+                strokeWidth={isActive ? 18 : 14}
+                strokeDasharray={segment.dash}
+                strokeDashoffset={segment.dashOffset}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isActive ? 1 : 0.25 }}
+                className={onActiveLabelChange ? "cursor-pointer" : undefined}
+                onMouseEnter={() => onActiveLabelChange?.(segment.label)}
+                onMouseLeave={() => onActiveLabelChange?.(null)}
+                onClick={() => onActiveLabelChange?.(activeLabel === segment.label ? null : segment.label)}
+              />
+            );
+          })}
+        </svg>
+        <div className="relative text-center">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--mega-text-faint)]">Total</p>
+          <p className="text-2xl font-black text-[var(--mega-text)]">{active ? Math.round((active.value / total) * 100) : 100}%</p>
+        </div>
+      </div>
+      <div className="space-y-2">
         {segments.map((segment) => (
           <button
             key={segment.label}
@@ -92,15 +102,17 @@ export function DonutChart({
             onMouseLeave={() => onActiveLabelChange?.(null)}
             onClick={() => onActiveLabelChange?.(activeLabel === segment.label ? null : segment.label)}
             className={clsx(
-              "flex w-full items-center justify-between gap-3 rounded-xl px-2 py-1.5 text-left text-sm transition",
-              activeLabel === segment.label ? "bg-white/10" : "hover:bg-white/5"
+              "mega-hover-lift flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left text-sm transition",
+              activeLabel === segment.label
+                ? "border-[var(--mega-cp-border-strong)] bg-[var(--mega-card-bg)]"
+                : "border-transparent hover:border-[var(--mega-cp-border)] hover:bg-[var(--mega-card-bg)]"
             )}
           >
-            <span className="flex min-w-0 items-center gap-2 text-white/72">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: segment.color }} />
-              <span className="truncate">{segment.label}</span>
+            <span className="flex min-w-0 items-center gap-2.5 text-[var(--mega-text-muted)]">
+              <span className="h-3 w-3 shrink-0 rounded-full shadow-[0_0_12px_-2px_currentColor]" style={{ background: segment.color, color: segment.color }} />
+              <span className="truncate font-medium">{segment.label}</span>
             </span>
-            <span className="font-semibold text-white">{Math.round((segment.value / total) * 100)}%</span>
+            <span className="font-bold text-[var(--mega-text)]">{Math.round((segment.value / total) * 100)}%</span>
           </button>
         ))}
       </div>
@@ -122,9 +134,10 @@ export function InteractiveBarRankingChart({
   const max = Math.max(...rows.map((row) => row.value), 1);
 
   return (
-    <div className="space-y-4">
+    <div className="mega-chart-capsules flex h-40 items-end justify-between gap-2 sm:gap-3 sm:h-44">
       {rows.map((row, index) => {
         const active = activeIndex === index;
+        const barHeight = Math.max(28, (row.value / max) * 140);
         return (
           <button
             key={`${row.label}-${index}`}
@@ -132,21 +145,32 @@ export function InteractiveBarRankingChart({
             onMouseEnter={() => setActiveIndex(index)}
             onMouseLeave={() => setActiveIndex(null)}
             onClick={() => setActiveIndex(active ? null : index)}
-            className={clsx("grid w-full grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-2xl px-2 py-1 text-left transition", active && "bg-white/8")}
+            className="group flex min-w-0 flex-1 flex-col items-center gap-2"
           >
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-                <span className="truncate font-medium text-white">{row.label}</span>
-                <span className="text-xs text-white/45">{formatCompact(row.value)}</span>
-              </div>
-              <div className="h-3 overflow-hidden rounded-full bg-white/[0.065]">
-                <div
-                  className={clsx("h-full rounded-full transition-all duration-300", row.accent || "bg-[linear-gradient(110deg,#3f9ae6,#d8497f)]")}
-                  style={{ width: `${Math.max(active ? 12 : 8, (row.value / max) * 100)}%` }}
-                />
-              </div>
-              {row.sublabel ? <p className="mt-1 text-xs text-white/35">{row.sublabel}</p> : null}
-            </div>
+            {active ? (
+              <motion.span
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mega-chart-tooltip rounded-full border border-[var(--mega-cp-border-strong)] bg-[var(--mega-cp-canvas)] px-2 py-1 text-[10px] font-bold text-[var(--mega-text)] shadow-lg"
+              >
+                {formatCompact(row.value)}
+              </motion.span>
+            ) : (
+              <span className="h-6" aria-hidden />
+            )}
+            <motion.div
+              className={clsx(
+                "mega-chart-capsule w-full max-w-[3.25rem] rounded-full border border-[var(--mega-cp-border)]",
+                active ? "mega-chart-capsule-active border-[var(--mega-cp-border-strong)]" : "bg-[var(--mega-card-bg)]"
+              )}
+              style={row.accent ? { background: active ? row.accent : undefined } : undefined}
+              initial={{ height: 0 }}
+              animate={{ height: barHeight }}
+              transition={{ delay: index * 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <span className={clsx("w-full truncate text-center text-[10px] font-semibold leading-tight", active ? "text-[var(--mega-text)]" : "text-[var(--mega-text-faint)]")}>
+              {row.label.split(" ").slice(0, 2).join(" ")}
+            </span>
           </button>
         );
       })}
@@ -154,60 +178,8 @@ export function InteractiveBarRankingChart({
   );
 }
 
-export function DonutChartStatic({
-  segments,
-  label
-}: {
-  label: string;
-  segments: Array<{ label: string; value: number; color: string }>;
-}) {
-  const total = Math.max(segments.reduce((sum, item) => sum + item.value, 0), 1);
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const renderedSegments = segments.map((segment, index) => {
-    const previous = segments.slice(0, index).reduce((sum, item) => sum + (item.value / total) * circumference, 0);
-    const length = (segment.value / total) * circumference;
-    return {
-      ...segment,
-      dash: `${length} ${circumference - length}`,
-      dashOffset: -previous
-    };
-  });
-
-  return (
-    <div className="grid items-center gap-6 sm:grid-cols-[160px_minmax(0,1fr)]">
-      <svg className="mx-auto h-40 w-40 -rotate-90" viewBox="0 0 120 120" role="img" aria-label={label}>
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="18" />
-        {renderedSegments.map((segment) => {
-          return (
-            <circle
-              key={segment.label}
-              cx="60"
-              cy="60"
-              r={radius}
-              fill="none"
-              stroke={segment.color}
-              strokeLinecap="round"
-              strokeWidth="18"
-              strokeDasharray={segment.dash}
-              strokeDashoffset={segment.dashOffset}
-            />
-          );
-        })}
-      </svg>
-      <div className="space-y-3">
-        {segments.map((segment) => (
-          <div key={segment.label} className="flex items-center justify-between gap-3 text-sm">
-            <span className="flex min-w-0 items-center gap-2 text-white/72">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: segment.color }} />
-              <span className="truncate">{segment.label}</span>
-            </span>
-            <span className="font-semibold text-white">{Math.round((segment.value / total) * 100)}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+export function DonutChartStatic(props: { label: string; segments: Array<{ label: string; value: number; color: string }> }) {
+  return <DonutChart {...props} />;
 }
 
 export function MiniLineChart({ points }: { points: number[] }) {
@@ -225,16 +197,36 @@ export function MiniLineChart({ points }: { points: number[] }) {
     .join(" ");
 
   return (
-    <svg className="h-40 w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Évolution récente">
+    <svg className="mega-line-chart h-44 w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Évolution récente">
       <defs>
-        <linearGradient id="lineGradient" x1="0" x2="1" y1="0" y2="0">
+        <linearGradient id="megaLineGradient" x1="0" x2="1" y1="0" y2="0">
           <stop stopColor="#3f9ae6" />
           <stop offset="0.55" stopColor="#f2b43c" />
           <stop offset="1" stopColor="#d8497f" />
         </linearGradient>
+        <linearGradient id="megaAreaGradient" x1="0" x2="0" y1="0" y2="1">
+          <stop stopColor="#3f9ae6" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#3f9ae6" stopOpacity="0" />
+        </linearGradient>
       </defs>
-      <path d={`${d} L${width},${height} L0,${height} Z`} fill="url(#lineGradient)" opacity="0.13" />
-      <path d={d} fill="none" stroke="url(#lineGradient)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+      <motion.path
+        d={`${d} L${width},${height} L0,${height} Z`}
+        fill="url(#megaAreaGradient)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      />
+      <motion.path
+        d={d}
+        fill="none"
+        stroke="url(#megaLineGradient)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3.5"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+      />
     </svg>
   );
 }
@@ -242,3 +234,5 @@ export function MiniLineChart({ points }: { points: number[] }) {
 function formatCompact(value: number) {
   return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
+
+export { spectrum as chartSpectrumGradient };

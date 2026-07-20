@@ -3,20 +3,21 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+/** Barre fine de progression — pas un full-page loading. */
 export function CompanionRouteProgress() {
   const pathname = usePathname();
   const [active, setActive] = useState(false);
 
   useEffect(() => {
     setActive(true);
-    const timer = window.setTimeout(() => setActive(false), 500);
+    const timer = window.setTimeout(() => setActive(false), 280);
     return () => window.clearTimeout(timer);
   }, [pathname]);
 
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 origin-left bg-[linear-gradient(90deg,#3f9ae6,#d8497f)] transition-transform duration-300 ${active ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0"}`}
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[100] h-[2px] origin-left bg-[linear-gradient(90deg,#f2b43c,#ee6a54,#d8497f)] transition-[transform,opacity] duration-200 ${active ? "scale-x-100 opacity-80" : "scale-x-0 opacity-0"}`}
     />
   );
 }
