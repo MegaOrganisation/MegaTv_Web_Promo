@@ -162,7 +162,7 @@ export function DeviceManagementPanel({ devices, duplicateCount = 0 }: Props) {
         <div className="min-w-0 space-y-3 lg:max-w-xl">
           {duplicateCount > 0 ? (
             <div className="rounded-[22px] border border-yellow-300/20 bg-yellow-300/8 p-3 text-xs text-yellow-100">
-              {duplicateCount} ghost(s) matériel sans nom perso (réinstall).{" "}
+              {duplicateCount} doublon(s) matériel (réinstall / ancien id).{" "}
               <button type="button" className="font-semibold underline" onClick={cleanupDuplicates} disabled={isCleaning}>
                 {isCleaning ? "Nettoyage…" : "Nettoyer le cloud"}
               </button>
