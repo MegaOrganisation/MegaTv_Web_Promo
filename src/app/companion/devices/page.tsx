@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function CompanionDevicesPage() {
   await requireUser("/companion/devices");
   const { isAdmin } = await getDashboardData(null);
+  // List by device_id (rename keeps uniqueness). Soft hardware ghosts only for cleanup banner.
   const [{ devices, duplicateIds }, raw] = await Promise.all([getMergedDevices({ dedupe: true }), getMergedDevices({ dedupe: false })]);
 
   return (

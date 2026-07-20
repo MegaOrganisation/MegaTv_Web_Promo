@@ -137,7 +137,7 @@ export function DeviceManagementPanel({ devices, duplicateCount = 0 }: Props) {
         return;
       }
       setMessage(
-        "Synchronisation demandée — une popup « Charger » apparaîtra sur vos apps Mobile/TV ouvertes."
+        "Synchronisation demandée — même si la liste affiche « Hors ligne », une popup « Charger » apparaît sur les apps MegaTv ouvertes (session MegaCloud valide)."
       );
       router.refresh();
     } catch {
