@@ -25,6 +25,7 @@
     "lucide-react": "^0.468.0",
     "motion": "^12.42.2",
     "next": "^16.2.9",
+    "patch-package": "^8.0.1",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "react-parallax-tilt": "^1.7.333",
