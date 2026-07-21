@@ -2,37 +2,71 @@
 
 import { useEffect, type RefObject } from "react";
 
-/** Scroll horizontal au clic-maintenu (desktop) + molette shift ; tactile natif. */
-export function useDragScroll(ref: RefObject<HTMLElement | null>, enabled = true) {
+type Options = {
+  enabled?: boolean;
+  /** `x` = drag + molette horizontale ; `y` = scroll natif uniquement. */
+  axis?: "x" | "y";
+};
+
+const INTERACTIVE =
+  "button,a,input,textarea,select,label,[role='button'],[data-no-drag-scroll]";
+
+/** Scroll horizontal au clic-maintenu (desktop) + molette ; tactile natif. */
+export function useDragScroll(ref: RefObject<HTMLElement | null>, options: Options | boolean = true) {
+  const enabled = typeof options === "boolean" ? options : (options.enabled ?? true);
+  const axis = typeof options === "boolean" ? "x" : (options.axis ?? "x");
+
   useEffect(() => {
     const el = ref.current;
-    if (!el || !enabled) return;
+    if (!el || !enabled || axis !== "x") return;
 
     let pointerDown = false;
+    let dragging = false;
     let startX = 0;
     let scrollLeft = 0;
+    let pointerId: number | null = null;
 
     function onPointerDown(e: PointerEvent) {
       if (e.pointerType === "touch") return;
+      if (e.button !== 0) return;
+      const target = e.target as Element | null;
+      if (target?.closest?.(INTERACTIVE)) return;
+
       pointerDown = true;
+      dragging = false;
       startX = e.clientX;
       scrollLeft = el!.scrollLeft;
-      el!.setPointerCapture(e.pointerId);
-      el!.classList.add("is-dragging");
+      pointerId = e.pointerId;
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (!pointerDown) return;
-      el!.scrollLeft = scrollLeft - (e.clientX - startX);
+      if (!pointerDown || pointerId !== e.pointerId) return;
+      const dx = e.clientX - startX;
+      if (!dragging) {
+        if (Math.abs(dx) < 6) return;
+        dragging = true;
+        try {
+          el!.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+        el!.classList.add("is-dragging");
+      }
+      el!.scrollLeft = scrollLeft - dx;
     }
 
     function onPointerUp(e: PointerEvent) {
+      if (pointerId !== null && e.pointerId !== pointerId) return;
       pointerDown = false;
-      el!.classList.remove("is-dragging");
-      try {
-        el!.releasePointerCapture(e.pointerId);
-      } catch {
-        /* ignore */
+      pointerId = null;
+      if (dragging) {
+        dragging = false;
+        el!.classList.remove("is-dragging");
+        try {
+          el!.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
       }
     }
 
@@ -56,5 +90,5 @@ export function useDragScroll(ref: RefObject<HTMLElement | null>, enabled = true
       el.removeEventListener("pointercancel", onPointerUp);
       el.removeEventListener("wheel", onWheel);
     };
-  }, [ref, enabled]);
+  }, [ref, enabled, axis]);
 }

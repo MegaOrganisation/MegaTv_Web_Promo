@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAddonsSlice } from "@/lib/companion/sync-queries";
-import { requestForceSync } from "@/lib/companion/force-sync";
+import { FORCE_SYNC_ALL_SCOPES, requestForceSync } from "@/lib/companion/force-sync";
 import { requireUser } from "@/lib/auth/require-user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  await requestForceSync(["addons"]);
+  await requestForceSync([...FORCE_SYNC_ALL_SCOPES]);
 
   return NextResponse.json({ ok: true, result: data, forceSync: true });
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { AVATAR_REGISTRY } from "@/lib/profiles/avatars";
 import { formatPinInput, hashPin, isValidPin, verifyPin } from "@/lib/profiles/pin";
+import { FORCE_SYNC_ALL_SCOPES, requestForceSync } from "@/lib/companion/force-sync";
 import { SyncPayloadConflictError, updateProfileInSyncPayload } from "@/lib/companion/sync-payload";
 import type { ProfileRow } from "@/lib/supabase/types";
 
@@ -129,7 +130,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ profi
     return NextResponse.json({ error: "Profil mis à jour, mais synchronisation payload incomplète" }, { status: 202 });
   }
 
-  return NextResponse.json({ ok: true, profile: data });
+  await requestForceSync([...FORCE_SYNC_ALL_SCOPES]);
+  return NextResponse.json({ ok: true, profile: data, forceSync: true });
 }
 
 function sanitizeId(value: string) {

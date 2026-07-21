@@ -29,7 +29,11 @@
  */
 .companion-lg-root {
   position: fixed;
-  inset: 0;
+  /* Laisse la topbar hors WebGL pour que backdrop-filter voie l’aurora (pj 3) */
+  top: 70px;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 80;
   pointer-events: none;
   overflow: visible;
@@ -805,11 +809,11 @@ html[data-mega-surface="companion"] body {
 .media-flip-scrim {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: 140;
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.72);
   pointer-events: auto;
   perspective: 1600px;
 }
@@ -876,7 +880,7 @@ html[data-mega-surface="companion"] body {
 
 .media-flip-face--back {
   transform: rotateY(180deg);
-  background: rgba(8, 12, 16, 0.35);
+  background: #0a0e14;
 }
 
 .media-flip-close {
@@ -900,7 +904,7 @@ html[data-mega-surface="companion"] body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.35;
+  opacity: 0.28;
   filter: blur(2px);
 }
 
@@ -912,6 +916,7 @@ html[data-mega-surface="companion"] body {
   height: 100%;
   padding: 1.35rem 1.25rem 1.1rem;
   color: #fff;
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.55) 0%, rgba(8, 12, 18, 0.92) 42%, #0a0e14 100%);
 }
 
 .media-flip-detail__meta {
@@ -1119,8 +1124,11 @@ html[data-mega-surface="companion"] body {
   position: absolute;
   inset: 0.15rem;
   border-radius: 999px;
-  background: linear-gradient(120deg, #f2b43c 0%, #ee6a54 100%);
-  box-shadow: 0 8px 20px -10px rgba(242, 180, 60, 0.7);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 12px -6px rgba(0, 0, 0, 0.35);
+  z-index: 0;
 }
 
 .pj1-nav-dock-btn {
@@ -1678,8 +1686,10 @@ html[data-mega-surface="companion"] body {
   position: absolute;
   inset: 0.15rem;
   border-radius: 999px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.75));
-  box-shadow: 0 8px 18px -10px rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 12px -6px rgba(0, 0, 0, 0.35);
   z-index: 0;
 }
 

@@ -1,0 +1,293 @@
+<!-- Variant A: Frosted topbar + ranking bars horizontales (posters/logos incrustés) — style bklit SeriesBar multi-color -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MegaCompagnon — Charts vA (bars + media)</title>
+  <style>
+    :root {
+      --bg: #06070a;
+      --gold: #f2b43c;
+      --magenta: #d8497f;
+      --blue: #3f9ae6;
+      --teal: #1fa8a0;
+      --lime: #a3e635;
+      --amber: #fbbf24;
+      --red: #ef4444;
+      --chart-1: #3f9ae6;
+      --chart-2: #f2b43c;
+      --chart-3: #d8497f;
+      --chart-4: #1fa8a0;
+      --chart-5: #a78bfa;
+      --frost: blur(48px) saturate(200%) contrast(1.08);
+      --rim: rgba(255,255,255,0.22);
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Instrument Sans", system-ui, sans-serif;
+      color: #eef1f7;
+      background:
+        radial-gradient(ellipse 55% 45% at 12% 8%, rgba(242,180,60,0.28), transparent 55%),
+        radial-gradient(ellipse 50% 40% at 88% 18%, rgba(216,73,127,0.22), transparent 50%),
+        radial-gradient(ellipse 45% 35% at 70% 85%, rgba(63,154,230,0.2), transparent 50%),
+        var(--bg);
+      padding: 88px 20px 48px;
+    }
+    /* Frosted topbar — PJ grain + rim */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      height: 70px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(18px,5vw,64px);
+      background: rgba(255,255,255,0.08);
+      border-bottom: 1px solid var(--rim);
+      backdrop-filter: var(--frost);
+      -webkit-backdrop-filter: var(--frost);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.28),
+        inset 0 -1px 0 rgba(255,255,255,0.06),
+        0 12px 40px -20px rgba(0,0,0,0.55);
+      isolation: isolate;
+    }
+    .topbar::before {
+      content: "";
+      position: absolute; inset: 0; pointer-events: none; z-index: -1; opacity: 0.35;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+    }
+    .brand { font-weight: 800; letter-spacing: -0.02em; }
+    .nav { display: flex; gap: 4px; }
+    .pill { padding: 8px 14px; border-radius: 999px; font-size: 13px; color: rgba(255,255,255,0.55); font-weight: 600; }
+    .pill.on { background: rgba(255,255,255,0.14); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+    .cta {
+      padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #10191c;
+      background: var(--gold);
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+    h2 { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: 15px; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 14px; }
+    .glass {
+      position: relative; border-radius: 28px; padding: 20px 22px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(28px) saturate(170%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 24px 60px -36px #000;
+      overflow: hidden;
+    }
+    /* Ce soir — full program strip, larger gap */
+    .tonight { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; min-height: 220px; }
+    .tonight-hero {
+      border-radius: 22px; overflow: hidden; position: relative;
+      background: linear-gradient(120deg,#1a2030,#0a0c10);
+      min-height: 220px;
+    }
+    .tonight-hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; display: block; min-height: 220px; }
+    .tonight-hero .meta {
+      position: absolute; inset: auto 0 0 0; padding: 18px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    }
+    .tonight-hero .meta .net { font-size: 11px; font-weight: 800; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; }
+    .tonight-hero .meta h3 { font-size: 22px; margin-top: 4px; }
+    .tonight-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow: auto; }
+    .tonight-row {
+      display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center;
+      padding: 8px; border-radius: 14px; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+    }
+    .tonight-row img { width: 52px; height: 36px; object-fit: cover; border-radius: 8px; background: #222; }
+    .tonight-row .t { font-size: 13px; font-weight: 700; }
+    .tonight-row .s { font-size: 11px; color: rgba(255,255,255,0.45); }
+    .tonight-row .time { font-size: 12px; font-weight: 800; color: var(--teal); }
+    .kpi { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+    .kpi .card {
+      border-radius: 22px; padding: 16px 18px;
+      background: rgba(18,22,28,0.72); border: 1px solid rgba(255,255,255,0.1);
+      position: relative; overflow: hidden;
+    }
+    .kpi .card::before {
+      content:""; position:absolute; top:0; left:16px; right:16px; height:3px; border-radius:0 0 99px 99px;
+      background: linear-gradient(90deg,var(--blue),var(--teal),var(--gold),var(--magenta));
+    }
+    .kpi .label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.45); font-weight: 800; }
+    .kpi .val { font-size: 26px; font-weight: 900; margin-top: 4px; }
+    .charts { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+    .rank { display: flex; flex-direction: column; gap: 12px; }
+    .rank-row { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; }
+    .rank-row .thumb {
+      width: 44px; height: 64px; border-radius: 10px; object-fit: cover;
+      box-shadow: 0 8px 20px -10px #000, 0 0 0 1px rgba(255,255,255,0.15);
+      background: #2a3340;
+    }
+    .rank-row .thumb.round { height: 44px; border-radius: 50%; }
+    .rank-row .thumb.logo { height: 44px; border-radius: 12px; object-fit: contain; background: rgba(255,255,255,0.08); padding: 4px; }
+    .bar-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .bar-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+    .bar-meta strong { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-meta span { color: rgba(255,255,255,0.5); font-weight: 700; flex-shrink: 0; }
+    .bar {
+      height: 18px; border-radius: 8px 8px 4px 4px; position: relative;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .bar > i {
+      display: block; height: 100%; border-radius: inherit;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .note { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.5; }
+    @media (max-width: 900px) {
+      .tonight, .charts, .kpi { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">MegaCompagnon</div>
+    <nav class="nav">
+      <span class="pill on">Home</span>
+      <span class="pill">Watchlist</span>
+      <span class="pill">Calendrier</span>
+      <span class="pill">Gérer</span>
+    </nav>
+    <span class="cta">Pairer TV</span>
+  </header>
+
+  <main class="wrap">
+    <section class="glass">
+      <h2>Ce soir · TF1 · France 2 · M6</h2>
+      <div class="tonight">
+        <div class="tonight-hero">
+          <img alt="" src="https://image.tmdb.org/t/p/w780/49WJfeN0moxb9IPfGn8AIqMGskD.jpg" />
+          <div class="meta">
+            <p class="net">TF1 · 21:10</p>
+            <h3>HPI</h3>
+          </div>
+        </div>
+        <div class="tonight-list">
+          <div class="tonight-row">
+            <img alt="" src="https://image.tmdb.org/t/p/w185/49WJfeN0moxb9IPfGn8AIqMGskD.jpg" />
+            <div><p class="t">HPI</p><p class="s">TF1 · S4 E6</p></div>
+            <span class="time">21:10</span>
+          </div>
+          <div class="tonight-row">
+            <img alt="" src="https://image.tmdb.org/t/p/w185/9Gtg2DzBhmYamXBS1hKAhiwbBKS.jpg" />
+            <div><p class="t">Cassandre</p><p class="s">France 2</p></div>
+            <span class="time">21:05</span>
+          </div>
+          <div class="tonight-row">
+            <img alt="" src="https://image.tmdb.org/t/p/w185/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg" />
+            <div><p class="t">Les Reines du shopping</p><p class="s">M6</p></div>
+            <span class="time">21:15</span>
+          </div>
+          <div class="tonight-row">
+            <img alt="" src="https://image.tmdb.org/t/p/w185/7DJKHzAi83BmQrOLrZAqRn80HLn.jpg" />
+            <div><p class="t">Arte Reportage</p><p class="s">Arte</p></div>
+            <span class="time">20:50</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="kpi">
+      <div class="card"><p class="label">Films</p><p class="val">42</p></div>
+      <div class="card"><p class="label">Épisodes</p><p class="val">186</p></div>
+      <div class="card"><p class="label">Temps</p><p class="val" style="color:var(--gold)">128 h</p></div>
+      <div class="card"><p class="label">Reprises</p><p class="val">9</p></div>
+    </div>
+
+    <div class="charts">
+      <section class="glass">
+        <h2>Top contenus · temps cumulé</h2>
+        <div class="rank">
+          <div class="rank-row">
+            <img class="thumb" alt="" src="https://image.tmdb.org/t/p/w92/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>Game of Thrones</strong><span>18 h 20</span></div>
+              <div class="bar"><i style="width:100%;background:linear-gradient(90deg,var(--chart-1),#60a5fa)"></i></div>
+            </div>
+          </div>
+          <div class="rank-row">
+            <img class="thumb" alt="" src="https://image.tmdb.org/t/p/w92/qJ2tW6WMUDux911r6m7haRef0WH.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>The Dark Knight</strong><span>4 h 12</span></div>
+              <div class="bar"><i style="width:62%;background:linear-gradient(90deg,var(--chart-2),#fcd34d)"></i></div>
+            </div>
+          </div>
+          <div class="rank-row">
+            <img class="thumb" alt="" src="https://image.tmdb.org/t/p/w92/49WJfeN0moxb9IPfGn8AIqMGskD.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>HPI</strong><span>3 h 40</span></div>
+              <div class="bar"><i style="width:48%;background:linear-gradient(90deg,var(--chart-3),#f472b6)"></i></div>
+            </div>
+          </div>
+          <div class="rank-row">
+            <img class="thumb" alt="" src="https://image.tmdb.org/t/p/w92/9Gtg2DzBhmYamXBS1hKAhiwbBKS.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>Dune</strong><span>2 h 55</span></div>
+              <div class="bar"><i style="width:38%;background:linear-gradient(90deg,var(--chart-4),#2dd4bf)"></i></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass">
+        <h2>Meilleur acteur · temps cumulé</h2>
+        <div class="rank">
+          <div class="rank-row">
+            <img class="thumb round" alt="" src="https://image.tmdb.org/t/p/w92/iYieigCSVAWVPDd0bC7YbOvYTyf.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>Will Smith</strong><span>6 h 10</span></div>
+              <div class="bar"><i style="width:100%;background:linear-gradient(90deg,var(--lime),#84cc16)"></i></div>
+            </div>
+          </div>
+          <div class="rank-row">
+            <img class="thumb round" alt="" src="https://image.tmdb.org/t/p/w92/5XBzD5AZz4JQMSu1AFEpn17rgKn.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>Zendaya</strong><span>5 h 02</span></div>
+              <div class="bar"><i style="width:82%;background:linear-gradient(90deg,var(--amber),#f59e0b)"></i></div>
+            </div>
+          </div>
+          <div class="rank-row">
+            <img class="thumb round" alt="" src="https://image.tmdb.org/t/p/w92/bBRlrpQmAZFBfTQTLfSx6ryXZ4l.jpg" />
+            <div class="bar-wrap">
+              <div class="bar-meta"><strong>Timothée Chalamet</strong><span>4 h 20</span></div>
+              <div class="bar"><i style="width:70%;background:linear-gradient(90deg,var(--red),#f87171)"></i></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="glass">
+      <h2>Chaînes les plus vues · logos IPTV</h2>
+      <div class="rank" style="max-width:720px">
+        <div class="rank-row">
+          <img class="thumb logo" alt="" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/TF1_logo_2013.svg/120px-TF1_logo_2013.svg.png" />
+          <div class="bar-wrap">
+            <div class="bar-meta"><strong>TF1</strong><span>12 h 40</span></div>
+            <div class="bar"><i style="width:100%;background:linear-gradient(90deg,var(--chart-1),var(--chart-5))"></i></div>
+          </div>
+        </div>
+        <div class="rank-row">
+          <img class="thumb logo" alt="" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/France_2_logo_2018.svg/120px-France_2_logo_2018.svg.png" />
+          <div class="bar-wrap">
+            <div class="bar-meta"><strong>France 2</strong><span>8 h 15</span></div>
+            <div class="bar"><i style="width:68%;background:linear-gradient(90deg,var(--chart-2),var(--chart-3))"></i></div>
+          </div>
+        </div>
+        <div class="rank-row">
+          <img class="thumb logo" alt="" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/M6_logo_2015.svg/120px-M6_logo_2015.svg.png" />
+          <div class="bar-wrap">
+            <div class="bar-meta"><strong>M6</strong><span>5 h 50</span></div>
+            <div class="bar"><i style="width:46%;background:linear-gradient(90deg,var(--chart-4),var(--lime))"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="note">
+      Variante A — bars horizontales type ranking bklit (SeriesBar multi-color) avec incrustation poster / avatar / logo.
+      Topbar frosted : blur 48px + grain SVG + rim blanc. « Ce soir » = hero + liste programme illustrée, écart 28px vs KPI.
+    </p>
+  </main>
+</body>
+</html>

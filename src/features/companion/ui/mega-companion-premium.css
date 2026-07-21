@@ -348,14 +348,14 @@ html[data-mega-surface="companion"] body {
   gap: 0.2rem;
   padding: 0.4rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(14, 20, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, #06070a 78%, transparent);
   box-shadow:
     0 16px 40px -12px rgba(0, 0, 0, 0.65),
     0 0 0 1px rgba(242, 180, 60, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(28px) saturate(170%);
-  -webkit-backdrop-filter: blur(28px) saturate(170%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(36px) saturate(185%);
+  -webkit-backdrop-filter: blur(36px) saturate(185%);
 }
 
 .mega-dock-item {
@@ -381,7 +381,7 @@ html[data-mega-surface="companion"] body {
 
 .mega-dock-item[aria-current="page"],
 .mega-dock-item.is-active {
-  color: #10191c;
+  color: #fff;
   background: transparent;
   box-shadow: none;
 }
@@ -535,9 +535,9 @@ html[data-mega-surface="companion"] body {
 
 .companion-shell .companion-mobile-header {
   border-bottom-color: rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(8, 12, 14, 0.78) 100%);
-  backdrop-filter: blur(26px) saturate(180%);
-  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  background: var(--mega-background, #080c0e);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Modals */
@@ -681,6 +681,17 @@ html[data-theme="light"] .mega-metric-pink {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  /* Mobile: grille égale sans scroll ; desktop: scroll si besoin */
+  overflow-x: visible;
+  overflow-y: visible;
+  padding: 4px 6px !important;
+}
+
+@media (min-width: 640px) {
+  .mega-pill-tabs {
+    overflow-x: auto;
+    padding: 6px 8px !important;
+  }
 }
 
 .mega-pill-tab {
@@ -1132,6 +1143,71 @@ html.has-poster-ambient .companion-shell::before {
 
 .mega-liquid-glass-inner {
   position: relative;
+}
+
+/* Gestion IPTV — échelle d’espacement unique (anti-éléments collés)
+   Note : flex/gap sur GlassCard ne s’applique PAS aux children (wrapper .mega-liquid-glass-inner). */
+.iptv-manage-hub > .mega-liquid-glass-inner {
+  display: block;
+}
+
+.iptv-manage-stack {
+  --iptv-space: 1.5rem; /* 24px — entre toutes les sections */
+  --iptv-space-sm: 1rem; /* 16px — entre cartes / chips */
+  --iptv-inset: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--iptv-space);
+  padding: var(--iptv-inset);
+}
+
+@media (min-width: 640px) {
+  .iptv-manage-stack {
+    --iptv-inset: 1.5rem;
+    gap: 1.75rem;
+  }
+}
+
+.iptv-manage-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--iptv-space);
+}
+
+.iptv-manage-grid {
+  display: grid;
+  gap: var(--iptv-space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .iptv-manage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .iptv-manage-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.iptv-manage-grid > li {
+  min-width: 0;
+}
+
+.iptv-manage-header-kicker {
+  margin: 0;
+}
+
+.iptv-manage-header-title {
+  margin: 0.5rem 0 0;
+}
+
+.iptv-manage-header-sub {
+  margin: 0.75rem 0 0;
 }
 
 /* Rails paysage visionOS (HIJACK / SLOW HORSES) */

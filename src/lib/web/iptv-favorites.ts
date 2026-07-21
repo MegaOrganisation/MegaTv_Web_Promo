@@ -97,5 +97,15 @@ export function useIptvFavorites(profileId: string | null) {
     [id]
   );
 
-  return { favorites, toggle, reorder };
+  const setAll = useCallback(
+    (ids: string[]) => {
+      if (!id) return;
+      const seen = new Set<string>();
+      const clean = ids.filter((x) => typeof x === "string" && x.trim() && !seen.has(x) && (seen.add(x), true));
+      write(id, clean);
+    },
+    [id]
+  );
+
+  return { favorites, toggle, reorder, setAll };
 }

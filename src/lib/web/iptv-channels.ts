@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { detectPlaylistType, type IptvPlaylistEntry } from "@/lib/iptv/types";
 
 /**
@@ -10,10 +12,18 @@ import { detectPlaylistType, type IptvPlaylistEntry } from "@/lib/iptv/types";
  *   navigating the grid never re-downloads a multi-MB M3U.
  * - Enrichment is capped (like Android ~500 shown / larger tree) so a huge
  *   list can't freeze the client: we cap total parsed channels + returned size.
+ *
+ * Channel ids MUST match Android `IptvRepository.buildChannelId` + playlist
+ * prefix (`listId:m3u:…`) so Companion favorites sync into Mobile/TV Live TV.
  */
 export type IptvChannel = {
-  /** Stable id for favorites: tvg-id when present, else hash(name|url). */
+  /** Android-compatible id: `{listId}:m3u:{epg?}:{streamKey}`. */
   id: string;
+  /**
+   * Legacy web hash id (pre-Android alignment). Used only to remap localStorage
+   * / cloud favorites that still store short hashes like `1gpu1x8`.
+   */
+  legacyId: string;
   name: string;
   logo: string | null;
   group: string;
@@ -59,6 +69,83 @@ function hashString(input: string): string {
     h = (h * 33) ^ input.charCodeAt(i);
   }
   return (h >>> 0).toString(36);
+}
+
+/** Mirrors Android `normalizeChannelKey`. */
+function normalizeChannelKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/** Mirrors Android `stableStreamKey` / `sha1Hex`. */
+function stableStreamKey(streamUrl: string): string {
+  const normalized = streamUrl.trim();
+  if (!normalized) return "empty";
+  const digest = createHash("sha1").update(normalized, "utf8").digest("hex").slice(0, 16);
+  return `${normalized.length}-${digest}`;
+}
+
+/**
+ * Mirrors Android `buildChannelId` then prefixes `playlistId:` like
+ * `fetchChannelsForPlaylistWithRetries`.
+ */
+export function buildAndroidChannelId(listId: string, streamUrl: string, epgId: string | null | undefined): string {
+  const normalizedEpg = normalizeChannelKey(epgId || "");
+  const streamKey = stableStreamKey(streamUrl);
+  const base = normalizedEpg ? `m3u:${normalizedEpg}:${streamKey}` : `m3u:${streamKey}`;
+  const prefix = (listId || "list_1").trim() || "list_1";
+  return `${prefix}:${base}`;
+}
+
+/** Legacy web favorite id — keep generating so old cloud/local favorites can remap. */
+export function buildLegacyChannelId(tvgId: string | null | undefined, name: string, urlOrStreamId: string): string {
+  return hashString(tvgId || `${name}|${urlOrStreamId}`);
+}
+
+/** Default group label aligned with Android M3U parser (`Uncategorized`). */
+function defaultGroupLabel(raw: string | null | undefined): string {
+  const trimmed = raw?.trim();
+  if (!trimmed || /^autres$/i.test(trimmed)) return "Uncategorized";
+  return trimmed;
+}
+
+/**
+ * Remaps stored favorite ids (legacy web hashes or bare m3u ids) onto current
+ * Android-compatible channel ids. Returns null when nothing changed.
+ */
+export function remapFavoriteChannelIds(
+  favoriteIds: string[],
+  channels: Pick<IptvChannel, "id" | "legacyId">[]
+): string[] | null {
+  if (favoriteIds.length === 0 || channels.length === 0) return null;
+
+  const byId = new Map<string, string>();
+  const byLegacy = new Map<string, string>();
+  for (const ch of channels) {
+    byId.set(ch.id, ch.id);
+    if (ch.legacyId) byLegacy.set(ch.legacyId, ch.id);
+    // Also accept bare Android id without playlist prefix.
+    const colon = ch.id.indexOf(":");
+    if (colon > 0) {
+      const bare = ch.id.slice(colon + 1);
+      if (!byId.has(bare)) byId.set(bare, ch.id);
+    }
+  }
+
+  let changed = false;
+  const next: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of favoriteIds) {
+    const mapped = byId.get(raw) || byLegacy.get(raw) || raw;
+    if (mapped !== raw) changed = true;
+    if (seen.has(mapped)) {
+      changed = true;
+      continue;
+    }
+    seen.add(mapped);
+    next.push(mapped);
+  }
+
+  return changed ? next : null;
 }
 
 /** Normalize tvg-logo / stream_icon URLs (protocol-relative, relative to playlist host). */
@@ -123,7 +210,7 @@ function parseM3u(text: string, listId: string, logoBase?: string | null): { cha
       pending = {
         name: name || attr(line, "tvg-name") || "Sans nom",
         logo: attr(line, "tvg-logo"),
-        group: attr(line, "group-title") || "Autres",
+        group: defaultGroupLabel(attr(line, "group-title")),
         tvgId: attr(line, "tvg-id")
       };
       continue;
@@ -134,13 +221,20 @@ function parseM3u(text: string, listId: string, logoBase?: string | null): { cha
     // A URL line closes the pending EXTINF.
     if (pending) {
       const url = line;
-      const baseId = pending.tvgId || `${pending.name}|${url}`;
-      let id = hashString(baseId);
-      // Guard against id collisions across duplicate tvg-ids.
-      while (seen.has(id)) id = hashString(`${id}|${channels.length}`);
+      let legacyId = buildLegacyChannelId(pending.tvgId, pending.name, url);
+      while (seen.has(`legacy:${legacyId}`)) {
+        legacyId = hashString(`${legacyId}|${channels.length}`);
+      }
+      seen.add(`legacy:${legacyId}`);
+
+      let id = buildAndroidChannelId(listId, url, pending.tvgId);
+      // Guard against rare collisions across duplicate streams.
+      while (seen.has(id)) id = `${id}~${channels.length}`;
       seen.add(id);
+
       channels.push({
         id,
+        legacyId,
         name: pending.name,
         logo: normalizeIptvLogoUrl(pending.logo, logoBase),
         group: pending.group,
@@ -248,17 +342,31 @@ async function loadXtreamViaApi(entry: IptvPlaylistEntry): Promise<CacheEntry> {
   for (const s of Array.isArray(streams) ? streams : []) {
     if (s.stream_id == null) continue;
     const streamId = String(s.stream_id);
+    // Playback URL for the browser (HLS).
     const url = `${base}/live/${encodeURIComponent(username)}/${encodeURIComponent(password)}/${streamId}.m3u8`;
+    // Android parses get.php M3U with output=ts — IDs must use that stream URL shape.
+    const androidStreamUrl = `${base}/live/${username}/${password}/${streamId}.ts`;
     const tvgId = s.epg_channel_id ? String(s.epg_channel_id) : null;
     const name = (s.name || "").trim() || "Sans nom";
-    let id = hashString(tvgId || `${name}|${streamId}`);
-    while (seen.has(id)) id = hashString(`${id}|${channels.length}`);
+
+    let legacyId = buildLegacyChannelId(tvgId, name, streamId);
+    while (seen.has(`legacy:${legacyId}`)) {
+      legacyId = hashString(`${legacyId}|${channels.length}`);
+    }
+    seen.add(`legacy:${legacyId}`);
+
+    let id = buildAndroidChannelId(entry.id, androidStreamUrl, tvgId);
+    while (seen.has(id)) id = `${id}~${channels.length}`;
     seen.add(id);
+
     channels.push({
       id,
+      legacyId,
       name,
       logo: normalizeIptvLogoUrl(s.stream_icon, base),
-      group: (s.category_id != null && catName.get(String(s.category_id))) || "Autres",
+      group: defaultGroupLabel(
+        s.category_id != null ? catName.get(String(s.category_id)) : null
+      ),
       url,
       tvgId,
       listId: entry.id
@@ -282,13 +390,36 @@ async function loadPlaylist(entry: IptvPlaylistEntry): Promise<CacheEntry> {
     throw new Error("Portails Stalker non supportés dans le viewer web (P3).");
   }
 
-  // Xtream: use player_api.php JSON (get.php M3U export is often blocked / gated).
+  // Prefer the same get.php M3U Android uses so favorite channel ids match.
+  // Fall back to player_api JSON when the M3U export is blocked/gated.
   if (type === "Xtream") {
-    const key = `xtream:${entry.m3uUrl.trim()}`;
-    const cached = cache.get(key);
-    if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached;
+    const m3uUrl = normalizeToM3uUrl(entry.m3uUrl);
+    const m3uKey = `m3u:${m3uUrl}`;
+    const cachedM3u = cache.get(m3uKey);
+    if (cachedM3u && Date.now() - cachedM3u.at < CACHE_TTL_MS) return cachedM3u;
+
+    try {
+      const text = await fetchText(m3uUrl);
+      if (/#EXTINF/i.test(text)) {
+        const parsed = parseM3u(text, entry.id, m3uUrl);
+        const result: CacheEntry = {
+          at: Date.now(),
+          channels: parsed.channels,
+          epgUrl: entry.epgUrl?.trim() || parsed.epgUrl || null,
+          capped: parsed.capped
+        };
+        cache.set(m3uKey, result);
+        return result;
+      }
+    } catch {
+      /* fall through to player_api */
+    }
+
+    const apiKey = `xtream:${entry.m3uUrl.trim()}`;
+    const cachedApi = cache.get(apiKey);
+    if (cachedApi && Date.now() - cachedApi.at < CACHE_TTL_MS) return cachedApi;
     const result = await loadXtreamViaApi(entry);
-    cache.set(key, result);
+    cache.set(apiKey, result);
     return result;
   }
 

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { MegaButton } from "@/components/ui/MegaButton";
 import { MobileModalSheet } from "@/components/ui/MobileModalSheet";
+import { FORCE_SYNC_ALL_SCOPES } from "@/lib/companion/force-sync-scopes";
 import { formatDate } from "@/lib/format";
 import type { MergedDevice } from "@/lib/devices/queries";
 
@@ -15,7 +16,7 @@ type Props = {
   duplicateCount?: number;
 };
 
-const FORCE_SYNC_SCOPES = ["watchlist", "catalogs", "iptv", "settings", "addons", "devices"] as const;
+const FORCE_SYNC_SCOPES = FORCE_SYNC_ALL_SCOPES;
 
 export function DeviceManagementPanel({ devices, duplicateCount = 0 }: Props) {
   const router = useRouter();

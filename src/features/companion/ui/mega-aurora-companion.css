@@ -24,10 +24,13 @@ html[data-mega-surface="companion"][data-theme="dark"] {
   --r-2xl: 52px;
 
   --blur-glass: blur(20px) saturate(165%);
-  --lg-blur: blur(26px) saturate(185%) contrast(1.05);
+  /* Frosted glass PJ — blur très fort + saturate */
+  --lg-blur: blur(72px) saturate(210%) contrast(1.1);
   --lg-shadow: 0 32px 88px -36px rgba(0, 0, 0, 0.88), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   --shadow-card: 0 30px 70px -28px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
   --ease-promo: cubic-bezier(0.16, 1, 0.3, 1);
+  --frost-rim: rgba(255, 255, 255, 0.28);
+  --frost-tint: rgba(255, 255, 255, 0.06);
 
   --font-display: var(--font-bricolage), "Bricolage Grotesque", "Outfit", sans-serif;
   --font-body: var(--font-instrument), "Instrument Sans", "DM Sans", sans-serif;
@@ -43,10 +46,10 @@ html[data-mega-surface="companion"][data-theme="dark"] {
   --mega-border: var(--c-border);
   --mega-border-strong: var(--c-border2);
   --mega-card-bg: var(--c-surface);
-  --mega-shell-nav: color-mix(in srgb, var(--c-bg) 58%, transparent);
+  --mega-shell-nav: color-mix(in srgb, var(--c-bg) 42%, transparent);
   --mega-input-bg: rgba(0, 0, 0, 0.28);
-  --mega-glass-blur: 26px;
-  --mega-glass-saturate: 185%;
+  --mega-glass-blur: 72px;
+  --mega-glass-saturate: 210%;
   --mega-dialog-radius: var(--r-lg);
   --mega-poster-radius: var(--r-lg);
   --mega-motion-ease: var(--ease-promo);
@@ -177,6 +180,17 @@ html[data-mega-surface="companion"] .companion-lg-capture-canvas {
   pointer-events: none !important;
 }
 
+/*
+ * CRITICAL frost : .companion-lg-root (z:80) peignait AU-DESSUS de toute l’app (z:10)
+ * et interceptait le sampling de backdrop-filter → nav « transparente » sans flou.
+ * Sous Aurora CSS on n’utilise plus de panneaux WebGL → root derrière / inerte.
+ */
+html[data-mega-surface="companion"] .companion-lg-root {
+  z-index: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 html[data-mega-surface="companion"] .companion-shell::before,
 html[data-mega-surface="companion"] .companion-shell::after {
   display: none !important;
@@ -204,38 +218,64 @@ html[data-mega-surface="companion"] .dashboard-layout-grid {
   align-items: start;
 }
 
-/* ===== Nav promo (full-bleed) ===== */
+/* ===== Nav = .nav promo, sticky DANS le scroll (backdrop-filter fonctionne) =====
+ * CRITICAL : jamais `isolation: isolate` ici — ça limite le backdrop au wrap vide
+ * (INC-WEB-023 / INC-WEB-031). Annule aussi le legacy fixed/hidden de ybouane. */
+html[data-mega-surface="companion"] .companion-shell--promo .companion-topbar-wrap.companion-promo-nav-wrap,
 .companion-topbar-wrap.companion-promo-nav-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  width: 100%;
-  max-width: none;
-  transform: none;
+  position: sticky !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 120 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
   display: block !important;
-  pointer-events: auto;
-  padding: 0;
+  pointer-events: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  /* PAS d’isolation — sinon frost invisible */
+  isolation: auto !important;
 }
 
 .companion-promo-nav {
+  position: relative;
   height: 70px;
   padding: 0 clamp(18px, 5vw, 72px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: color-mix(in srgb, var(--c-bg) 58%, transparent);
-  backdrop-filter: var(--lg-blur);
-  -webkit-backdrop-filter: var(--lg-blur);
-  border-bottom: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  transition: border-color 0.4s, background 0.4s;
+  overflow: hidden;
+  /* Opaque — plus de transparence / frost nav */
+  background: var(--c-bg, #06070a) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 24px -16px rgba(0, 0, 0, 0.55);
+  transition: border-color 0.4s, background 0.4s, height 0.4s, box-shadow 0.4s;
+}
+
+.companion-promo-nav__frost {
+  display: none !important;
+}
+
+.companion-promo-nav > * {
+  position: relative;
+  z-index: 1;
 }
 
 .companion-promo-nav.is-scrolled {
   border-bottom-color: var(--c-border);
+  background: var(--c-bg, #06070a) !important;
+}
+
+.companion-promo-nav.is-scrolled .companion-promo-nav__frost {
+  display: none !important;
 }
 
 .companion-promo-nav__brand {
@@ -410,15 +450,17 @@ html[data-mega-surface="companion"] .companion-sync-pulse.is-offline .companion-
   }
 }
 
-/* Offset contenu sous nav 70px */
-html[data-mega-surface="companion"] .companion-shell--filesnap .companion-main-frame-wrap,
-html[data-mega-surface="companion"] .companion-shell--promo .companion-main-frame-wrap {
-  margin-top: 70px !important;
-  padding-inline: clamp(16px, 4vw, 48px) !important;
-  margin-bottom: 1.5rem !important;
-  max-width: 1240px;
-  margin-left: auto;
-  margin-right: auto;
+/* Sticky nav dans le flux : annule l’ancien offset fixed (4.55rem) */
+html[data-mega-surface="companion"] .companion-shell--promo .companion-main-frame-wrap,
+html[data-mega-surface="companion"] .companion-shell--filesnap .companion-main-frame-wrap {
+  margin-top: 0.55rem !important;
+}
+
+@media (min-width: 1024px) {
+  html[data-mega-surface="companion"] .companion-shell--promo .companion-main-frame-wrap,
+  html[data-mega-surface="companion"] .companion-shell--filesnap .companion-main-frame-wrap {
+    margin-top: 0.75rem !important;
+  }
 }
 
 /* ===== Main frame ≈ content wrap (plus de fenêtre WebGL) ===== */
@@ -591,14 +633,237 @@ html[data-mega-surface="companion"] .cinema-page-subnav {
 }
 
 @media (max-width: 1023px) {
-  .companion-promo-nav {
-    height: 60px;
-    padding: 0 14px;
+  /* Mobile : dock bas = nav ; topbar desktop masquée ; header profil fixe */
+  html[data-mega-surface="companion"] .companion-shell--promo .companion-topbar-wrap.companion-promo-nav-wrap {
+    display: none !important;
   }
 
   html[data-mega-surface="companion"] .companion-shell--filesnap .companion-main-frame-wrap,
   html[data-mega-surface="companion"] .companion-shell--promo .companion-main-frame-wrap {
-    margin-top: 60px !important;
+    margin-top: 0 !important;
+  }
+
+  html[data-mega-surface="companion"] .companion-main-frame__body {
+    padding-top: calc(0.35rem + var(--companion-mobile-header, 3.75rem)) !important;
+  }
+}
+
+/* ===== Dock mobile (portal body) — fond opaque ===== */
+.companion-mobile-nav.mega-dock.pj2-mobile-dock,
+.companion-mobile-nav.companion-glass-tray {
+  background: var(--c-bg, #06070a) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow:
+    0 18px 44px -14px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.companion-mobile-nav .mega-dock-item,
+.companion-mobile-nav .pj2-dock-item,
+.companion-mobile-nav .v10-mobile-dock-item {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.companion-mobile-nav .mega-dock-item.is-active,
+.companion-mobile-nav .pj2-dock-item.is-active,
+.companion-mobile-nav .v10-mobile-dock-item.is-active,
+.companion-mobile-nav .mega-dock-item[aria-current="page"] {
+  color: #fff !important;
+  background: transparent !important;
+}
+
+.companion-mobile-nav .pj2-dock-active-pill {
+  background: rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 12px -6px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.companion-mobile-nav .dock-icon-glyph,
+.companion-mobile-nav .dock-icon-glyph--active {
+  color: inherit !important;
+}
+
+/* Répartition : chiffre central toujours lisible (thème dark Companion) */
+html[data-mega-surface="companion"] .activity-ring-chart .text-foreground,
+html[data-mega-surface="companion"] .activity-ring-chart [class*="text-foreground"],
+html[data-mega-surface="companion"] .activity-ring-chart .text-chart-label,
+html[data-mega-surface="companion"] .activity-ring-chart [class*="text-chart-label"] {
+  color: #fff !important;
+}
+
+html[data-mega-surface="companion"] .activity-ring-chart .text-white\/70,
+html[data-mega-surface="companion"] .activity-ring-chart [class*="text-white"] {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+/* ===== Mobile dashboard : densification (moins de scroll vertical) ===== */
+@media (max-width: 1023px) {
+  html[data-mega-surface="companion"] .dashboard-stack {
+    gap: 0.75rem !important;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv {
+    padding: 0.75rem !important;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv__program {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    min-height: 0 !important;
+  }
+
+  /* Hero programme : bandeau 16:10 (évite la bande trop basse qui coupe les têtes) */
+  html[data-mega-surface="companion"] .tonight-tv__hero {
+    min-height: 0 !important;
+    max-height: none;
+    flex-direction: row !important;
+    align-items: stretch;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv__hero-media {
+    min-height: 0 !important;
+    flex: 0 0 44%;
+    max-width: 44%;
+    aspect-ratio: 16 / 10;
+    align-self: stretch;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv__hero-media img {
+    position: absolute !important;
+    inset: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center 22% !important;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv__hero-meta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 12px !important;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv__list {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    max-height: none !important;
+  }
+
+  html[data-mega-surface="companion"] .tonight-tv__row {
+    flex: 0 0 min(72vw, 260px);
+    scroll-snap-align: start;
+    min-width: min(72vw, 260px);
+  }
+
+  html[data-mega-surface="companion"] .premium-kpi-card {
+    padding: 0.7rem 0.8rem !important;
+  }
+
+  html[data-mega-surface="companion"] .premium-kpi-value {
+    font-size: clamp(1.15rem, 5vw, 1.45rem) !important;
+  }
+
+  html[data-mega-surface="companion"] .premium-kpi-label {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  html[data-mega-surface="companion"] .premium-kpi-hint,
+  html[data-mega-surface="companion"] .premium-kpi-card p:last-child {
+    display: none !important;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .dashboard-layout-block {
+    min-width: 0;
+  }
+
+  /* KPI 2×2 : hiérarchie claire, pas d’écrasement icône/valeur */
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-card {
+    min-height: 5.75rem !important;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-card__inner {
+    gap: 0.35rem !important;
+    min-width: 0;
+    padding: 0.75rem 0.8rem 0.7rem !important;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-card__inner > .flex {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-label {
+    font-size: 0.625rem !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1.25;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-value {
+    margin-top: 0.15rem !important;
+    font-size: 1.35rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-icon {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    padding: 0.25rem !important;
+    border-radius: 10px !important;
+    align-self: flex-end;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-icon svg {
+    width: 0.95rem !important;
+    height: 0.95rem !important;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-kpi-strip .premium-kpi-hint {
+    display: none !important;
+  }
+
+  html[data-mega-surface="companion"] .dashboard-mobile-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+
+  html[data-mega-surface="companion"] .dashboard-panel-pad {
+    padding: 0.85rem !important;
+  }
+
+  html[data-mega-surface="companion"] .activity-ring-chart__plot {
+    width: 168px !important;
+    height: 168px !important;
+  }
+
+  /* Marge sous le contenu = hauteur dock + safe-area (plus de cartes sous la nav) */
+  html[data-mega-surface="companion"] .companion-main-frame__body {
+    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  html[data-mega-surface="companion"] .companion-lg-app {
+    scroll-padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -686,15 +951,22 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   background: color-mix(in srgb, var(--c-bg2) 48%, transparent);
   backdrop-filter: var(--lg-blur);
   -webkit-backdrop-filter: var(--lg-blur);
-  padding: 14px 16px 16px;
+  padding: 14px 16px 14px;
   box-shadow: var(--lg-shadow);
+  margin-bottom: 0.75rem;
+}
+.tonight-tv--program {
+  margin-bottom: 0.75rem;
+}
+.dashboard-stack > .tonight-tv {
+  margin-bottom: 0.75rem;
 }
 .tonight-tv__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .tonight-tv__eyebrow {
   display: inline-flex;
@@ -711,14 +983,516 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   font-size: 12px;
   color: var(--c-text3);
 }
-.tonight-tv__country {
+.tonight-tv__filters {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.tonight-tv__country-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border-radius: 999px;
   border: 1px solid var(--c-border2);
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
   color: var(--c-text);
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 10px;
+  padding: 6px 12px 6px 10px;
+  cursor: pointer;
+}
+.tonight-tv__country-label {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tonight-tv__flag-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.tonight-tv__flag-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tonight-tv__country-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 220px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 16, 24, 0.96);
+  box-shadow: 0 18px 48px -20px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.tonight-tv__country-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #eef1f7;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.tonight-tv__country-option:hover,
+.tonight-tv__country-option.is-active {
+  background: rgba(255, 255, 255, 0.1);
+}
+.tonight-tv__logos {
+  display: none;
+}
+.tonight-tv__channel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(220px, 48vw);
+  min-height: 36px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tonight-tv__channel-btn:hover,
+.tonight-tv__channel-btn[aria-expanded="true"] {
+  border-color: rgba(242, 180, 60, 0.55);
+  background: rgba(242, 180, 60, 0.12);
+}
+.tonight-tv__channel-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+.tonight-tv__channel-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tonight-tv__channel-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: min(280px, 86vw);
+  max-height: min(52vh, 360px);
+  overflow: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 16px;
+  border: 1px solid var(--c-border2);
+  background: color-mix(in srgb, var(--c-bg2) 94%, #000);
+  box-shadow: var(--shadow-card);
+}
+.tonight-tv__channel-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.tonight-tv__channel-option:hover,
+.tonight-tv__channel-option.is-active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.tonight-tv__local-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+.tonight-tv__local-panel {
+  position: relative;
+  width: min(420px, 92vw);
+  border-radius: 22px;
+  border: 1px solid var(--c-border2);
+  background: color-mix(in srgb, var(--c-bg2) 96%, #000);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+.tonight-tv__local-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Actor detail modal */
+.companion-actor-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 135;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+.companion-actor-panel {
+  position: relative;
+  width: min(720px, 94vw);
+  max-height: min(84vh, 860px);
+  overflow: auto;
+  border-radius: 24px;
+  border: 1px solid var(--c-border2);
+  background: color-mix(in srgb, var(--c-bg2) 96%, #000);
+  box-shadow: var(--shadow-card);
+  padding: 1.25rem 1.2rem 1.4rem;
+}
+.companion-actor-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  cursor: pointer;
+}
+.companion-actor-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--c-text2);
+  font-size: 14px;
+}
+.companion-actor-head {
+  display: flex;
+  gap: 1rem;
+  padding-right: 2rem;
+}
+.companion-actor-photo {
+  width: 7rem;
+  height: 10rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  place-items: center;
+}
+.companion-actor-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.companion-actor-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+}
+.companion-actor-name {
+  margin: 0.2rem 0 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #fff;
+}
+.companion-actor-meta {
+  margin: 0.35rem 0 0;
+  font-size: 12px;
+  color: var(--c-text2);
+}
+.companion-actor-bio {
+  margin: 0.75rem 0 0;
+  max-height: 8.5rem;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--c-text2);
+  scrollbar-width: thin;
+}
+.companion-actor-filmo {
+  margin-top: 1.25rem;
+}
+.companion-actor-filmo h3 {
+  margin: 0 0 0.75rem;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text2);
+}
+.companion-actor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+@media (min-width: 640px) {
+  .companion-actor-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+.companion-actor-credit {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.companion-actor-credit__poster {
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  place-items: center;
+  color: var(--c-text2);
+  font-size: 11px;
+  font-weight: 800;
+}
+.companion-actor-credit__poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.companion-actor-credit__title {
+  margin: 0.35rem 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.companion-actor-credit__year {
+  margin: 0.15rem 0 0;
+  font-size: 10px;
+  color: var(--c-text2);
+}
+.tonight-tv__logo-btn {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--c-border2);
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--c-text2);
+  font-size: 10px;
+  font-weight: 800;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.15s;
+  transform-origin: center center;
+}
+.tonight-tv__logo-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.tonight-tv__logo-btn:hover,
+.tonight-tv__logo-btn.is-active {
+  border-color: rgba(242, 180, 60, 0.65);
+  background: rgba(242, 180, 60, 0.14);
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 0 0 1px rgba(242, 180, 60, 0.35);
+}
+.tonight-tv__program {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 14px;
+  min-height: 200px;
+}
+@media (max-width: 820px) {
+  .tonight-tv__program {
+    grid-template-columns: 1fr;
+  }
+}
+.tonight-tv__hero {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  background: rgba(0, 0, 0, 0.28);
+  text-align: left;
+  color: inherit;
+  min-height: 220px;
+  padding: 0;
+}
+.tonight-tv__hero-media {
+  position: relative;
+  flex: 0 0 auto;
+  aspect-ratio: 16 / 9;
+  min-height: 168px;
+  max-height: 280px;
+  background: #12161a;
+  overflow: hidden;
+}
+.tonight-tv__hero-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+  display: block;
+  min-height: 0;
+  max-height: none;
+}
+.tonight-tv__hero-empty {
+  display: grid;
+  place-items: center;
+  min-height: 168px;
+  aspect-ratio: 16 / 9;
+}
+.tonight-tv__hero-meta {
+  padding: 12px 14px 14px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+}
+.tonight-tv__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 2px;
+}
+.tonight-tv__row {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s;
+}
+.tonight-tv__row:hover,
+.tonight-tv__row.is-active {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.tonight-tv__row-thumb {
+  width: 52px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1a2030;
+  display: grid;
+  place-items: center;
+}
+.tonight-tv__row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tonight-tv__row-title {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tonight-tv__row-sub {
+  font-size: 11px;
+  color: var(--c-text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.tonight-tv__row-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px;
+}
+.tonight-tv__row-time {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--brand-teal);
+}
+.tonight-tv__open-all {
+  margin-top: 2px;
+  border-radius: 12px;
+  border: 1px dashed var(--c-border2);
+  background: transparent;
+  color: var(--c-text2);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+}
+.tonight-tv__local-poster {
+  margin-top: 12px;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 14px;
 }
 .tonight-tv__stage {
   display: grid;
@@ -776,6 +1550,14 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   text-transform: uppercase;
   color: var(--c-text3);
 }
+.tonight-tv__network-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px;
+}
 .tonight-tv__network span {
   border-radius: 999px;
   border: 1px solid var(--c-border2);
@@ -816,28 +1598,294 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   background: var(--brand-gold);
   width: 18px;
 }
-.tonight-tv__local-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 130;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
-  background: rgba(0, 0, 0, 0.55);
-}
-.tonight-tv__local-panel {
-  width: min(420px, 92vw);
-  border-radius: 22px;
-  border: 1px solid var(--c-border2);
-  background: color-mix(in srgb, var(--c-bg2) 88%, #000);
-  padding: 1.25rem;
-  box-shadow: var(--shadow-card);
-}
 .tonight-tv__local-summary {
   margin-top: 10px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--c-text2);
+}
+
+/* ===== Ranking charts (colonnes alignées + multi-color) ===== */
+.rank-chart {
+  position: relative;
+  min-height: 200px;
+  width: 100%;
+}
+.rank-chart--h .rank-chart__h-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rank-chart__h-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.rank-chart__h-row.is-dim,
+.rank-chart__v-col.is-dim {
+  opacity: 0.38;
+}
+.rank-chart__thumb {
+  width: 40px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 18px -12px #000;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-text3);
+}
+.rank-chart__thumb.is-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.rank-chart__thumb.is-logo {
+  width: 44px;
+  height: 44px;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.rank-chart__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rank-chart__thumb.is-logo img {
+  object-fit: contain;
+}
+.rank-chart__h-meta {
+  min-width: 0;
+}
+.rank-chart__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rank-chart__sub {
+  margin: 2px 0 0;
+  font-size: 10px;
+  color: var(--c-text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-chart__h-track {
+  margin-top: 6px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.rank-chart__h-bar {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 14px;
+}
+.rank-chart__value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-text2);
+  white-space: nowrap;
+}
+.rank-chart__v-grid {
+  display: grid;
+  gap: 8px;
+  align-items: end;
+  min-height: 220px;
+}
+.rank-chart__v-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.rank-chart__v-plot {
+  width: 100%;
+  height: 140px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+}
+.rank-chart__v-bar {
+  width: min(36px, 70%);
+  border-radius: 10px 10px 4px 4px;
+  min-height: 8px;
+  box-shadow: 0 10px 24px -14px currentColor;
+}
+.rank-chart__area-fill {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  min-height: 8px;
+  align-self: flex-end;
+}
+.rank-chart__v-col .rank-chart__label {
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  color: var(--c-text3);
+}
+.rank-chart__tip {
+  margin: 10px 0 0;
+  min-height: 1.25rem;
+  font-size: 12px;
+  color: var(--c-text2);
+  text-align: center;
+}
+.rank-chart__tip.is-idle {
+  color: var(--c-text3);
+  font-weight: 500;
+}
+.rank-chart__tip strong {
+  color: var(--c-text);
+  font-weight: 700;
+}
+
+/* ===== Ranking charts bklit ComposedChart + markers (legacy) ===== */
+.media-ranking-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 200px;
+}
+.media-ranking-chart--composed .media-ranking-chart__markers {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 0 8px;
+}
+.media-ranking-chart__marker-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.media-ranking-chart__thumb {
+  width: 40px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 18px -12px #000;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-text3);
+}
+.media-ranking-chart__thumb.is-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.media-ranking-chart__thumb.is-logo {
+  width: 44px;
+  height: 44px;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.media-ranking-chart__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.media-ranking-chart__thumb.is-logo img {
+  object-fit: contain;
+}
+.media-ranking-chart__marker-label {
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text3);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.media-ranking-chart__plot {
+  min-width: 0;
+}
+.media-ranking-chart__bklit {
+  width: 100%;
+}
+/* Masquer les dates synthétiques de l’axe X (labels = markers au-dessus) */
+.media-ranking-chart--composed .media-ranking-chart__bklit text {
+  font-size: 0 !important;
+  opacity: 0 !important;
+}
+html[data-mega-surface="companion"] .dashboard-layout-grid {
+  gap: 1rem !important;
+}
+html[data-mega-surface="companion"] .dashboard-stack {
+  gap: 1rem !important;
+}
+html[data-mega-surface="companion"] .dashboard-panel-pad {
+  padding: 1rem 1.1rem !important;
+}
+html[data-mega-surface="companion"] {
+  --chart-1: #3f9ae6;
+  --chart-2: #f2b43c;
+  --chart-3: #d8497f;
+  --chart-4: #1fa8a0;
+  --chart-5: #a78bfa;
+  --chart-line-primary: #3f9ae6;
+  --chart-line-secondary: #f2b43c;
+  --chart-background: transparent;
+  --chart-foreground: #eef1f7;
+  --chart-foreground-muted: rgba(238, 241, 247, 0.55);
+  --chart-crosshair: rgba(255, 255, 255, 0.35);
+  --chart-grid: rgba(255, 255, 255, 0.1);
+  --chart-tooltip-background: rgba(12, 14, 20, 0.92);
+  --chart-tooltip-foreground: #eef1f7;
+  --chart-tooltip-muted: rgba(238, 241, 247, 0.55);
+  --chart-label: rgba(238, 241, 247, 0.65);
+}
+
+html[data-mega-surface="companion"] .activity-ring-chart {
+  /* Track RingChart three-quarter (VisX fill = var(--border)) */
+  --border: rgba(255, 255, 255, 0.14);
+}
+
+html[data-mega-surface="companion"] .dashboard-layout-columns,
+html[data-mega-surface="companion"] .dashboard-layout-col {
+  gap: 1rem;
 }
 
 /* ===== Popup jour calendrier ===== */
@@ -865,7 +1913,7 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   flex-direction: column;
   border-radius: 24px;
   border: 1px solid var(--c-border2);
-  background: color-mix(in srgb, var(--c-bg2) 92%, #000);
+  background: color-mix(in srgb, var(--c-bg2) 96%, #000);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }

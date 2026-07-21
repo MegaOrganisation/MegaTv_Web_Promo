@@ -190,6 +190,16 @@ async function fetchTmdbProxy(path: string, append = "", extraParams?: Record<st
   return response.json();
 }
 
+/** Export pour guides TV / agrégations Companion (même proxy Edge). */
+export async function fetchTmdbProxyPublic(
+  path: string,
+  append = "",
+  extraParams?: Record<string, string>,
+  revalidate = 60 * 60 * 12
+) {
+  return fetchTmdbProxy(path, append, extraParams, revalidate);
+}
+
 export type TmdbSearchResult = {
   id: number;
   media_type?: string;

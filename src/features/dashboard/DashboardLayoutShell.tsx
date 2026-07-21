@@ -28,6 +28,7 @@ export type DashboardBlockId =
   | "continue-watching"
   | "donut-chart"
   | "top-content"
+  | "top-actors"
   | "activity-chart"
   | "history"
   | `custom-${string}`;
@@ -47,8 +48,12 @@ type LayoutState = {
   customKpis: CustomKpiConfig[];
 };
 
-const storageKey = "megacompanion_dashboard_layout_v4";
-const legacyKeys = ["megacompanion_dashboard_layout_v3", "megacompanion_dashboard_layout_v2"];
+const storageKey = "megacompanion_dashboard_layout_v5";
+const legacyKeys = [
+  "megacompanion_dashboard_layout_v4",
+  "megacompanion_dashboard_layout_v3",
+  "megacompanion_dashboard_layout_v2"
+];
 
 const BLOCK_LABELS: Record<string, string> = {
   "kpi-movies": "KPI Films",
@@ -58,11 +63,12 @@ const BLOCK_LABELS: Record<string, string> = {
   "continue-watching": "Reprendre",
   "donut-chart": "Répartition",
   "top-content": "Top contenus",
-  "activity-chart": "Progression",
+  "top-actors": "Acteurs préférés",
+  "activity-chart": "Chaînes",
   history: "Historique"
 };
 
-/** Grille 4 cols sans trou : CW|donut 2+2, top full, activity|history 2+2 */
+/** Grille 4 cols : CW|donut, top|acteurs, chaînes|history */
 const defaultOrder: DashboardBlockId[] = [
   "kpi-movies",
   "kpi-episodes",
@@ -71,9 +77,18 @@ const defaultOrder: DashboardBlockId[] = [
   "continue-watching",
   "donut-chart",
   "top-content",
+  "top-actors",
   "activity-chart",
   "history"
 ];
+
+/** Colonnes empilées — même gap vertical, plus de trou sous Répartition (pj 1/2). */
+const LEFT_STACK: DashboardBlockId[] = ["continue-watching", "top-content", "activity-chart"];
+const RIGHT_STACK: DashboardBlockId[] = ["donut-chart", "top-actors", "history"];
+
+function isKpiBlock(id: string) {
+  return id.startsWith("kpi-") || id.startsWith("custom-");
+}
 
 const defaultSpans: Partial<Record<DashboardBlockId, ColSpan>> = {
   "kpi-movies": 1,
@@ -82,7 +97,8 @@ const defaultSpans: Partial<Record<DashboardBlockId, ColSpan>> = {
   "kpi-continue": 1,
   "continue-watching": 2,
   "donut-chart": 2,
-  "top-content": 4,
+  "top-content": 2,
+  "top-actors": 2,
   "activity-chart": 2,
   history: 2
 };
@@ -140,6 +156,14 @@ function migrateLegacy(raw: string): LayoutState | null {
   }
 }
 
+type MobileDashTab = "resume" | "stats" | "explore";
+
+const MOBILE_TAB_LABELS: Record<MobileDashTab, string> = {
+  resume: "Reprendre",
+  stats: "Stats",
+  explore: "Explorer"
+};
+
 export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showEditChrome = true, metrics }: Props) {
   const [layout, setLayout] = useState<LayoutState>({
     order: defaultOrder,
@@ -151,15 +175,24 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
   const [paletteOpen, setPaletteOpen] = useState(false);
   const touchTargetRef = useRef<DashboardBlockId | null>(null);
   const [touchDragId, setTouchDragId] = useState<DashboardBlockId | null>(null);
+  const [mobileTab, setMobileTab] = useState<MobileDashTab>("resume");
 
   useEffect(() => {
     try {
-      const v4 = window.localStorage.getItem(storageKey);
-      if (v4) {
-        const parsed = JSON.parse(v4) as LayoutState;
+      const ensureActors = (order: DashboardBlockId[]) => {
+        if (order.includes("top-actors")) return order;
+        const topIdx = order.indexOf("top-content");
+        const next = [...order];
+        next.splice(topIdx >= 0 ? topIdx + 1 : next.length, 0, "top-actors");
+        return next;
+      };
+
+      const current = window.localStorage.getItem(storageKey);
+      if (current) {
+        const parsed = JSON.parse(current) as LayoutState;
         if (Array.isArray(parsed.order)) {
           setLayout({
-            order: parsed.order,
+            order: ensureActors(parsed.order),
             hidden: parsed.hidden || [],
             spans: { ...defaultSpans, ...(parsed.spans || {}) },
             customKpis: parsed.customKpis || []
@@ -171,14 +204,28 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
       for (const key of legacyKeys) {
         const raw = window.localStorage.getItem(key);
         if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw) as LayoutState;
+          if (Array.isArray(parsed.order)) {
+            setLayout({
+              order: ensureActors(parsed.order),
+              hidden: parsed.hidden || [],
+              spans: { ...defaultSpans, ...(parsed.spans || {}) },
+              customKpis: parsed.customKpis || []
+            });
+            return;
+          }
+        } catch {
+          /* try migrateLegacy */
+        }
         const migrated = migrateLegacy(raw);
         if (migrated) {
           setLayout({
             ...migrated,
             spans: { ...defaultSpans },
-            order: migrated.order.includes("continue-watching")
-              ? migrated.order
-              : defaultOrder
+            order: ensureActors(
+              migrated.order.includes("continue-watching") ? migrated.order : defaultOrder
+            )
           });
           break;
         }
@@ -200,6 +247,27 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
     ) as DashboardBlockId[];
     return [...known, ...missing];
   }, [blocks, layout.hidden, layout.order]);
+
+  /** KPI en première rangée ; colonnes empilées pour un gap vertical uniforme (pj 1/2). */
+  const { kpiIds, leftIds, rightIds, editFlatIds, mobileResumeIds, mobileStatsIds, mobileExploreIds } = useMemo(() => {
+    const hidden = new Set(layout.hidden);
+    const kpis = visibleOrder.filter((id) => isKpiBlock(id));
+    const left = LEFT_STACK.filter((id) => !hidden.has(id) && (blocks[id] || visibleOrder.includes(id)));
+    const right = RIGHT_STACK.filter((id) => !hidden.has(id) && (blocks[id] || visibleOrder.includes(id)));
+    const placed = new Set<string>([...kpis, ...left, ...right]);
+    const extras = visibleOrder.filter((id) => !placed.has(id) && !isKpiBlock(id));
+    const rightAll = [...right, ...extras];
+    return {
+      kpiIds: kpis,
+      leftIds: left,
+      rightIds: rightAll,
+      editFlatIds: visibleOrder,
+      /* Mobile : 1 job par onglet — évite un scroll interminable */
+      mobileResumeIds: left.filter((id) => id === "continue-watching"),
+      mobileStatsIds: rightAll.filter((id) => id === "donut-chart"),
+      mobileExploreIds: [...left, ...rightAll].filter((id) => id !== "continue-watching" && id !== "donut-chart")
+    };
+  }, [blocks, layout.hidden, visibleOrder]);
 
   function renderCustomKpi(config: CustomKpiConfig) {
     if (!metrics) return null;
@@ -301,6 +369,49 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
     return hiddenBuiltins;
   }, [layout.hidden]);
 
+  function renderBlock(id: DashboardBlockId) {
+    const span = clampSpan(
+      layout.spans[id] ?? defaultSpans[id as DashboardBlockId] ?? (isKpiBlock(id) ? 1 : 2)
+    );
+    const custom = layout.customKpis.find((item) => item.id === id);
+    return (
+      <DashboardBlock
+        key={id}
+        id={id}
+        editMode={editMode}
+        span={span}
+        dragging={dragId === id || touchDragId === id}
+        customKpi={custom}
+        onCustomKpiChange={(patch) => updateCustomKpi(id, patch)}
+        onHide={() => hideBlock(id)}
+        onDragStart={() => setDragId(id)}
+        onDragEnd={() => setDragId(null)}
+        onDropOn={() => {
+          if (dragId) reorder(dragId, id);
+          if (touchDragId) reorder(touchDragId, id);
+          setDragId(null);
+          setTouchDragId(null);
+        }}
+        onTouchDragStart={() => {
+          setTouchDragId(id);
+          touchTargetRef.current = id;
+        }}
+        onTouchDragEnter={() => {
+          if (touchDragId && touchDragId !== id) touchTargetRef.current = id;
+        }}
+        onTouchDragEnd={() => {
+          if (touchDragId && touchTargetRef.current) reorder(touchDragId, touchTargetRef.current);
+          setTouchDragId(null);
+          touchTargetRef.current = null;
+        }}
+        onSpanChange={(next) => setSpan(id, next)}
+        className={editMode ? spanClass[span] : "min-w-0 w-full"}
+      >
+        {blocks[id] ?? (custom ? renderCustomKpi(custom) : null)}
+      </DashboardBlock>
+    );
+  }
+
   return (
     <div className="min-w-0 max-w-full space-y-4">
       {showEditChrome && editMode ? (
@@ -368,48 +479,70 @@ export function DashboardLayoutShell({ blocks, editMode, onEditModeChange, showE
         </div>
       ) : null}
 
-      <div className="dashboard-layout-grid grid min-w-0 max-w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        {visibleOrder.map((id) => {
-          const span = clampSpan(layout.spans[id] ?? defaultSpans[id as DashboardBlockId] ?? (id.startsWith("kpi-") || id.startsWith("custom-") ? 1 : 2));
-          const custom = layout.customKpis.find((item) => item.id === id);
-          return (
-            <DashboardBlock
-              key={id}
-              id={id}
-              editMode={editMode}
-              span={span}
-              dragging={dragId === id || touchDragId === id}
-              customKpi={custom}
-              onCustomKpiChange={(patch) => updateCustomKpi(id, patch)}
-              onHide={() => hideBlock(id)}
-              onDragStart={() => setDragId(id)}
-              onDragEnd={() => setDragId(null)}
-              onDropOn={() => {
-                if (dragId) reorder(dragId, id);
-                if (touchDragId) reorder(touchDragId, id);
-                setDragId(null);
-                setTouchDragId(null);
-              }}
-              onTouchDragStart={() => {
-                setTouchDragId(id);
-                touchTargetRef.current = id;
-              }}
-              onTouchDragEnter={() => {
-                if (touchDragId && touchDragId !== id) touchTargetRef.current = id;
-              }}
-              onTouchDragEnd={() => {
-                if (touchDragId && touchTargetRef.current) reorder(touchDragId, touchTargetRef.current);
-                setTouchDragId(null);
-                touchTargetRef.current = null;
-              }}
-              onSpanChange={(next) => setSpan(id, next)}
-              className={spanClass[span]}
+      {editMode ? (
+        <div className="dashboard-layout-grid grid min-w-0 max-w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+          {editFlatIds.map((id) => renderBlock(id))}
+        </div>
+      ) : (
+        <>
+          {/* Desktop / tablette large : 2 colonnes */}
+          <div className="dashboard-layout-columns hidden min-w-0 max-w-full flex-col gap-4 lg:flex">
+            {kpiIds.length > 0 ? (
+              <div className="grid min-w-0 grid-cols-2 gap-4 xl:grid-cols-4">{kpiIds.map((id) => renderBlock(id))}</div>
+            ) : null}
+            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="dashboard-layout-col flex min-w-0 flex-col gap-4">
+                {leftIds.map((id) => renderBlock(id))}
+              </div>
+              <div className="dashboard-layout-col flex min-w-0 flex-col gap-4">
+                {rightIds.map((id) => renderBlock(id))}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile : KPI compact + onglets (pattern apps streaming) */}
+          <div className="dashboard-layout-mobile flex min-w-0 max-w-full flex-col gap-3 lg:hidden">
+            {kpiIds.length > 0 ? (
+              <div className="dashboard-kpi-strip grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {kpiIds.map((id) => renderBlock(id))}
+              </div>
+            ) : null}
+
+            <div
+              className="dashboard-mobile-tabs flex gap-1 rounded-full border border-[var(--mega-border)] bg-[var(--mega-card-bg)] p-1"
+              role="tablist"
+              aria-label="Sections dashboard"
             >
-              {blocks[id] ?? (custom ? renderCustomKpi(custom) : null)}
-            </DashboardBlock>
-          );
-        })}
-      </div>
+              {(Object.keys(MOBILE_TAB_LABELS) as MobileDashTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={mobileTab === tab}
+                  className={clsx(
+                    "focus-ring flex-1 rounded-full px-2 py-2 text-center text-xs font-bold transition",
+                    mobileTab === tab
+                      ? "bg-[var(--brand-gold)] text-[#10191C] shadow-sm"
+                      : "text-[var(--mega-text-muted)]"
+                  )}
+                  onClick={() => setMobileTab(tab)}
+                >
+                  {MOBILE_TAB_LABELS[tab]}
+                </button>
+              ))}
+            </div>
+
+            <div className="dashboard-mobile-tabpanel flex min-w-0 flex-col gap-3" role="tabpanel">
+              {(mobileTab === "resume"
+                ? mobileResumeIds
+                : mobileTab === "stats"
+                  ? mobileStatsIds
+                  : mobileExploreIds
+              ).map((id) => renderBlock(id))}
+            </div>
+          </div>
+        </>
+      )}
 
     </div>
   );

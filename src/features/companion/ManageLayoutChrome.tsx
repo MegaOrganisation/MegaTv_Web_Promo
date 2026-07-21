@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 
-import { MegaLink } from "@/components/ui/MegaButton";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { ManageTabs } from "@/features/companion/ManageTabs";
 
@@ -18,18 +17,10 @@ export function ManageLayoutChrome({
   return (
     <ResponsiveShell
       title="Gestion cloud"
-      subtitle="Addons, catalogues et IPTV par profil — écritures batch, lectures slice."
+      subtitle="IPTV, addons, catalogues, profils et appareils — écritures batch, lectures slice."
       isAdmin={isAdmin}
       hidePageHeader={hideHero}
     >
-      <div className="mb-4 flex justify-end">
-        <nav className="mega-pill-nav" aria-label="Actions profils">
-          <MegaLink href="/companion/profiles" variant="ghost">
-            Gérer les profils →
-          </MegaLink>
-        </nav>
-      </div>
-
       <ManageTabs />
 
       {children}

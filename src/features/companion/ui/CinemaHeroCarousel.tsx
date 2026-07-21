@@ -151,7 +151,7 @@ export function CinemaHeroCarousel({
           <p className="mega-cinema-hero__sub">{slide.subtitle}</p>
           {slide.playerHref ? (
             <div className="mega-cinema-hero__actions">
-              <PremiumButton href={slide.playerHref} variant="gold" className="mega-spectrum-btn px-5 py-2.5 text-sm">
+              <PremiumButton href={slide.playerHref} variant="gold" className="mega-spectrum-btn mega-cinema-hero__cta px-5 py-2.5 text-sm">
                 <Play className="h-4 w-4 fill-current" />
                 Reprendre
               </PremiumButton>

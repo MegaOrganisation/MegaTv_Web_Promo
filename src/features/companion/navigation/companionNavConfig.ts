@@ -14,7 +14,6 @@ export const COMPANION_DOCK_ROUTES: CompanionDockRoute[] = [
   { href: "/companion/watchlist", label: "Watchlist", shortLabel: "List", icon: "bookmark" },
   { href: "/companion/calendar", label: "Calendrier", shortLabel: "Cal.", icon: "calendar" },
   { href: "/companion/manage", label: "Gérer", shortLabel: "Gérer", icon: "cloud" },
-  { href: "/companion/profiles", label: "Profils", shortLabel: "Profils", icon: "people" },
   { href: "/companion/settings", label: "Réglages", shortLabel: "Régl.", icon: "settings", exact: true }
 ];
 
@@ -32,9 +31,14 @@ export function companionRailVariantFromPath(pathname: string): CompanionRailVar
   if (pathname === "/companion") return "dashboard";
   if (pathname.startsWith("/companion/watchlist")) return "watchlist";
   if (pathname.startsWith("/companion/calendar")) return "dashboard";
-  if (pathname.startsWith("/companion/manage")) return "manage";
-  if (pathname.startsWith("/companion/settings") || pathname.startsWith("/companion/devices")) return "settings";
-  if (pathname.startsWith("/companion/profiles")) return "profiles";
+  if (
+    pathname.startsWith("/companion/manage") ||
+    pathname.startsWith("/companion/profiles") ||
+    pathname.startsWith("/companion/devices")
+  ) {
+    return "manage";
+  }
+  if (pathname.startsWith("/companion/settings")) return "settings";
   if (pathname.startsWith("/companion/admin")) return "admin";
   return "none";
 }

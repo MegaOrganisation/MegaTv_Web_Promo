@@ -6,12 +6,13 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 
-import { MobileCompanionNav } from "@/components/ui/ResponsiveShellNav";
+import { MobileCompanionChrome, MobileCompanionNav } from "@/components/ui/ResponsiveShellNav";
 import { companionRailVariantFromPath } from "@/features/companion/navigation/companionNavConfig";
 import { CompanionTopBar } from "@/features/companion/ui/CompanionTopBar";
 import { CinemaPageSubNav } from "@/features/companion/ui/CinemaPageSubNav";
 import { CinemaContextRail } from "@/features/companion/ui/CinemaRightRail";
 import { CompanionPageTransition } from "@/features/companion/ui/CompanionPageTransition";
+import { GlobalProfileSelector } from "@/features/companion/GlobalProfileSelector";
 import type { ContinueWatchingRow } from "@/lib/supabase/types";
 
 /**
@@ -50,6 +51,12 @@ export function ResponsiveShell({
   useEffect(() => setMounted(true), []);
 
   const mobileNav = mounted ? createPortal(<MobileCompanionNav isAdmin={isAdmin} />, document.body) : null;
+  const mobileChrome = mounted
+    ? createPortal(
+        <MobileCompanionChrome isAdmin={isAdmin} headerEnd={headerEnd} profileAnchor={<GlobalProfileSelector />} />,
+        document.body
+      )
+    : null;
 
   const rail = showContextRail ? (
     <aside className={clsx("companion-inline-rail", splitCw && "companion-inline-rail--cw")}>
@@ -60,6 +67,7 @@ export function ResponsiveShell({
   return (
     <div className="companion-shell companion-shell--pj1 companion-shell--v10 companion-shell--unified companion-shell--filesnap companion-shell--promo companion-shell--page-scroll">
       <CompanionTopBar isAdmin={isAdmin} headerEnd={headerEnd} />
+      {mobileChrome}
       {mobileNav}
 
       <div className="companion-main-frame-wrap">

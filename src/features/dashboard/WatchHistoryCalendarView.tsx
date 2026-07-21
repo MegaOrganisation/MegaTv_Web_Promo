@@ -83,11 +83,12 @@ function PosterPillStack({
       {visible.map((row, index) => {
         const poster = tmdbImageUrl(row.poster_path, "w185");
         const canOpen = Number.isFinite(row.tmdb_id) && row.tmdb_id > 0;
+        // div + role (pas <button>) : les cellules jour/mois sont déjà des <button>
         return (
-          <button
+          <div
             key={`${row.id}-${index}`}
-            type="button"
-            disabled={!canOpen}
+            role={canOpen ? "button" : undefined}
+            tabIndex={canOpen ? 0 : undefined}
             className={clsx(
               "shrink-0 overflow-hidden rounded-full border-2 border-[var(--mega-card-bg)] bg-[var(--mega-border)] shadow-sm transition hover:scale-110 focus-ring",
               dim,
@@ -114,6 +115,14 @@ function PosterPillStack({
                 layoutId: `cal-${row.media_type}-${row.tmdb_id}-${row.id}`
               });
             }}
+            onKeyDown={(e) => {
+              if (!canOpen) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                (e.currentTarget as HTMLElement).click();
+              }
+            }}
           >
             {poster ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -123,7 +132,7 @@ function PosterPillStack({
                 {row.media_type === "tv" ? "TV" : "F"}
               </div>
             )}
-          </button>
+          </div>
         );
       })}
       {extra > 0 ? (

@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { clsx } from "clsx";
 
 import { MegaTvIcon } from "@/components/icons/MegaTvIcon";
@@ -22,31 +21,24 @@ import { CompanionSyncPulse } from "@/features/companion/ui/CompanionSyncPulse";
 type Panel = "notifications" | "search" | null;
 
 /**
- * Topbar = nav Aurora du site promo (CSS glass full-bleed).
- * Plus de WebGL / MegaLiquidGlass.
+ * Topbar = .nav du site promo.
+ * Sticky DANS .companion-lg-app (pas de portal body) pour que backdrop-filter
+ * floute vraiment le contenu qui défile — comme la landing.
  */
 export function CompanionTopBar({ isAdmin = false, headerEnd }: { isAdmin?: boolean; headerEnd?: ReactNode }) {
   const pathname = usePathname();
-  const { withProfile, activeProfile } = useCompanionProfile();
+  const { withProfile } = useCompanionProfile();
   const [panel, setPanel] = useState<Panel>(null);
-  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const isKids = Boolean(activeProfile?.is_kids_profile);
-  const baseLinks = isKids
-    ? COMPANION_DOCK_ROUTES.filter((r) => !["/companion/manage", "/companion/settings"].includes(r.href))
-    : COMPANION_DOCK_ROUTES;
-  const links = isAdmin && !isKids ? [...baseLinks, COMPANION_ADMIN_ROUTE] : baseLinks;
-
-  useEffect(() => setMounted(true), []);
+  const links = isAdmin ? [...COMPANION_DOCK_ROUTES, COMPANION_ADMIN_ROUTE] : COMPANION_DOCK_ROUTES;
 
   useEffect(() => {
+    const root = document.querySelector(".companion-lg-app");
     const onScroll = () => {
-      const root = document.querySelector(".companion-lg-app");
       const y = root instanceof HTMLElement ? root.scrollTop : window.scrollY;
       setScrolled(y > 12);
     };
     onScroll();
-    const root = document.querySelector(".companion-lg-app");
     root?.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -55,70 +47,69 @@ export function CompanionTopBar({ isAdmin = false, headerEnd }: { isAdmin?: bool
     };
   }, []);
 
-  const bar = (
-    <div className="companion-topbar-wrap companion-promo-nav-wrap">
-      <header className={clsx("companion-promo-nav", scrolled && "is-scrolled")}>
-        <Link href={withProfile("/companion")} className="companion-promo-nav__brand" aria-label="MegaCompagnon">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logo.png" alt="MegaTv" />
-        </Link>
-
-        <div className="companion-promo-nav__right">
-          <nav aria-label="Navigation principale" className="companion-promo-nav__links">
-            {links.map((item) => {
-              const active = isCompanionRouteActive(pathname, item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={withProfile(item.href)}
-                  prefetch
-                  className={clsx("companion-promo-nav__link", active && "is-active")}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <button
-            type="button"
-            className="companion-promo-nav__search focus-ring"
-            aria-label="Rechercher"
-            onClick={() => setPanel("search")}
-          >
-            <MegaTvIcon name="search" size={15} />
-            Rechercher…
-          </button>
-
-          <CompanionSyncPulse />
-
-          <Link
-            href={withProfile("/companion/devices")}
-            className="companion-promo-nav__cta mega-spectrum-btn focus-ring"
-          >
-            <MegaTvIcon name="cast" size={15} />
-            Pairer TV
-          </Link>
-
-          <button
-            type="button"
-            className={clsx("companion-promo-nav__icon focus-ring", panel === "notifications" && "is-active")}
-            aria-label="Notifications"
-            onClick={() => setPanel(panel === "notifications" ? null : "notifications")}
-          >
-            <MegaTvIcon name="bell" size={17} />
-          </button>
-
-          {headerEnd ? <div className="companion-promo-nav__slot">{headerEnd}</div> : null}
-          <GlobalProfileSelector />
-        </div>
-      </header>
-    </div>
-  );
-
   return (
     <>
-      {mounted ? createPortal(bar, document.body) : <div className="companion-topbar-wrap companion-promo-nav-wrap" aria-hidden />}
+      <div className="companion-topbar-wrap companion-promo-nav-wrap">
+        <header className={clsx("companion-promo-nav", scrolled && "is-scrolled")}>
+          <Link href={withProfile("/companion")} className="companion-promo-nav__brand" aria-label="MegaCompagnon">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/logo.png" alt="MegaTv" />
+          </Link>
+
+          <div className="companion-promo-nav__right">
+            <nav aria-label="Navigation principale" className="companion-promo-nav__links">
+              {links.map((item) => {
+                const active = isCompanionRouteActive(pathname, item.href, item.exact);
+                return (
+                  <Link
+                    key={item.href}
+                    href={withProfile(item.href)}
+                    prefetch
+                    className={clsx("companion-promo-nav__link", active && "is-active")}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <button
+              type="button"
+              className="companion-promo-nav__search focus-ring"
+              aria-label="Rechercher"
+              onClick={() => setPanel("search")}
+            >
+              <MegaTvIcon name="search" size={15} />
+              Rechercher…
+            </button>
+
+            <CompanionSyncPulse />
+
+            <a
+              href="https://megatv-auth-site.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="companion-promo-nav__cta mega-spectrum-btn focus-ring"
+            >
+              <MegaTvIcon name="cast" size={15} />
+              Pairer TV
+            </a>
+
+            <button
+              type="button"
+              className={clsx("companion-promo-nav__icon focus-ring", panel === "notifications" && "is-active")}
+              aria-label="Notifications"
+              onClick={() => setPanel(panel === "notifications" ? null : "notifications")}
+            >
+              <MegaTvIcon name="bell" size={17} />
+            </button>
+
+            {headerEnd ? <div className="companion-promo-nav__slot">{headerEnd}</div> : null}
+            <GlobalProfileSelector />
+          </div>
+        </header>
+      </div>
+
       <NotificationsPanel open={panel === "notifications"} onClose={() => setPanel(null)} />
       <CompanionSearchModal open={panel === "search"} onClose={() => setPanel(null)} />
     </>

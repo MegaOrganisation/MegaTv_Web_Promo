@@ -15,9 +15,9 @@ const EXPOSE_ROUTES = [
   { href: "/companion", label: "Dashboard", gradient: "linear-gradient(135deg,#d8497f,#3f9ae6)" },
   { href: "/companion/watchlist", label: "Watchlist", gradient: "linear-gradient(135deg,#3f9ae6,#1fa8a0)" },
   { href: "/companion/manage", label: "Gérer", gradient: "linear-gradient(135deg,#f2b43c,#ee6a54)" },
-  { href: "/companion/profiles", label: "Profils", gradient: "linear-gradient(135deg,#5fbf5a,#1fa8a0)" },
+  { href: "/companion/manage/profiles", label: "Profils", gradient: "linear-gradient(135deg,#5fbf5a,#1fa8a0)" },
   { href: "/companion/settings", label: "Réglages", gradient: "linear-gradient(135deg,#10191c,#3f9ae6)" },
-  { href: "/companion/devices", label: "Appareils", gradient: "linear-gradient(135deg,#d8497f,#3f9ae6)" }
+  { href: "/companion/manage/devices", label: "Appareils", gradient: "linear-gradient(135deg,#d8497f,#3f9ae6)" }
 ];
 
 function GlassModal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean }) {

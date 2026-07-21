@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<!-- Variant TripGlass v2: MegaTv dark + gold, settings mesh (ember), TripGlide mobile dock + Urbanist desktop density -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MegaCompagnon — TripGlass v2 (mobile + desktop)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --mega-bg: #10191c;
+      --mega-deep: #0a0e12;
+      --mega-text: #ededed;
+      --mega-muted: rgba(237, 237, 237, 0.58);
+      --mega-faint: rgba(237, 237, 237, 0.38);
+      --mega-border: rgba(255, 255, 255, 0.1);
+      --brand-gold: #f2b43c;
+      --brand-magenta: #d8497f;
+      --blur: blur(28px) saturate(170%);
+      --spring: cubic-bezier(0.34, 1.28, 0.64, 1);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --font: "Bricolage Grotesque", Inter, system-ui, sans-serif;
+      --font-body: Inter, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: var(--font-body);
+      background: #06080c;
+      color: var(--mega-text);
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    h1.doc {
+      font-family: var(--font);
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.02em;
+    }
+    .doc-sub { color: var(--mega-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+    .board {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    @media (max-width: 960px) { .board { grid-template-columns: 1fr; } }
+
+    /* Shared ember mesh (settings preset) */
+    .mesh {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 65% 50% at 30% 20%, rgba(238, 106, 84, 0.22), transparent 58%),
+        radial-gradient(ellipse 55% 45% at 75% 75%, rgba(242, 180, 60, 0.14), transparent 52%),
+        linear-gradient(165deg, #0c0806 0%, #12100c 50%, #080606 100%);
+    }
+
+    /* —— Mobile frame —— */
+    .phone {
+      position: relative;
+      height: 780px;
+      border-radius: 36px;
+      overflow: hidden;
+      border: 1px solid var(--mega-border);
+      box-shadow: 0 40px 80px -32px rgba(0,0,0,0.8);
+      background: var(--mega-bg);
+    }
+    .phone-inner { position: relative; z-index: 1; height: 100%; padding: 1.1rem 1.15rem 5.5rem; }
+    .m-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .hello { font-family: var(--font); font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em; }
+    .hello span { display: block; font-size: 0.75rem; font-weight: 500; color: var(--mega-muted); margin-top: 0.15rem; }
+    .avatar {
+      width: 2.6rem; height: 2.6rem; border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand-gold), var(--brand-magenta));
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .search {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.75rem 1rem; border-radius: 999px; margin-bottom: 1rem;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--mega-border);
+      color: var(--mega-muted); font-size: 0.8rem;
+    }
+    .chips { display: flex; gap: 0.45rem; overflow: hidden; margin-bottom: 1rem; }
+    .chip {
+      flex-shrink: 0; padding: 0.45rem 0.9rem; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 600; color: var(--mega-muted);
+      border: 1px solid var(--mega-border); background: rgba(255,255,255,0.04);
+    }
+    .chip.on { background: var(--brand-gold); color: #10191c; border-color: transparent; }
+    .hero {
+      position: relative; border-radius: 28px; overflow: hidden; height: 320px;
+      background: linear-gradient(160deg, #1a2830, #0c1216);
+      border: 1px solid var(--mega-border);
+      margin-bottom: 1rem;
+    }
+    .hero::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(10,14,18,0.92) 0%, transparent 55%);
+    }
+    .hero-glass {
+      position: absolute; left: 0.85rem; right: 0.85rem; bottom: 0.85rem; z-index: 2;
+      padding: 0.85rem 1rem; border-radius: 18px;
+      background: rgba(255,255,255,0.1); backdrop-filter: var(--blur);
+      border: 1px solid rgba(255,255,255,0.14);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .hero-glass strong { font-family: var(--font); font-size: 0.95rem; }
+    .hero-glass small { color: var(--mega-muted); font-size: 0.7rem; }
+    .cta {
+      width: 2.4rem; height: 2.4rem; border-radius: 999px;
+      background: #1a1f24; color: var(--mega-text);
+      display: grid; place-items: center; font-size: 1rem;
+    }
+    .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+    .kpi {
+      padding: 0.9rem; border-radius: 20px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--mega-border);
+      backdrop-filter: var(--blur);
+    }
+    .kpi .v { font-family: var(--font); font-size: 1.45rem; font-weight: 800; }
+    .kpi .l { font-size: 0.7rem; color: var(--mega-muted); }
+
+    /* TripGlide floating dock */
+    .dock {
+      position: absolute; left: 1rem; right: 1rem; bottom: 1.1rem; z-index: 20;
+      height: 4rem; border-radius: 999px;
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0 0.5rem;
+      background: rgba(18, 22, 28, 0.72);
+      backdrop-filter: var(--blur);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 16px 40px -12px rgba(0,0,0,0.65), 0 0 0 1px rgba(242,180,60,0.08);
+    }
+    .dock a {
+      width: 2.75rem; height: 2.75rem; border-radius: 999px;
+      display: grid; place-items: center; color: var(--mega-faint);
+      text-decoration: none; font-size: 1.05rem; position: relative;
+      transition: transform 0.3s var(--spring);
+    }
+    .dock a:hover { transform: scale(1.08); color: var(--mega-muted); }
+    .dock a.on {
+      background: var(--brand-gold);
+      color: #10191c;
+      box-shadow: 0 8px 20px -6px rgba(242,180,60,0.55);
+    }
+
+    /* —— Desktop frame —— */
+    .desk {
+      position: relative;
+      min-height: 780px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid var(--mega-border);
+      box-shadow: 0 40px 80px -32px rgba(0,0,0,0.75);
+      display: grid;
+      grid-template-columns: 72px 1fr 280px;
+      background: var(--mega-deep);
+    }
+    .desk-rail {
+      position: relative; z-index: 2;
+      margin: 1rem 0 1rem 0.85rem;
+      border-radius: 40px;
+      padding: 1rem 0.55rem;
+      display: flex; flex-direction: column; align-items: center; gap: 0.45rem;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: var(--blur);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 20px 48px -24px rgba(0,0,0,0.7);
+    }
+    .desk-logo {
+      width: 2.4rem; height: 2.4rem; border-radius: 14px; margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, var(--brand-gold), var(--brand-magenta));
+    }
+    .rail-btn {
+      width: 2.6rem; height: 2.6rem; border-radius: 14px;
+      border: none; background: transparent; color: var(--mega-faint);
+      cursor: pointer; font-size: 1rem;
+      transition: all 0.3s var(--spring);
+    }
+    .rail-btn:hover { background: rgba(255,255,255,0.06); color: var(--mega-muted); transform: scale(1.06); }
+    .rail-btn.on {
+      background: var(--brand-gold);
+      color: #10191c;
+      box-shadow: 0 8px 20px -8px rgba(242,180,60,0.6);
+    }
+    .desk-main {
+      position: relative; z-index: 2;
+      margin: 1rem 0.85rem;
+      border-radius: 40px;
+      padding: 1.35rem 1.5rem;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: var(--blur);
+      border: 1px solid rgba(255,255,255,0.11);
+      box-shadow: 0 24px 56px -28px rgba(0,0,0,0.7);
+      overflow: auto;
+    }
+    .desk-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; }
+    .desk-top h2 { font-family: var(--font); font-size: 1.65rem; font-weight: 800; letter-spacing: -0.03em; }
+    .desk-top p { color: var(--mega-muted); font-size: 0.85rem; margin-top: 0.2rem; }
+    .util { display: flex; gap: 0.45rem; }
+    .util button {
+      width: 2.4rem; height: 2.4rem; border-radius: 999px;
+      border: 1px solid var(--mega-border); background: rgba(255,255,255,0.04);
+      color: var(--mega-muted); cursor: pointer;
+      transition: transform 0.25s var(--spring);
+    }
+    .util button:hover { transform: scale(1.08); }
+    .subnav {
+      display: inline-flex; gap: 0.25rem; padding: 0.25rem;
+      border-radius: 999px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--mega-border); margin-bottom: 1.1rem;
+    }
+    .subnav span {
+      padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+      color: var(--mega-muted);
+    }
+    .subnav span.on { background: var(--brand-gold); color: #10191c; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; margin-bottom: 1rem; }
+    .metric {
+      padding: 1.1rem; border-radius: 22px;
+      border: 1px solid var(--mega-border);
+      background: rgba(255,255,255,0.05);
+      transition: transform 0.35s var(--spring);
+    }
+    .metric:hover { transform: translateY(-4px); }
+    .metric .v { font-family: var(--font); font-size: 1.85rem; font-weight: 800; }
+    .metric .l { font-size: 0.72rem; color: var(--mega-muted); }
+    .metric.g { box-shadow: inset 0 0 40px -20px rgba(242,180,60,0.35); }
+    .panels { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.85rem; }
+    .panel {
+      padding: 1.1rem; border-radius: 22px;
+      border: 1px solid var(--mega-border);
+      background: rgba(255,255,255,0.04);
+      min-height: 180px;
+    }
+    .panel h3 { font-family: var(--font); font-size: 0.95rem; margin-bottom: 0.75rem; }
+    .bars { display: flex; align-items: flex-end; gap: 0.35rem; height: 100px; }
+    .bars i {
+      flex: 1; border-radius: 8px 8px 4px 4px;
+      background: linear-gradient(180deg, var(--brand-gold), rgba(242,180,60,0.2));
+      opacity: 0.85;
+    }
+    .desk-rail-right {
+      position: relative; z-index: 2;
+      margin: 1rem 0.85rem 1rem 0;
+      border-radius: 40px;
+      padding: 1.1rem;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: var(--blur);
+      border: 1px solid rgba(255,255,255,0.11);
+    }
+    .desk-rail-right h3 { font-family: var(--font); font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .rail-card {
+      padding: 0.75rem; border-radius: 16px; margin-bottom: 0.55rem;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--mega-border);
+      font-size: 0.78rem; color: var(--mega-muted);
+    }
+    .label {
+      display: inline-block; margin-bottom: 0.5rem;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--brand-gold);
+    }
+  </style>
+</head>
+<body>
+  <h1 class="doc">TripGlass v2 — MegaCompagnon</h1>
+  <p class="doc-sub">Tokens MegaTv · fond Ember (settings) · dock TripGlide · fenêtres liquid glass · accent gold #F2B43C</p>
+
+  <div class="board">
+    <div>
+      <span class="label">Mobile</span>
+      <div class="phone">
+        <div class="mesh"></div>
+        <div class="phone-inner">
+          <div class="m-header">
+            <div class="hello">Bonjour<span>Dashboard · profil Alex</span></div>
+            <div class="avatar"></div>
+          </div>
+          <div class="search">Rechercher films, séries…</div>
+          <div class="chips">
+            <span class="chip on">Tout</span>
+            <span class="chip">Films</span>
+            <span class="chip">Séries</span>
+          </div>
+          <div class="hero">
+            <div class="hero-glass">
+              <div>
+                <strong>Reprendre · Dune</strong><br />
+                <small>★ 8.4 · Episode 2</small>
+              </div>
+              <div class="cta">→</div>
+            </div>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="v">42</div><div class="l">Films</div></div>
+            <div class="kpi"><div class="v">18h</div><div class="l">Temps total</div></div>
+          </div>
+        </div>
+        <nav class="dock" aria-label="Navigation">
+          <a class="on" href="#">⌂</a>
+          <a href="#">♡</a>
+          <a href="#">☰</a>
+          <a href="#">☺</a>
+          <a href="#">⚙</a>
+        </nav>
+      </div>
+    </div>
+
+    <div>
+      <span class="label">Desktop</span>
+      <div class="desk">
+        <div class="mesh"></div>
+        <aside class="desk-rail">
+          <div class="desk-logo"></div>
+          <button class="rail-btn on" type="button">⌂</button>
+          <button class="rail-btn" type="button">♡</button>
+          <button class="rail-btn" type="button">☰</button>
+          <button class="rail-btn" type="button">☺</button>
+          <button class="rail-btn" type="button">⚙</button>
+        </aside>
+        <main class="desk-main">
+          <div class="desk-top">
+            <div>
+              <h2>Bonjour, Alex</h2>
+              <p>Vue d’ensemble · sync cloud OK</p>
+            </div>
+            <div class="util">
+              <button type="button">⌕</button>
+              <button type="button">🔔</button>
+              <button type="button">📺</button>
+            </div>
+          </div>
+          <div class="subnav">
+            <span class="on">Vue d’ensemble</span>
+            <span>Activité</span>
+            <span>Historique</span>
+          </div>
+          <div class="metrics">
+            <div class="metric g"><div class="v">42</div><div class="l">Films</div></div>
+            <div class="metric"><div class="v">128</div><div class="l">Épisodes</div></div>
+            <div class="metric"><div class="v">18h</div><div class="l">Temps</div></div>
+            <div class="metric"><div class="v">6</div><div class="l">Reprises</div></div>
+          </div>
+          <div class="panels">
+            <div class="panel">
+              <h3>Activité</h3>
+              <div class="bars">
+                <i style="height:40%"></i><i style="height:70%"></i><i style="height:55%"></i>
+                <i style="height:90%"></i><i style="height:45%"></i><i style="height:65%"></i>
+                <i style="height:80%"></i>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Top contenus</h3>
+              <div class="rail-card">Dune · Part Two</div>
+              <div class="rail-card">The Bear S3</div>
+              <div class="rail-card">Shōgun</div>
+            </div>
+          </div>
+        </main>
+        <aside class="desk-rail-right">
+          <h3>Reprendre</h3>
+          <div class="rail-card">Dune · 42 min restantes</div>
+          <div class="rail-card">The Bear · S3E4</div>
+          <h3 style="margin-top:1rem">Calendrier</h3>
+          <div class="rail-card">Mercredi · 2 sorties</div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

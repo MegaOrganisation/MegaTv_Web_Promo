@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "profile requis" }, { status: 400 });
   }
 
-  const { playlists, favoriteChannels, error, scope } = await getIptvPlaylistsForProfile(profileId);
+  const { playlists, favoriteChannels, hiddenCategories, hiddenChannels, error, scope } = await getIptvPlaylistsForProfile(profileId);
 
   if (playlists.length === 0) {
     return NextResponse.json({
@@ -30,6 +30,8 @@ export async function GET(request: Request) {
       categories: [],
       epgUrls: [],
       favoriteChannels,
+      hiddenCategories,
+      hiddenChannels,
       capped: false,
       total: 0,
       errors: error ? [{ listId: "", name: "", message: error }] : [],
@@ -39,5 +41,12 @@ export async function GET(request: Request) {
   }
 
   const result = await loadIptvChannels(playlists);
-  return NextResponse.json({ configured: true, favoriteChannels, scope, ...result });
+  return NextResponse.json({
+    configured: true,
+    favoriteChannels,
+    hiddenCategories,
+    hiddenChannels,
+    scope,
+    ...result
+  });
 }

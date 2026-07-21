@@ -1,19 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Tv } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Tv, X } from "lucide-react";
 import { clsx } from "clsx";
 
 import { useMediaDetailOptional } from "@/features/companion/ui/MediaDetailContext";
+import { IptvChannelLogo } from "@/features/web/tv/IptvChannelLogo";
 import {
-  MAJOR_NETWORKS,
   TONIGHT_COUNTRIES,
+  type TonightChannelOption,
   type TonightCountry,
   type TonightProgram
 } from "@/lib/tvmaze/tonight";
 
 const COUNTRY_KEY = "megacompanion_tonight_country_v1";
+const CHANNEL_KEY = "megacompanion_tonight_channel_v1";
 
 function readCountry(): TonightCountry {
   try {
@@ -33,41 +34,102 @@ function writeCountry(id: TonightCountry) {
   }
 }
 
+function readChannel(country: TonightCountry): string {
+  try {
+    return localStorage.getItem(`${CHANNEL_KEY}_${country}`) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeChannel(country: TonightCountry, id: string) {
+  try {
+    localStorage.setItem(`${CHANNEL_KEY}_${country}`, id);
+    localStorage.setItem(CHANNEL_KEY, id);
+  } catch {
+    /* ignore */
+  }
+}
+
 type Props = {
-  /** Mode compact pour calendrier */
   compact?: boolean;
   className?: string;
 };
 
-/** « Ce soir » — programmes des 2–3 plus grandes chaînes du pays (TVMaze), carousel en boucle. */
+/** Programme TV — pays + chaîne en menus déroulants. */
 export function TonightTvRail({ compact = false, className }: Props) {
   const media = useMediaDetailOptional();
   const [country, setCountry] = useState<TonightCountry>("FR");
+  const [channelId, setChannelId] = useState("");
+  const [channels, setChannels] = useState<TonightChannelOption[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [programs, setPrograms] = useState<TonightProgram[]>([]);
   const [loading, setLoading] = useState(true);
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [localDetail, setLocalDetail] = useState<TonightProgram | null>(null);
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [channelOpen, setChannelOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setCountry(readCountry());
+    const c = readCountry();
+    setCountry(c);
+    setChannelId(readChannel(c));
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!countryOpen && !channelOpen) return;
+    const onPointer = (event: MouseEvent) => {
+      if (!filtersRef.current?.contains(event.target as Node)) {
+        setCountryOpen(false);
+        setChannelOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCountryOpen(false);
+        setChannelOpen(false);
+        setLocalDetail(null);
+      }
+    };
+    window.addEventListener("mousedown", onPointer);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onPointer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [countryOpen, channelOpen]);
 
   useEffect(() => {
     if (!hydrated) return;
     let cancelled = false;
     setLoading(true);
-    void fetch(`/api/tvmaze/tonight?country=${country}`)
+    const qs = new URLSearchParams({ country });
+    if (channelId) qs.set("channel", channelId);
+    void fetch(`/api/tvmaze/tonight?${qs.toString()}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (cancelled) return;
         const list = Array.isArray(json?.programs) ? (json.programs as TonightProgram[]) : [];
+        const chans = Array.isArray(json?.channels) ? (json.channels as TonightChannelOption[]) : [];
+        setChannels(chans);
         setPrograms(list);
-        setIndex(0);
+        setActiveId(list[0]?.id ?? null);
+
+        if (chans.length === 0) return;
+        const stillValid = channelId && chans.some((c) => c.id === channelId);
+        if (!stillValid) {
+          const fallback = chans[0]!.id;
+          setChannelId(fallback);
+          writeChannel(country, fallback);
+        }
       })
       .catch(() => {
-        if (!cancelled) setPrograms([]);
+        if (!cancelled) {
+          setPrograms([]);
+          setActiveId(null);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -75,20 +137,14 @@ export function TonightTvRail({ compact = false, className }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [country, hydrated]);
+  }, [country, channelId, hydrated]);
 
-  useEffect(() => {
-    if (paused || programs.length < 2) return;
-    const timer = window.setInterval(() => {
-      setIndex((i) => (i + 1) % programs.length);
-    }, 5200);
-    return () => window.clearInterval(timer);
-  }, [paused, programs.length]);
-
-  const current = programs[index] ?? null;
-  const channelsHint = useMemo(() => MAJOR_NETWORKS[country].slice(0, 3).join(" · "), [country]);
-
-  const [localDetail, setLocalDetail] = useState<TonightProgram | null>(null);
+  const currentCountry = TONIGHT_COUNTRIES.find((c) => c.id === country) || TONIGHT_COUNTRIES[0]!;
+  const current = useMemo(
+    () => programs.find((p) => p.id === activeId) || programs[0] || null,
+    [programs, activeId]
+  );
+  const list = useMemo(() => programs.slice(0, compact ? 4 : 10), [programs, compact]);
 
   const handleOpen = useCallback(
     (program: TonightProgram) => {
@@ -98,9 +154,7 @@ export function TonightTvRail({ compact = false, className }: Props) {
           tmdbId: program.tmdbId,
           title: program.title,
           posterUrl: program.posterUrl,
-          meta: `${program.network} · ${program.airtime}${
-            program.season ? ` · S${program.season}E${program.episode ?? "?"}` : ""
-          }`,
+          meta: `${program.network} · ${program.airtime}`,
           layoutId: `tonight-${program.id}`
         });
         return;
@@ -108,134 +162,207 @@ export function TonightTvRail({ compact = false, className }: Props) {
       setLocalDetail(program);
     },
     [media]
-  )
+  );
+
+  const activeChannel = channels.find((c) => c.id === channelId);
 
   return (
     <section
-      className={clsx("tonight-tv", compact && "tonight-tv--compact", className)}
-      aria-label="Ce soir à la télé"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      className={clsx("tonight-tv tonight-tv--program", compact && "tonight-tv--compact", className)}
+      aria-label="Programme TV"
     >
       <div className="tonight-tv__head">
         <div className="min-w-0">
           <p className="tonight-tv__eyebrow">
             <Tv className="h-3.5 w-3.5" />
-            Ce soir
+            Programme
           </p>
-          <p className="tonight-tv__channels">{channelsHint}</p>
+          <p className="tonight-tv__channels">{activeChannel?.name || "Guide TV"}</p>
         </div>
-        <select
-          className="tonight-tv__country focus-ring"
-          value={country}
-          aria-label="Pays du guide TV"
-          onChange={(e) => {
-            const next = e.target.value as TonightCountry;
-            setCountry(next);
-            writeCountry(next);
-          }}
-        >
-          {TONIGHT_COUNTRIES.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
+
+        <div className="tonight-tv__filters" ref={filtersRef}>
+          <button
+            type="button"
+            className="tonight-tv__country-btn focus-ring"
+            aria-haspopup="listbox"
+            aria-expanded={countryOpen}
+            aria-label="Pays du guide TV"
+            onClick={() => {
+              setCountryOpen((v) => !v);
+              setChannelOpen(false);
+            }}
+          >
+            <span className="tonight-tv__flag-badge" aria-hidden>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={currentCountry.flagSrc} alt="" className="tonight-tv__flag-img" width={22} height={16} />
+            </span>
+            <span className="tonight-tv__country-label">{currentCountry.label}</span>
+            <ChevronDown className={clsx("h-3.5 w-3.5 opacity-70 transition", countryOpen && "rotate-180")} />
+          </button>
+
+          <button
+            type="button"
+            className="tonight-tv__channel-btn focus-ring"
+            aria-haspopup="listbox"
+            aria-expanded={channelOpen}
+            aria-label="Chaîne du guide TV"
+            disabled={channels.length === 0}
+            onClick={() => {
+              setChannelOpen((v) => !v);
+              setCountryOpen(false);
+            }}
+          >
+            <span className="tonight-tv__channel-logo" aria-hidden>
+              <IptvChannelLogo
+                src={activeChannel?.logoUrl ?? null}
+                className="h-full w-full object-contain"
+                fallback={<span className="text-[9px] font-extrabold">{(activeChannel?.name || "TV").slice(0, 3)}</span>}
+              />
+            </span>
+            <span className="tonight-tv__channel-label">{activeChannel?.name || "Chaîne"}</span>
+            <ChevronDown className={clsx("h-3.5 w-3.5 opacity-70 transition", channelOpen && "rotate-180")} />
+          </button>
+
+          {countryOpen ? (
+            <ul className="tonight-tv__country-menu" role="listbox" aria-label="Choisir un pays">
+              {TONIGHT_COUNTRIES.map((c) => (
+                <li key={c.id} role="option" aria-selected={c.id === country}>
+                  <button
+                    type="button"
+                    className={clsx("tonight-tv__country-option", c.id === country && "is-active")}
+                    onClick={() => {
+                      setCountry(c.id);
+                      writeCountry(c.id);
+                      setChannelId("");
+                      writeChannel(c.id, "");
+                      setCountryOpen(false);
+                    }}
+                  >
+                    <span className="tonight-tv__flag-badge" aria-hidden>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={c.flagSrc} alt="" className="tonight-tv__flag-img" width={22} height={16} />
+                    </span>
+                    <span>{c.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {channelOpen ? (
+            <ul className="tonight-tv__channel-menu" role="listbox" aria-label="Choisir une chaîne">
+              {channels.map((c) => (
+                <li key={c.id} role="option" aria-selected={c.id === channelId}>
+                  <button
+                    type="button"
+                    className={clsx("tonight-tv__channel-option", c.id === channelId && "is-active")}
+                    onClick={() => {
+                      setChannelId(c.id);
+                      writeChannel(country, c.id);
+                      setChannelOpen(false);
+                    }}
+                  >
+                    <span className="tonight-tv__channel-logo" aria-hidden>
+                      <IptvChannelLogo
+                        src={c.logoUrl}
+                        className="h-full w-full object-contain"
+                        fallback={<span className="text-[9px] font-extrabold">{c.name.slice(0, 3)}</span>}
+                      />
+                    </span>
+                    <span className="truncate">{c.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       </div>
 
       {loading ? <p className="tonight-tv__empty">Chargement du guide…</p> : null}
       {!loading && programs.length === 0 ? (
-        <p className="tonight-tv__empty">Aucun programme prime-time trouvé pour ce pays ce soir.</p>
+        <p className="tonight-tv__empty">Aucun programme pour cette chaîne — choisis-en une autre.</p>
       ) : null}
 
       {current ? (
-        <div className="tonight-tv__stage">
-          <button
-            type="button"
-            className="tonight-tv__nav focus-ring"
-            aria-label="Programme précédent"
-            onClick={() => setIndex((i) => (i - 1 + programs.length) % programs.length)}
-          >
-            <ChevronLeft className="h-4 w-4" />
+        <div className="tonight-tv__program">
+          <button type="button" className="tonight-tv__hero focus-ring" onClick={() => handleOpen(current)}>
+            <div className="tonight-tv__hero-media">
+              {current.posterUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={current.posterUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="tonight-tv__hero-empty" />
+              )}
+            </div>
+            <div className="tonight-tv__hero-meta">
+              <p className="tonight-tv__network">
+                {activeChannel?.logoUrl ? (
+                  <IptvChannelLogo src={activeChannel.logoUrl} className="tonight-tv__network-logo" />
+                ) : null}
+                <span>{current.network}</span>
+              </p>
+              <p className="tonight-tv__title">{current.title}</p>
+              <p className="tonight-tv__sub">
+                {current.airtime}
+                {current.endTime ? ` – ${current.endTime}` : ""}
+                {current.season && current.episode ? ` · S${current.season}E${current.episode}` : ""}
+              </p>
+            </div>
           </button>
 
-          <AnimatePresence mode="wait">
-            <motion.button
-              key={current.id}
-              type="button"
-              className="tonight-tv__card focus-ring"
-              onClick={() => handleOpen(current)}
-              initial={{ opacity: 0, x: 28 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -28 }}
-              transition={{ duration: 0.35 }}
-            >
-              <div className="tonight-tv__poster-wrap">
-                {current.posterUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <motion.img
-                    layoutId={`tonight-${current.id}`}
-                    src={current.posterUrl}
-                    alt=""
-                    className="tonight-tv__poster"
-                  />
-                ) : (
-                  <div className="tonight-tv__poster tonight-tv__poster--empty">
-                    <Tv className="h-8 w-8 opacity-40" />
-                  </div>
-                )}
-              </div>
-              <div className="tonight-tv__meta">
-                <p className="tonight-tv__network">
-                  {current.network}
-                  <span>{current.airtime}</span>
-                </p>
-                <p className="tonight-tv__title">{current.title}</p>
-                <p className="tonight-tv__sub">
-                  {current.season
-                    ? `S${current.season} · E${current.episode ?? "?"} · `
-                    : null}
-                  Appuyer pour le détail
-                </p>
-              </div>
-            </motion.button>
-          </AnimatePresence>
-
-          <button
-            type="button"
-            className="tonight-tv__nav focus-ring"
-            aria-label="Programme suivant"
-            onClick={() => setIndex((i) => (i + 1) % programs.length)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      ) : null}
-
-      {programs.length > 1 ? (
-        <div className="tonight-tv__dots" aria-hidden>
-          {programs.slice(0, 12).map((p, i) => (
-            <button
-              key={p.id}
-              type="button"
-              className={clsx("tonight-tv__dot", i === index && "is-active")}
-              onClick={() => setIndex(i)}
-            />
-          ))}
+          <div className="tonight-tv__list">
+            {list.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={clsx("tonight-tv__row focus-ring", p.id === current.id && "is-active")}
+                onClick={() => {
+                  setActiveId(p.id);
+                  handleOpen(p);
+                }}
+              >
+                <div className="tonight-tv__row-thumb">
+                  {p.posterUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.posterUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="tonight-tv__row-title">{p.title}</p>
+                  <p className="tonight-tv__row-sub">{p.network}</p>
+                </div>
+                <span className="tonight-tv__row-time">{p.airtime}</span>
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
       {localDetail ? (
-        <div className="tonight-tv__local-scrim" onClick={() => setLocalDetail(null)} role="presentation">
-          <div className="tonight-tv__local-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal>
-            <p className="tonight-tv__network">
+        <div
+          className="tonight-tv__local-scrim"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setLocalDetail(null)}
+        >
+          <div className="tonight-tv__local-panel" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="tonight-tv__local-close focus-ring"
+              onClick={() => setLocalDetail(null)}
+              aria-label="Fermer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {localDetail.posterUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={localDetail.posterUrl} alt="" className="tonight-tv__local-poster" />
+            ) : null}
+            <h3 className="mt-3 pr-8 text-lg font-bold">{localDetail.title}</h3>
+            <p className="text-sm text-[var(--mega-text-muted)]">
               {localDetail.network} · {localDetail.airtime}
             </p>
-            <h3 className="tonight-tv__title">{localDetail.title}</h3>
-            <p className="tonight-tv__local-summary">{localDetail.summary || "Pas de synopsis pour ce programme."}</p>
-            <button type="button" className="mega-spectrum-btn focus-ring mt-4" onClick={() => setLocalDetail(null)}>
-              Fermer
-            </button>
+            {localDetail.summary ? <p className="tonight-tv__local-summary">{localDetail.summary}</p> : null}
           </div>
         </div>
       ) : null}

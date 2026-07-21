@@ -35,6 +35,8 @@ function RailContinueCard({
   const media = useMediaDetailOptional();
   const backdrop = tmdbProxiedImageUrl(item.backdrop_path || item.poster_path, "w500");
   const poster = tmdbProxiedImageUrl(item.poster_path, "w185");
+  const [imgSrc, setImgSrc] = useState<string | null>(poster || backdrop);
+  const [imgFailed, setImgFailed] = useState(false);
   const layoutId = `media-${item.media_type}-${item.tmdb_id}`;
   const meta =
     item.media_type === "tv" && item.season
@@ -47,13 +49,18 @@ function RailContinueCard({
       ? Math.min(99, Math.round(item.progress <= 1 ? item.progress * 100 : item.progress))
       : null;
 
+  useEffect(() => {
+    setImgSrc(poster || backdrop);
+    setImgFailed(false);
+  }, [poster, backdrop, item.track_id]);
+
   function openDetail() {
-    if (!item.tmdb_id) return;
-    media?.openMediaDetail({
+    if (!item.tmdb_id || !media) return;
+    media.openMediaDetail({
       mediaType: item.media_type as "movie" | "tv",
       tmdbId: item.tmdb_id,
       title: item.title || `TMDB ${item.tmdb_id}`,
-      posterUrl: poster,
+      posterUrl: imgSrc || poster,
       backdropUrl: backdrop,
       meta,
       layoutId
@@ -61,11 +68,14 @@ function RailContinueCard({
   }
 
   return (
-    <motion.article
+    <motion.button
+      type="button"
       className="rail-cw-infuse text-left"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...cinemaSpringSnappy, delay: index * 0.04 }}
+      onClick={openDetail}
+      aria-label={`Ouvrir ${item.title || `TMDB ${item.tmdb_id}`}`}
     >
       <div className="rail-cw-infuse__shell">
         {backdrop ? (
@@ -73,26 +83,30 @@ function RailContinueCard({
             <CompanionCanvasImg src={backdrop} alt="" className="rail-cw-infuse__backdrop-img" />
           </div>
         ) : null}
-        <button
-          type="button"
-          className="rail-cw-infuse__poster rail-cw-infuse__poster--hit focus-ring group"
-          onClick={openDetail}
-          aria-label={`Ouvrir ${item.title || `TMDB ${item.tmdb_id}`}`}
-        >
+        <div className="rail-cw-infuse__poster rail-cw-infuse__poster--hit">
           <motion.div layoutId={layoutId} className="rail-cw-infuse__poster-zoom">
-            {poster ? (
-              <CompanionCanvasImg src={poster} alt="" className="rail-cw-infuse__poster-img" />
+            {imgSrc && !imgFailed ? (
+              <CompanionCanvasImg
+                src={imgSrc}
+                alt=""
+                className="rail-cw-infuse__poster-img"
+                onError={() => {
+                  if (imgSrc !== backdrop && backdrop) {
+                    setImgSrc(backdrop);
+                    return;
+                  }
+                  setImgFailed(true);
+                }}
+              />
             ) : (
               <div className="rail-cw-infuse__poster-fallback">
                 <Play className="h-5 w-5 fill-white/40 text-white/40" />
               </div>
             )}
           </motion.div>
-        </button>
+        </div>
         <div className="rail-cw-infuse__meta">
-          <button type="button" className="rail-cw-infuse__title-btn" onClick={openDetail}>
-            <p className="rail-cw-infuse__title">{item.title || `TMDB ${item.tmdb_id}`}</p>
-          </button>
+          <p className="rail-cw-infuse__title">{item.title || `TMDB ${item.tmdb_id}`}</p>
           <p className="rail-cw-infuse__sub">
             <Play className="h-3 w-3 shrink-0 fill-current" />
             <span className="truncate">{meta}</span>
@@ -102,7 +116,7 @@ function RailContinueCard({
           </div>
         </div>
       </div>
-    </motion.article>
+    </motion.button>
   );
 }
 
@@ -173,7 +187,7 @@ function renderVariantBody(
               Calendrier
             </Link>
             <Link
-              href={withProfile("/companion/devices")}
+              href={withProfile("/companion/manage/devices")}
               className="focus-ring cinema-rail-link inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--mega-text-muted)] hover:text-[var(--brand-gold)]"
               title="Lancer sur TV"
             >
@@ -224,7 +238,7 @@ function renderVariantBody(
           <h2 className="mega-cinema-rail-title">Appareils</h2>
           <p className="mt-2 text-xs text-[var(--mega-text-muted)]">TV, mobile et sessions web.</p>
           <Link
-            href={withProfile("/companion/devices")}
+            href={withProfile("/companion/manage/devices")}
             className="focus-ring mt-3 inline-flex items-center gap-2 rounded-2xl border border-[var(--mega-border)] bg-[var(--mega-card-bg)]/50 px-3 py-2.5 text-xs font-semibold"
           >
             <MegaTvIcon name="cast" size={16} />

@@ -31,9 +31,12 @@ export function MobileCompanionChrome({
   return (
     <header className="companion-mobile-header pointer-events-none fixed inset-x-0 top-0 z-[90] w-full max-w-[100vw] lg:hidden">
       <div className="pointer-events-auto mx-auto flex w-full max-w-md items-center justify-between gap-3 px-3 py-2.5 pt-[max(0.65rem,env(safe-area-inset-top))]">
-        <Link href="/companion" className="focus-ring flex min-w-0 items-center gap-2 rounded-2xl">
-          <MegaCompagnonBrand size={30} />
-        </Link>
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="shrink-0">{profileAnchor}</div>
+          <Link href="/companion" className="focus-ring flex min-w-0 items-center gap-2 rounded-2xl">
+            <MegaCompagnonBrand size={30} />
+          </Link>
+        </div>
         <div className="pj2-mobile-header-actions">
           {headerEnd ? <div className="shrink-0">{headerEnd}</div> : null}
           {isAdmin ? (
@@ -44,7 +47,6 @@ export function MobileCompanionChrome({
               <MegaTvIcon name="shield" size={16} />
             </Link>
           ) : null}
-          <div className="shrink-0">{profileAnchor}</div>
         </div>
       </div>
     </header>
@@ -58,7 +60,7 @@ export function MobileCompanionNav({ isAdmin: _isAdmin = false }: { isAdmin?: bo
   const items = COMPANION_DOCK_ROUTES;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[85] px-3 pb-[max(0.85rem,env(safe-area-inset-bottom))] lg:hidden">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[130] px-3 pb-[max(0.85rem,env(safe-area-inset-bottom))] lg:hidden">
       <LayoutGroup id="mobile-dock">
         <nav
           className="companion-mobile-nav v10-mobile-dock mega-dock pj2-mobile-dock companion-glass-tray pointer-events-auto mx-auto grid w-full max-w-md gap-0.5 p-1.5"
@@ -85,13 +87,21 @@ export function MobileCompanionNav({ isAdmin: _isAdmin = false }: { isAdmin?: bo
                     <motion.span layoutId="companion-dock-active" className="pj2-dock-active-pill" transition={cinemaSpringSnappy} />
                   ) : null}
                   <motion.span
-                    className="relative z-[1] inline-flex flex-col items-center"
+                    className={clsx(
+                      "relative z-[1] inline-flex flex-col items-center",
+                      active ? "text-white" : "text-white/55"
+                    )}
                     animate={{ scale: active ? 1.06 : 1 }}
                     transition={cinemaSpringSnappy}
                   >
-                    <DockLottieIcon name={item.icon} active={active} size={18} className="text-inherit" />
+                    <DockLottieIcon
+                      name={item.icon}
+                      active={active}
+                      size={18}
+                      className={active ? "text-white" : "text-white/55"}
+                    />
                     {active ? (
-                      <span className="mt-0.5 block w-full truncate text-center text-[10px] font-bold leading-none text-[#10191c]">
+                      <span className="mt-0.5 block w-full truncate text-center text-[10px] font-bold leading-none text-white">
                         {item.shortLabel}
                       </span>
                     ) : null}

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getIptvPlaylistsForProfile, saveIptvPlaylistsForProfile } from "@/lib/iptv/queries";
 import type { IptvPlaylistEntry } from "@/lib/iptv/types";
-import { requestForceSync } from "@/lib/companion/force-sync";
+import { FORCE_SYNC_ALL_SCOPES, requestForceSync } from "@/lib/companion/force-sync";
 import { createClient } from "@/lib/supabase/server";
 
 async function assertProfileOwnership(profileId: string) {
@@ -44,6 +44,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     profileId,
     playlists: result.playlists,
+    favoriteChannels: result.favoriteChannels,
+    hiddenCategories: result.hiddenCategories,
+    hiddenChannels: result.hiddenChannels,
     updatedAt: result.updatedAt
   });
 }
@@ -74,7 +77,10 @@ export async function POST(request: Request) {
       name: String(entry.name || "").trim(),
       m3uUrl: String(entry.m3uUrl || "").trim(),
       epgUrl: String(entry.epgUrl || "").trim(),
-      enabled: entry.enabled !== false
+      enabled: entry.enabled !== false,
+      hiddenCategories: Array.isArray(entry.hiddenCategories)
+        ? entry.hiddenCategories.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)
+        : []
     }))
     .filter((entry) => entry.name && entry.m3uUrl);
 
@@ -88,7 +94,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
-  await requestForceSync(["iptv"]);
+  await requestForceSync([...FORCE_SYNC_ALL_SCOPES]);
 
   return NextResponse.json({ ok: true, ...result.data, forceSync: true });
 }

@@ -77,7 +77,8 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
         name: entry.name.trim(),
         m3uUrl: entry.m3uUrl.trim(),
         epgUrl: entry.epgUrl?.trim() || "",
-        enabled: entry.enabled !== false
+        enabled: entry.enabled !== false,
+        hiddenCategories: entry.hiddenCategories || []
       }))
       .filter((entry) => entry.name && entry.m3uUrl);
 
@@ -107,14 +108,14 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
   }
 
   return (
-    <GlassCard as="section">
-      <div className="mega-surface mega-surface-elevated mb-5 rounded-[26px]">
+    <GlassCard as="section" className="p-4 sm:p-5">
+      <div className="mega-surface mega-surface-elevated mb-5 rounded-[26px] p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="mega-metric-icon-wrap">
               <Tv className="h-5 w-5" strokeWidth={2} />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="mega-section-title">Playlists IPTV</h2>
               <p className="mega-section-sub">
                 Profil {profileLabel}… · écriture batch à l&apos;enregistrement uniquement
@@ -168,19 +169,19 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
                 if (dragIndex !== null) movePlaylist(dragIndex, index);
                 setDragIndex(null);
               }}
-              className="mega-surface mega-surface-elevated rounded-[20px]"
+              className="mega-surface mega-surface-elevated rounded-[20px] p-3.5 sm:p-4"
             >
               <div className="flex items-start gap-3">
                 {editing ? (
                   <button
                     type="button"
-                    className="mt-1 cursor-grab text-[var(--mega-text-faint)]"
+                    className="mt-1 shrink-0 cursor-grab text-[var(--mega-text-faint)]"
                     aria-label="Réordonner"
                   >
                     <GripVertical className="h-4 w-4" />
                   </button>
                 ) : null}
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 overflow-visible">
                   {editing ? (
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="block text-xs text-[var(--mega-text-faint)]">
@@ -236,12 +237,14 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-1 font-mono text-xs text-[var(--mega-text-faint)]">{maskPlaylistUrl(entry.m3uUrl)}</p>
+                      <p className="mt-1 break-all font-mono text-xs text-[var(--mega-text-faint)]">
+                        {maskPlaylistUrl(entry.m3uUrl)}
+                      </p>
                     </>
                   )}
                 </div>
                 {editing ? (
-                  <MegaButton type="button" variant="danger" className="min-h-9 px-3" onClick={() => removePlaylist(index)}>
+                  <MegaButton type="button" variant="danger" className="min-h-9 shrink-0 px-3" onClick={() => removePlaylist(index)}>
                     <Trash2 className="h-4 w-4" />
                   </MegaButton>
                 ) : null}

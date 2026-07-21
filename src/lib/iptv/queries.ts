@@ -53,7 +53,40 @@ function hasPlaylistData(state: IptvProfileState) {
 }
 
 function favoriteChannelsFromState(state: IptvProfileState): string[] {
-  const raw = (state as Record<string, unknown>).favoriteChannels;
+  const raw = state.favoriteChannels ?? (state as Record<string, unknown>).favoriteChannels;
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of raw) {
+    const id = typeof value === "string" ? value.trim() : String(value ?? "").trim();
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
+}
+
+function hiddenCategoriesFromState(state: IptvProfileState, playlists: IptvPlaylistEntry[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const push = (value: unknown) => {
+    const label = typeof value === "string" ? value.trim() : String(value ?? "").trim();
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      out.push(label);
+    }
+  };
+  const profileHidden = state.hiddenCategories ?? (state as Record<string, unknown>).hiddenCategories;
+  if (Array.isArray(profileHidden)) profileHidden.forEach(push);
+  for (const pl of playlists) {
+    (pl.hiddenCategories || []).forEach(push);
+  }
+  return out;
+}
+
+function hiddenChannelsFromState(state: IptvProfileState): string[] {
+  const raw = state.hiddenChannels ?? (state as Record<string, unknown>).hiddenChannels;
   if (!Array.isArray(raw)) return [];
   const seen = new Set<string>();
   const out: string[] = [];
@@ -143,12 +176,17 @@ export async function getIptvPlaylistsForProfile(profileId: string) {
   // Favorites are strictly profile-scoped: read only the requested profile's
   // favoriteChannels (never merged across profiles). Additive field — the
   // Companion editor ignores it.
-  const favoriteChannels = favoriteChannelsFromState(iptvByProfile[normalizedProfileId] || profileState);
+  const profileScoped = iptvByProfile[normalizedProfileId] || profileState;
+  const favoriteChannels = favoriteChannelsFromState(profileScoped);
+  const hiddenCategories = hiddenCategoriesFromState(profileScoped, playlists);
+  const hiddenChannels = hiddenChannelsFromState(profileScoped);
 
   if (playlists.length === 0 && sliceError) {
     return {
       playlists: [] as IptvPlaylistEntry[],
       favoriteChannels,
+      hiddenCategories,
+      hiddenChannels,
       updatedAt: null as string | null,
       error: sliceError.message,
       scope: "empty" as const
@@ -158,6 +196,8 @@ export async function getIptvPlaylistsForProfile(profileId: string) {
   return {
     playlists,
     favoriteChannels,
+    hiddenCategories,
+    hiddenChannels,
     updatedAt: (sliceResult.data?.updated_at as string | null) || (payloadResult.data?.updated_at as string | null) || null,
     error: null as string | null,
     scope: playlists.length > 0 && !hasPlaylistData(profileState) && !profileState.m3uUrl ? ("account" as const) : ("profile" as const)
@@ -171,7 +211,10 @@ export async function saveIptvPlaylistsForProfile(profileId: string, playlists: 
     name: entry.name,
     m3uUrl: entry.m3uUrl,
     epgUrl: entry.epgUrl || "",
-    enabled: entry.enabled !== false
+    enabled: entry.enabled !== false,
+    hiddenCategories: Array.isArray(entry.hiddenCategories)
+      ? [...new Set(entry.hiddenCategories.map((v) => String(v || "").trim()).filter(Boolean))]
+      : []
   }));
 
   const { data, error } = await supabase.rpc("megacompanion_patch_iptv_playlists", {
@@ -203,6 +246,52 @@ export async function saveIptvFavoritesForProfile(profileId: string, favoriteCha
   const { data, error } = await supabase.rpc("megacompanion_patch_iptv_favorites", {
     p_profile_id: profileId.trim(),
     p_favorite_channels: clean
+  });
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  return { ok: true as const, data };
+}
+
+/**
+ * Batch write des catégories IPTV masquées (profil-scopé).
+ * Free Tier : un seul RPC à la sauvegarde / debounce.
+ */
+export async function saveIptvHiddenCategoriesForProfile(profileId: string, hiddenCategories: string[]) {
+  const supabase = await createClient();
+  const seen = new Set<string>();
+  const clean = hiddenCategories
+    .map((label) => (typeof label === "string" ? label.trim() : String(label ?? "").trim()))
+    .filter((label) => label && !seen.has(label) && (seen.add(label), true));
+
+  const { data, error } = await supabase.rpc("megacompanion_patch_iptv_hidden_categories", {
+    p_profile_id: profileId.trim(),
+    p_hidden_categories: clean
+  });
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  return { ok: true as const, data };
+}
+
+/**
+ * Batch write des chaînes IPTV masquées individuellement (profil-scopé).
+ * Free Tier : un seul RPC à la sauvegarde / debounce.
+ */
+export async function saveIptvHiddenChannelsForProfile(profileId: string, hiddenChannels: string[]) {
+  const supabase = await createClient();
+  const seen = new Set<string>();
+  const clean = hiddenChannels
+    .map((id) => (typeof id === "string" ? id.trim() : String(id ?? "").trim()))
+    .filter((id) => id && !seen.has(id) && (seen.add(id), true));
+
+  const { data, error } = await supabase.rpc("megacompanion_patch_iptv_hidden_channels", {
+    p_profile_id: profileId.trim(),
+    p_hidden_channels: clean
   });
 
   if (error) {

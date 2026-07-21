@@ -4,8 +4,8 @@ export const QUICK_ACCESS_OPTIONS: Array<{ id: QuickAccessId; label: string; hre
   { id: "dashboard", label: "Dashboard", href: "/companion" },
   { id: "watchlist", label: "Watchlist", href: "/companion/watchlist" },
   { id: "manage", label: "Gestion cloud", href: "/companion/manage" },
-  { id: "profiles", label: "Profils", href: "/companion/profiles" },
-  { id: "devices", label: "Appareils", href: "/companion/devices" },
+  { id: "profiles", label: "Profils", href: "/companion/manage/profiles" },
+  { id: "devices", label: "Appareils", href: "/companion/manage/devices" },
   { id: "settings", label: "Réglages", href: "/companion/settings" },
   { id: "admin", label: "Console Admin", href: "/companion/admin", adminOnly: true }
 ];

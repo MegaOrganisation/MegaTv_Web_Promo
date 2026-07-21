@@ -10,32 +10,42 @@ import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
 
 type MenuPlacement = "end" | "sidebar";
 
+/**
+ * Sélecteur profil — menu toujours en portal (body) pour éviter le clip
+ * `overflow:hidden` de la topbar.
+ */
 export function GlobalProfileSelector({ menuPlacement = "end" }: { menuPlacement?: MenuPlacement }) {
   const { profiles, activeProfileId, activeProfile, setActiveProfileId } = useCompanionProfile();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [menuStyle, setMenuStyle] = useState<{ top: number; left: number } | null>(null);
+  const [menuStyle, setMenuStyle] = useState<{ top: number; left: number; width: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => setMounted(true), []);
 
   useLayoutEffect(() => {
-    if (!open || menuPlacement !== "sidebar" || !buttonRef.current) {
+    if (!open || !buttonRef.current) {
       setMenuStyle(null);
       return;
     }
     const sync = () => {
       const rect = buttonRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setMenuStyle({ top: rect.top, left: rect.right + 12 });
+      const width = 288;
+      if (menuPlacement === "sidebar") {
+        setMenuStyle({ top: rect.top, left: rect.right + 12, width });
+        return;
+      }
+      const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
+      setMenuStyle({ top: rect.bottom + 8, left, width });
     };
     sync();
     window.addEventListener("resize", sync);
-    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("scroll", sync, { passive: true, capture: true });
     return () => {
       window.removeEventListener("resize", sync);
-      window.removeEventListener("scroll", sync);
+      window.removeEventListener("scroll", sync, true);
     };
   }, [open, menuPlacement]);
 
@@ -66,11 +76,12 @@ export function GlobalProfileSelector({ menuPlacement = "end" }: { menuPlacement
       id="companion-profile-menu"
       role="listbox"
       aria-label="Sélection du profil"
-      className={clsx(
-        "z-[120] w-[min(92vw,18rem)] overflow-hidden rounded-[22px] border border-[var(--mega-border)] bg-[var(--mega-shell-nav)] p-2 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.65)] backdrop-blur-2xl",
-        menuPlacement === "sidebar" ? "fixed" : "absolute right-0 mt-2"
-      )}
-      style={menuPlacement === "sidebar" && menuStyle ? { top: menuStyle.top, left: menuStyle.left } : undefined}
+      className="fixed z-[140] w-[min(92vw,18rem)] overflow-hidden rounded-[22px] border border-[var(--mega-border)] bg-[rgba(12,16,24,0.96)] p-2 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.65)] backdrop-blur-xl"
+      style={
+        menuStyle
+          ? { top: menuStyle.top, left: menuStyle.left, width: menuStyle.width }
+          : { visibility: "hidden" }
+      }
     >
       <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--mega-text-faint)]">Filtrer par profil</p>
       <button
@@ -148,11 +159,7 @@ export function GlobalProfileSelector({ menuPlacement = "end" }: { menuPlacement
         </span>
       </button>
 
-      {open
-        ? menuPlacement === "sidebar" && mounted
-          ? createPortal(menu, document.body)
-          : menu
-        : null}
+      {open && mounted ? createPortal(menu, document.body) : null}
     </div>
   );
 }

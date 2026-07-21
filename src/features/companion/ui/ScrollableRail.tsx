@@ -14,7 +14,8 @@ type Props = {
 
 export function ScrollableRail({ children, className, axis = "x", showScrollbar = true }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  useDragScroll(ref);
+  // Drag-scroll H only — on vertical rails it stole clicks (pointer capture).
+  useDragScroll(ref, { axis, enabled: axis === "x" });
 
   return (
     <div

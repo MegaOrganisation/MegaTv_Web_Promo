@@ -537,12 +537,41 @@
   min-height: 10.5rem;
   max-height: min(20rem, 38vh);
   box-shadow: 0 32px 72px -32px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: #080a0e;
 }
 
 .mega-cinema-hero__img {
-  height: 100%;
-  width: 100%;
+  position: absolute;
+  /* Photo paysage cadrée haut-droite (rectangle rouge pj1) */
+  top: 0;
+  right: 0;
+  bottom: auto;
+  left: auto;
+  width: min(68%, 52rem);
+  height: 86%;
   object-fit: cover;
+  object-position: 70% 22%;
+  transform: scale(1.04);
+  transform-origin: 80% 20%;
+  /* Fondu soft vers la gauche + bas (barres rouges pj1) */
+  -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.25) 18%,
+      rgba(0, 0, 0, 0.75) 42%,
+      #000 62%
+    ),
+    linear-gradient(180deg, #000 0%, #000 58%, rgba(0, 0, 0, 0.55) 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.25) 18%,
+      rgba(0, 0, 0, 0.75) 42%,
+      #000 62%
+    ),
+    linear-gradient(180deg, #000 0%, #000 58%, rgba(0, 0, 0, 0.55) 78%, transparent 100%);
+  mask-composite: intersect;
 }
 
 .mega-cinema-hero__fallback {
@@ -550,21 +579,66 @@
   background: linear-gradient(135deg, rgba(216, 73, 127, 0.25), rgba(63, 154, 230, 0.2) 50%, rgba(8, 10, 14, 0.95));
 }
 
-.mega-cinema-hero__blur {
-  height: 55%;
+.mega-cinema-hero__blur.mega-cinema-poster__blur-cap {
+  /* Flou fondu sur la zone texte (gauche) + bas — barres rouges pj1 */
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  -webkit-mask-image: linear-gradient(
+      90deg,
+      #000 0%,
+      #000 32%,
+      rgba(0, 0, 0, 0.45) 52%,
+      transparent 78%
+    ),
+    linear-gradient(0deg, #000 0%, #000 22%, rgba(0, 0, 0, 0.4) 40%, transparent 68%);
+  -webkit-mask-composite: source-over;
+  mask-image: linear-gradient(
+      90deg,
+      #000 0%,
+      #000 32%,
+      rgba(0, 0, 0, 0.45) 52%,
+      transparent 78%
+    ),
+    linear-gradient(0deg, #000 0%, #000 22%, rgba(0, 0, 0, 0.4) 40%, transparent 68%);
+  mask-composite: add;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.mega-cinema-hero__blur .mega-cinema-poster__blur-img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: 70% 22% !important;
+  filter: blur(36px) saturate(115%) brightness(0.42) !important;
+  transform: scale(1.18) !important;
 }
 
 .mega-cinema-hero__content {
   position: absolute;
-  right: 0;
+  right: auto;
   bottom: 0;
   left: 0;
+  top: 0;
   z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: flex-end;
   gap: 0.35rem;
+  width: min(52%, 30rem);
   padding: 1.35rem 1.5rem 4rem;
+  /* Voile doux sous le texte — fondu, pas de plaque nette */
+  background: linear-gradient(
+    90deg,
+    rgba(4, 6, 12, 0.55) 0%,
+    rgba(4, 6, 12, 0.28) 55%,
+    transparent 100%
+  );
 }
 
 .mega-cinema-hero__actions {
@@ -1998,9 +2072,22 @@ html[data-theme="light"] .v10-utility-search--loud {
   object-fit: cover;
 }
 
-/* Hide legacy external mobile header (profil désormais dans le chrome du cadre) */
+/* Mobile header — profil top-left (uniquement < lg ; ne pas écraser lg:hidden) */
 .companion-mobile-header {
-  display: none !important;
+  background: var(--mega-background, #06070a);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 1023px) {
+  .companion-mobile-header {
+    display: block !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .companion-mobile-header {
+    display: none !important;
+  }
 }
 
 .v10-utility-bar {
@@ -2142,11 +2229,104 @@ html[data-theme="light"] .v10-subnav-bubble {
 }
 
 .v10-mobile-dock-item.is-active {
-  color: #10191c;
+  color: #fff;
 }
 
 @media (min-width: 1280px) {
   .companion-shell--v10 .pj1-windows--with-rail {
     grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  }
+}
+
+/* ── Hero mobile — proportions lisibles (pochette + CTA + nav) ── */
+@media (max-width: 639px) {
+  .mega-cinema-hero__frame,
+  .companion-shell--pj1 .mega-cinema-hero__frame {
+    aspect-ratio: 4 / 3;
+    min-height: 14rem;
+    max-height: min(22rem, 52vh);
+    border-radius: 22px;
+  }
+
+  .mega-cinema-hero__img {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center 28% !important;
+    transform: none !important;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 48%, rgba(0, 0, 0, 0.55) 72%, transparent 100%) !important;
+    mask-image: linear-gradient(180deg, #000 0%, #000 48%, rgba(0, 0, 0, 0.55) 72%, transparent 100%) !important;
+  }
+
+  .mega-cinema-hero__blur.mega-cinema-poster__blur-cap {
+    -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 28%, transparent 70%) !important;
+    mask-image: linear-gradient(0deg, #000 0%, #000 28%, transparent 70%) !important;
+  }
+
+  .mega-cinema-hero__content {
+    width: 100%;
+    max-width: none;
+    padding: 0.85rem 0.95rem 3.1rem;
+    background: linear-gradient(0deg, rgba(4, 6, 12, 0.88) 0%, rgba(4, 6, 12, 0.35) 55%, transparent 100%);
+  }
+
+  .mega-cinema-hero__title-btn {
+    gap: 0.65rem;
+    align-items: flex-end;
+  }
+
+  .mega-cinema-hero__title-poster {
+    width: 4.25rem;
+    height: 6.25rem;
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+  }
+
+  .mega-cinema-hero__title {
+    font-size: clamp(1.15rem, 5.2vw, 1.45rem);
+    line-height: 1.15;
+  }
+
+  .mega-cinema-hero__sub {
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+  }
+
+  .mega-cinema-hero__actions {
+    margin-top: 0.45rem;
+    gap: 0.5rem;
+  }
+
+  .mega-cinema-hero__actions .mega-spectrum-btn,
+  .mega-cinema-hero__actions a,
+  .mega-cinema-hero__actions button {
+    min-height: 2.25rem !important;
+    padding: 0.4rem 0.85rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.35rem !important;
+  }
+
+  .mega-cinema-hero__actions .mega-spectrum-btn svg,
+  .mega-cinema-hero__actions a svg,
+  .mega-cinema-hero__actions button svg {
+    width: 0.85rem !important;
+    height: 0.85rem !important;
+  }
+
+  .mega-cinema-hero-dots {
+    left: 0.85rem;
+    bottom: 0.7rem;
+  }
+
+  .mega-cinema-hero-nav {
+    right: 0.7rem;
+    bottom: 0.55rem;
+    gap: 0.4rem;
+  }
+
+  .mega-cinema-hero-nav-btn {
+    height: 2.5rem;
+    width: 2.5rem;
   }
 }

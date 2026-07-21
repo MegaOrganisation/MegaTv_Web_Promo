@@ -82,7 +82,7 @@ export function CinemaUtilityBar({
 
           <div className="v10-utility-actions">
             <div className="hidden md:contents">
-              <UtilityGlassPill href={withProfile("/companion/devices")}>
+              <UtilityGlassPill href={withProfile("/companion/manage/devices")}>
                 <MegaTvIcon name="cast" size={16} />
                 Pairer TV
               </UtilityGlassPill>

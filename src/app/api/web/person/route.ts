@@ -32,7 +32,7 @@ export type WebPerson = {
  * to respect the Free-Tier.
  */
 export async function GET(request: Request) {
-  await requireUser("/web");
+  await requireUser();
 
   const personId = Number(new URL(request.url).searchParams.get("personId"));
   if (!Number.isFinite(personId) || personId <= 0) {

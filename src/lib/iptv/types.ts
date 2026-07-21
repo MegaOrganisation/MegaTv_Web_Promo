@@ -4,12 +4,19 @@ export type IptvPlaylistEntry = {
   m3uUrl: string;
   epgUrl?: string;
   enabled?: boolean;
+  /** Catégories masquées par playlist (parité Android IptvPlaylistEntry). */
+  hiddenCategories?: string[];
 };
 
 export type IptvProfileState = {
   m3uUrl?: string;
   epgUrl?: string;
   playlists?: IptvPlaylistEntry[];
+  favoriteChannels?: string[];
+  /** Catégories masquées au niveau profil (sync MegaCloud). */
+  hiddenCategories?: string[];
+  /** Chaînes masquées individuellement (Companion manage — ids stables). */
+  hiddenChannels?: string[];
 };
 
 export function maskPlaylistUrl(url: string) {
@@ -38,7 +45,11 @@ export function normalizePlaylistEntry(raw: Record<string, unknown>, index: numb
   const m3uUrl = String(raw.m3uUrl || raw.m3u_url || "");
   const epgUrl = String(raw.epgUrl || raw.epg_url || "");
   const enabled = raw.enabled === undefined ? true : Boolean(raw.enabled);
-  return { id, name, m3uUrl, epgUrl, enabled };
+  const hiddenRaw = raw.hiddenCategories ?? raw.hidden_categories;
+  const hiddenCategories = Array.isArray(hiddenRaw)
+    ? [...new Set(hiddenRaw.map((v) => String(v || "").trim()).filter(Boolean))]
+    : [];
+  return { id, name, m3uUrl, epgUrl, enabled, hiddenCategories };
 }
 
 export function newPlaylistId(existing: IptvPlaylistEntry[]) {

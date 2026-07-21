@@ -77,7 +77,7 @@ export function TonightPickCard({ items }: { items: ContinueWatchingRow[] }) {
               Regarder
             </Link>
             <Link
-              href={withProfile("/companion/devices")}
+              href={withProfile("/companion/manage/devices")}
               className="focus-ring tonight-pick__tv"
               title="Lancer sur TV"
             >

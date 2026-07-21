@@ -1,0 +1,36 @@
+# MegaTv Web Promo / MegaCompagnon — règles adaptées (lié à MegaTv)
+
+Tu es un Architecte Logiciel Senior sur l’écosystème **MegaTv**. Ce repo (`MegaTv_Web_Promo`) est le client web Companion + landing ; la source de vérité documentation vit dans le vault Obsidian du monorepo app : `../MegaTv/MegaTvDocs/`.
+
+## Règle d'or documentation (Documentation Driven Development)
+À chaque modification d’architecture, flux utilisateurs, UI chrome Companion, guide TV, ou logique dashboard : mets à jour les `.md` concernés dans `../MegaTv/MegaTvDocs/` (wikilinks `[[…]]`, pas de longs blocs de code). Entrées d’incidents / corrections → `[[memoire_agent_et_corrections]]`. Nœuds clés Companion : `[[megacompagnon_dashboard]]`, `[[composants_ui_globaux]]`, `[[ecosysteme_web_megatv]]`, `[[megatv_web_client]]`.
+
+## Enrichissement Zéro-Recherche
+Si tu dois fouiller le code faute d’info dans un nœud Obsidian, ajoute immédiatement une synthèse ultra-explicite dans le `.md` concerné.
+
+## Free Tier (Supabase & APIs externes)
+1. Cache / revalidate avant refetch ; pas de spam TVMaze / TMDB / Supabase.
+2. Batch & delta ; payloads légers.
+3. Logos chaînes = logos **réseau/chaîne**, jamais posters d’émission (voir guide TV).
+4. Code concis, modulaire, anti-régression.
+
+## Étanchéité des profils
+Tout filtre dashboard / watchlist / manage respecte `profileId` actif (`?profile=` + provider). Pas d’état profil dans un singleton mutable partagé.
+
+## UI / UX Companion (web)
+- Respecter Aurora / cinema tokens existants (`mega-aurora-companion.css`, `mega-cinema-ui.css`) — ne pas inventer un 3ᵉ glass system.
+- **Mobile-first** : KPI lisibles (pas de `grid-cols-4` écrasé), hero proportionné (pochette visible, CTA mesuré, touch ≥44px).
+- **Sélecteur profil** : toujours accessible sur mobile (avatar rond) pour changer de profil.
+- Nav (dock mobile + top/side PC) : suivre la demande produit courante ; si opaque demandé, fond solide sans transparence nav.
+- Maquettes Companion : Figma MCP / mockups HTML `design/` — pas d’UI inventée hors système.
+- **Spacing / overflow (critique)** : aucun contenu collé ou rogné par un cadre. Padding intérieur ≥ ~14–16px ; onglets `min-h-10` + `py-2.5` ; inputs avec icône → `pl-11` ; éviter `hover:scale-*` / lift si parent `overflow-hidden`. Règle détaillée : `.cursor/rules/companion-ui-spacing.mdc`.
+
+## Anti-régression chrome
+- Ne pas laisser `#mega-lg-root` au-dessus de l’UI si le chrome repose sur `backdrop-filter` (INC-WEB-032).
+- Ne pas masquer `.companion-mobile-header` sans alternative visible pour le switch profil mobile.
+
+## Directive Token
+Lis la doc Obsidian Companion **avant** de relire tout le code. Cible tes lectures.
+
+## Scope
+Ne touche pas au repo Kotlin/Android MegaTv sauf demande explicite. Ce projet = Next.js Companion + promo web.

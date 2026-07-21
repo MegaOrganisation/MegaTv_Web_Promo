@@ -11,7 +11,6 @@ const tabs = [
   { href: "/companion", label: "Dashboard", exact: true },
   { href: "/companion/watchlist", label: "Watchlist" },
   { href: "/companion/manage", label: "Gérer" },
-  { href: "/companion/profiles", label: "Profils" },
   { href: "/companion/settings", label: "Réglages", exact: true }
 ] as const;
 

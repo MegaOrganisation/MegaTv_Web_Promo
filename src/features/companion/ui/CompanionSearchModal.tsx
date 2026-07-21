@@ -21,10 +21,10 @@ const COMPANION_INDEX: CompanionHit[] = [
   { id: "dash", label: "Dashboard", hint: "Vue d'ensemble, KPI, activité", href: "/companion", icon: "home", keywords: ["dashboard", "accueil", "kpi", "stats", "statistiques", "activité", "historique"] },
   { id: "watchlist", label: "Watchlist", hint: "Films et séries à voir", href: "/companion/watchlist", icon: "bookmark", keywords: ["watchlist", "liste", "favoris"] },
   { id: "calendar", label: "Calendrier", hint: "Visionnages et sorties", href: "/companion/calendar", icon: "calendar", keywords: ["calendrier", "agenda", "sorties", "visionnages"] },
-  { id: "manage", label: "Gérer", hint: "IPTV, addons, catalogues", href: "/companion/manage", icon: "cloud", keywords: ["gérer", "manage", "iptv", "addons", "catalogues", "cloud"] },
-  { id: "profiles", label: "Profils", hint: "Profils compte et Kids", href: "/companion/profiles", icon: "people", keywords: ["profils", "kids", "pin", "avatar"] },
+  { id: "manage", label: "Gérer", hint: "IPTV, addons, catalogues, profils, appareils", href: "/companion/manage", icon: "cloud", keywords: ["gérer", "manage", "iptv", "addons", "catalogues", "cloud", "profils", "appareils"] },
+  { id: "profiles", label: "Profils", hint: "Profils compte et Kids", href: "/companion/manage/profiles", icon: "people", keywords: ["profils", "kids", "pin", "avatar"] },
   { id: "settings", label: "Réglages", hint: "Compte, fond, thème, sync", href: "/companion/settings", icon: "settings", keywords: ["réglages", "paramètres", "settings", "thème", "fond", "apparence", "sync"] },
-  { id: "devices", label: "Appareils", hint: "TV et sessions liées", href: "/companion/devices", icon: "cast", keywords: ["appareils", "devices", "tv", "pairer", "cast"] },
+  { id: "devices", label: "Appareils", hint: "TV et sessions liées", href: "/companion/manage/devices", icon: "cast", keywords: ["appareils", "devices", "tv", "pairer", "cast"] },
   { id: "apparence", label: "Fond d'écran", hint: "Ambiance liquid glass", href: "/companion/settings#apparence", icon: "settings", keywords: ["fond", "ambiance", "ember", "aurora", "cosmic"] },
   { id: "admin", label: "Admin", hint: "Console plateforme", href: "/companion/admin", icon: "shield", keywords: ["admin", "console", "plateforme"] }
 ];

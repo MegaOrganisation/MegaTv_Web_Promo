@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 
 import { formatDuration } from "@/lib/format";
-import { tmdbImageUrl } from "@/lib/tmdb";
+import { tmdbImageUrl, tmdbProxiedImageUrl } from "@/lib/tmdb";
 import type { WatchHistoryRow } from "@/lib/dashboard/watch-data";
 import { displayTitle } from "@/features/dashboard/watch-history-utils";
 import { useMediaDetailOptional } from "@/features/companion/ui/MediaDetailContext";
@@ -73,7 +73,8 @@ export function CalendarDayDetailModal({ open, dateLabel, rows, modeLabel, onClo
             ) : (
               <ul className="cal-day-modal__list">
                 {rows.map((row) => {
-                  const poster = tmdbImageUrl(row.poster_path, "w185");
+                  const poster =
+                    tmdbProxiedImageUrl(row.poster_path, "w185") || tmdbImageUrl(row.poster_path, "w185");
                   const canOpen = Number.isFinite(row.tmdb_id) && row.tmdb_id > 0;
                   return (
                     <li key={row.id}>
@@ -83,25 +84,40 @@ export function CalendarDayDetailModal({ open, dateLabel, rows, modeLabel, onClo
                         disabled={!canOpen}
                         onClick={() => {
                           if (!canOpen) return;
-                          media?.openMediaDetail({
-                            mediaType: row.media_type,
-                            tmdbId: row.tmdb_id,
-                            title: displayTitle(row),
-                            posterUrl: poster,
-                            meta:
-                              row.media_type === "tv" && row.season
-                                ? `S${row.season} · E${row.episode ?? 1}`
-                                : row.media_type === "tv"
-                                  ? "Série"
-                                  : "Film",
-                            layoutId: `cal-day-${row.media_type}-${row.tmdb_id}-${row.id}`
-                          });
+                          onClose();
+                          // Laisser le jour se fermer avant le flip pour z-index / lisibilité.
+                          window.setTimeout(() => {
+                            media?.openMediaDetail({
+                              mediaType: row.media_type,
+                              tmdbId: row.tmdb_id,
+                              title: displayTitle(row),
+                              posterUrl: poster,
+                              meta:
+                                row.media_type === "tv" && row.season
+                                  ? `S${row.season} · E${row.episode ?? 1}`
+                                  : row.media_type === "tv"
+                                    ? "Série"
+                                    : "Film",
+                              layoutId: `cal-day-${row.media_type}-${row.tmdb_id}-${row.id}`
+                            });
+                          }, 40);
                         }}
                       >
                         <div className="cal-day-modal__poster">
                           {poster ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={poster} alt="" />
+                            <img
+                              src={poster}
+                              alt=""
+                              onError={(e) => {
+                                const direct = tmdbImageUrl(row.poster_path, "w185");
+                                if (direct && e.currentTarget.src !== direct) {
+                                  e.currentTarget.src = direct;
+                                  return;
+                                }
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
                           ) : (
                             <span>{row.media_type === "tv" ? "TV" : "F"}</span>
                           )}

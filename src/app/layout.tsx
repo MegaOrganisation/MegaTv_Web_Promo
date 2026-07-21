@@ -1,13 +1,16 @@
 import "@fontsource-variable/nunito";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans, Geist } from "next/font/google";
 import Script from "next/script";
 
 import { CompanionPwaSplash } from "@/features/companion/CompanionPwaSplash";
 import { ThemeProvider } from "@/features/theme/ThemeProvider";
 
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -63,7 +66,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <head>
         <link rel="apple-touch-startup-image" href="/assets/apple-touch-startup.png" />
       </head>

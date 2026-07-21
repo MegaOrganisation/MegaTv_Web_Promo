@@ -10,8 +10,15 @@ import { IptvChannelLogo } from "@/features/web/tv/IptvChannelLogo";
 import { TvLivePlayer } from "@/features/web/tv/TvLivePlayer";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
 import type { IptvCategory, IptvChannel } from "@/lib/web/iptv-channels";
+import { remapFavoriteChannelIds } from "@/lib/web/iptv-channels";
 import type { EpgMap, EpgNowNext } from "@/lib/web/iptv-epg";
 import { seedFavoritesIfEmpty, useIptvFavorites } from "@/lib/web/iptv-favorites";
+import {
+  flushIptvChannelWatchNow,
+  onIptvChannelChanged,
+  onIptvChannelPausedOrLeft,
+  setChannelWatchProfile
+} from "@/lib/web/channel-watch-tracker";
 
 type ChannelsPayload = {
   configured: boolean;
@@ -19,6 +26,8 @@ type ChannelsPayload = {
   categories: IptvCategory[];
   epgUrls: string[];
   favoriteChannels: string[];
+  hiddenCategories?: string[];
+  hiddenChannels?: string[];
   capped: boolean;
   total: number;
   errors: { listId: string; name: string; message: string }[];
@@ -31,7 +40,7 @@ const CHANNELS_CACHE_TTL = 10 * 60 * 1000;
 const EPG_CACHE_TTL = 15 * 60 * 1000;
 const FAV_DEBOUNCE_MS = 2500;
 
-const channelsCacheKey = (p: string) => `megatv_web_iptv_cache_${p}`;
+const channelsCacheKey = (p: string) => `megatv_web_iptv_cache_v2_${p}`;
 const epgCacheKey = (p: string) => `megatv_web_iptv_epg_${p}`;
 
 function readCache<T>(key: string, ttl: number): T | null {
@@ -66,7 +75,7 @@ function formatSlot(slot: EpgNowNext["now"]) {
 
 export function WebTv({ profileId }: { profileId: string }) {
   const { withProfile } = useWebProfile();
-  const { favorites, toggle, reorder } = useIptvFavorites(profileId);
+  const { favorites, toggle, reorder, setAll } = useIptvFavorites(profileId);
 
   const [payload, setPayload] = useState<ChannelsPayload | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "empty">("loading");
@@ -120,6 +129,47 @@ export function WebTv({ profileId }: { profileId: string }) {
     const timer = setTimeout(() => pushFavorites(favoritesRef.current), FAV_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [favorites, pushFavorites]);
+
+  // Remap legacy hash favorites → Android-compatible ids for Mobile/TV sync.
+  useEffect(() => {
+    if (status !== "ready" || !payload?.channels?.length || favorites.length === 0) return;
+    const remapped = remapFavoriteChannelIds(favorites, payload.channels);
+    if (!remapped) return;
+    setAll(remapped);
+    dirtyRef.current = true;
+    pushFavorites(remapped);
+  }, [status, payload, favorites, setAll, pushFavorites]);
+
+  // IPTV watch time → megacompanion_channel_watch (batch, Free Tier)
+  useEffect(() => {
+    setChannelWatchProfile(profileId);
+  }, [profileId]);
+
+  useEffect(() => {
+    if (selected) {
+      onIptvChannelChanged({ id: selected.id, name: selected.name, logo: selected.logo });
+    } else {
+      onIptvChannelPausedOrLeft();
+    }
+    return () => onIptvChannelPausedOrLeft();
+  }, [selected]);
+
+  useEffect(() => {
+    const flushWatch = () => {
+      onIptvChannelPausedOrLeft();
+      flushIptvChannelWatchNow();
+    };
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flushWatch();
+    };
+    window.addEventListener("pagehide", flushWatch);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("pagehide", flushWatch);
+      document.removeEventListener("visibilitychange", onVis);
+      flushWatch();
+    };
+  }, []);
 
   // Flush on tab hide / unmount so a single batch write always lands.
   useEffect(() => {
@@ -205,17 +255,36 @@ export function WebTv({ profileId }: { profileId: string }) {
 
   const channelById = useMemo(() => {
     const map = new Map<string, IptvChannel>();
-    payload?.channels.forEach((c) => map.set(c.id, c));
+    payload?.channels.forEach((c) => {
+      map.set(c.id, c);
+      if (c.legacyId) map.set(c.legacyId, c);
+    });
     return map;
   }, [payload]);
 
+  const hiddenCategorySet = useMemo(
+    () => new Set(payload?.hiddenCategories ?? []),
+    [payload?.hiddenCategories]
+  );
+  const hiddenChannelSet = useMemo(
+    () => new Set(payload?.hiddenChannels ?? []),
+    [payload?.hiddenChannels]
+  );
+
   const categories = useMemo(() => {
+    const visibleGroups = (payload?.categories ?? []).filter((c) => !hiddenCategorySet.has(c.label));
+    const visibleTotal = (payload?.channels ?? []).filter(
+      (c) =>
+        !hiddenChannelSet.has(c.id) &&
+        !(c.legacyId && hiddenChannelSet.has(c.legacyId)) &&
+        !hiddenCategorySet.has(c.group)
+    ).length;
     const base: IptvCategory[] = [
       { id: "fav", label: "Favoris", count: favorites.length },
-      { id: "all", label: "Toutes les chaînes", count: payload?.total ?? 0 }
+      { id: "all", label: "Toutes les chaînes", count: visibleTotal }
     ];
-    return [...base, ...(payload?.categories ?? [])];
-  }, [favorites.length, payload]);
+    return [...base, ...visibleGroups];
+  }, [favorites.length, payload, hiddenCategorySet, hiddenChannelSet]);
 
   const filtered = useMemo(() => {
     if (!payload) return [] as IptvChannel[];
@@ -228,10 +297,14 @@ export function WebTv({ profileId }: { profileId: string }) {
       const label = activeCat.startsWith("grp:") ? activeCat.slice(4) : activeCat;
       list = payload.channels.filter((c) => c.group === label);
     }
+    if (activeCat !== "fav") {
+      list = list.filter((c) => !hiddenCategorySet.has(c.group));
+    }
+    list = list.filter((c) => !hiddenChannelSet.has(c.id) && !(c.legacyId && hiddenChannelSet.has(c.legacyId)));
     const q = search.trim().toLowerCase();
     if (q) list = list.filter((c) => c.name.toLowerCase().includes(q));
     return list;
-  }, [payload, activeCat, favorites, channelById, search]);
+  }, [payload, activeCat, favorites, channelById, search, hiddenCategorySet, hiddenChannelSet]);
 
   const selectCategory = useCallback((id: string) => {
     setActiveCat(id);
@@ -245,6 +318,10 @@ export function WebTv({ profileId }: { profileId: string }) {
 
   const visible = filtered.slice(0, visibleCount);
   const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+  const isFavorite = useCallback(
+    (ch: IptvChannel) => favoriteSet.has(ch.id) || (ch.legacyId ? favoriteSet.has(ch.legacyId) : false),
+    [favoriteSet]
+  );
 
   const moveFavorite = useCallback(
     (id: string, dir: -1 | 1) => {
@@ -372,7 +449,7 @@ export function WebTv({ profileId }: { profileId: string }) {
                   key={channel.id}
                   channel={channel}
                   nowNext={channel.tvgId ? epg[channel.tvgId] : undefined}
-                  isFavorite={favoriteSet.has(channel.id)}
+                  isFavorite={isFavorite(channel)}
                   isPlaying={selected?.id === channel.id}
                   editMode={editMode && isFav}
                   canMoveUp={index > 0}
