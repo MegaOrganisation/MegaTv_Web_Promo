@@ -222,6 +222,55 @@ if(track){ track.innerHTML += track.innerHTML; }
       window.location.href = url.toString();
     });
   });
+
+  // Surface checkout fallback (Stripe not configured / error) on the pricing section.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    if (!checkout) return;
+    const lang = (document.documentElement.getAttribute('data-lang') || 'fr').toLowerCase();
+    const copy = {
+      fr: {
+        configure: 'Le paiement Stripe n’est pas encore branché. Les formules Pro arrivent — contacte le support MegaTv ou réessaie bientôt.',
+        error: 'Le paiement a échoué. Réessaie dans un instant ou choisis une autre formule.',
+        cancel: 'Paiement annulé. Tu peux choisir une formule quand tu veux.',
+      },
+      en: {
+        configure: 'Stripe checkout is not connected yet. Pro plans are coming — contact MegaTv support or try again soon.',
+        error: 'Payment failed. Please try again in a moment or pick another plan.',
+        cancel: 'Checkout cancelled. You can pick a plan anytime.',
+      },
+    };
+    const msg = (copy[lang] || copy.fr)[checkout] || (copy.fr)[checkout];
+    if (!msg) return;
+
+    const banner = document.createElement('div');
+    banner.setAttribute('role', 'status');
+    banner.style.cssText = [
+      'position:fixed','left:50%','transform:translateX(-50%)','bottom:28px','z-index:9999',
+      'max-width:min(560px,92vw)','padding:14px 18px','border-radius:14px',
+      'background:rgba(16,25,28,0.94)','border:1px solid rgba(242,180,60,0.45)',
+      'color:#fff','font:500 14px/1.45 Instrument Sans,system-ui,sans-serif',
+      'box-shadow:0 16px 40px rgba(0,0,0,0.45)','backdrop-filter:blur(12px)',
+    ].join(';');
+    banner.textContent = msg;
+    document.body.appendChild(banner);
+
+    const pricing = document.getElementById('pricing');
+    if (pricing) {
+      requestAnimationFrame(() => pricing.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+
+    // Clean query from the URL without losing #pricing.
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete('checkout');
+    clean.searchParams.delete('plan');
+    clean.searchParams.delete('product');
+    clean.hash = '#pricing';
+    window.history.replaceState({}, '', clean.toString());
+
+    setTimeout(() => banner.remove(), 9000);
+  } catch (_) { /* ignore */ }
 })();
 
 /* ---------- INIT ---------- */

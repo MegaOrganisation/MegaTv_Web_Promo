@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
  *   (optional) STRIPE_PAYMENT_LINK_MONTHLY / _YEARLY / _LIFETIME — used if price IDs absent
  *   NEXT_PUBLIC_SITE_URL — success/cancel base (default megatv-neo.vercel.app)
  *
- * When Stripe is not configured, redirects to /#pricing with ?checkout=configure.
+ * When Stripe is not configured, redirects to /?checkout=configure#pricing.
  */
 
 type PlanKey = "monthly" | "yearly" | "lifetime";
@@ -37,6 +37,16 @@ function siteBase(): string {
     process.env.VERCEL_URL?.replace(/\/+$/, "")?.replace(/^/, "https://") ||
     "https://megatv-neo.vercel.app"
   );
+}
+
+/** Query params MUST come before the hash, otherwise the browser keeps the user on the hero. */
+function pricingRedirect(base: string, checkout: "configure" | "error" | "cancel", plan: PlanKey): string {
+  const q = new URLSearchParams({
+    checkout,
+    plan,
+    product: PRODUCT_IDS[plan],
+  });
+  return `${base}/?${q.toString()}#pricing`;
 }
 
 function paymentLinkFor(plan: PlanKey): string | null {
@@ -65,7 +75,7 @@ export async function GET(req: NextRequest) {
   const userId = (url.searchParams.get("user_id") ?? "").trim();
   const base = siteBase();
   const successUrl = `${base}/companion?pro=success&plan=${plan}`;
-  const cancelUrl = `${base}/#pricing`;
+  const cancelUrl = pricingRedirect(base, "cancel", plan);
 
   // Prefer static Payment Links when configured (simplest RC/Stripe sideload path).
   const paymentLink = paymentLinkFor(plan);
@@ -78,10 +88,7 @@ export async function GET(req: NextRequest) {
   const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
   const priceId = priceIdFor(plan);
   if (!stripeKey || !priceId) {
-    return NextResponse.redirect(
-      `${base}/#pricing?checkout=configure&plan=${plan}&product=${PRODUCT_IDS[plan]}`,
-      302,
-    );
+    return NextResponse.redirect(pricingRedirect(base, "configure", plan), 302);
   }
 
   try {
@@ -112,16 +119,16 @@ export async function GET(req: NextRequest) {
     if (!stripeRes.ok) {
       const errText = await stripeRes.text();
       console.error("stripe checkout session failed", errText);
-      return NextResponse.redirect(`${base}/#pricing?checkout=error&plan=${plan}`, 302);
+      return NextResponse.redirect(pricingRedirect(base, "error", plan), 302);
     }
 
     const session = (await stripeRes.json()) as { url?: string };
     if (!session.url) {
-      return NextResponse.redirect(`${base}/#pricing?checkout=error&plan=${plan}`, 302);
+      return NextResponse.redirect(pricingRedirect(base, "error", plan), 302);
     }
     return NextResponse.redirect(session.url, 302);
   } catch (err) {
     console.error("checkout error", err);
-    return NextResponse.redirect(`${base}/#pricing?checkout=error&plan=${plan}`, 302);
+    return NextResponse.redirect(pricingRedirect(base, "error", plan), 302);
   }
 }
