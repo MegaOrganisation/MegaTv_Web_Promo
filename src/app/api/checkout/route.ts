@@ -103,8 +103,16 @@ export async function GET(req: NextRequest) {
     params.set("metadata[megatv_product_id]", PRODUCT_IDS[plan]);
     params.set("metadata[megatv_plan]", plan);
     if (userId) {
+      // Required so Stripe webhooks can map payment → Supabase auth.users.id
+      // (and RevenueCat app_user_id when Stripe App is connected).
       params.set("client_reference_id", userId);
+      params.set("metadata[app_user_id]", userId);
       params.set("metadata[supabase_user_id]", userId);
+      if (mode === "subscription") {
+        params.set("subscription_data[metadata][app_user_id]", userId);
+        params.set("subscription_data[metadata][supabase_user_id]", userId);
+        params.set("subscription_data[metadata][megatv_plan]", plan);
+      }
     }
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
