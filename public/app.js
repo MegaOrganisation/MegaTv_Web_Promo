@@ -205,6 +205,25 @@ window.openMegaCompanion = openMegaCompanion;
 const track = document.getElementById('screensTrack');
 if(track){ track.innerHTML += track.innerHTML; }
 
+/* ---------- PRO CHECKOUT (RevenueCat / Stripe) ---------- */
+(function wireProCheckout(){
+  const plans = ['monthly', 'yearly', 'lifetime'];
+  const buttons = document.querySelectorAll('#pricing .btn-price-gradient');
+  buttons.forEach((btn, index) => {
+    const plan = btn.getAttribute('data-plan') || plans[index] || 'monthly';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = new URL('/api/checkout', window.location.origin);
+      url.searchParams.set('plan', plan);
+      try {
+        const uid = localStorage.getItem('megatv_user_id') || sessionStorage.getItem('megatv_user_id');
+        if (uid) url.searchParams.set('user_id', uid);
+      } catch (_) { /* ignore */ }
+      window.location.href = url.toString();
+    });
+  });
+})();
+
 /* ---------- INIT ---------- */
 onNav();
 applyParallax();
