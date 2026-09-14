@@ -31,6 +31,7 @@ Elle combine :
 | `/companion/manage/addons` | Gestion addons Stremio |
 | `/companion/manage/catalogs` | Gestion catalogues |
 | `/companion/admin` | Dashboard admin (périodes, CSV, graphiques) |
+| `/companion/admin/accounts` | Comptes, plans Pro, profils et codes ami (allowlist) |
 | `/companion/admin/releases` | Console OTA `version.json` |
 | `/companion/admin/platform` | Config plateforme (révisions) |
 

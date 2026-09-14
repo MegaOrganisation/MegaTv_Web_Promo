@@ -266,6 +266,9 @@ function renderVariantBody(
         <div className="cinema-rail-panel">
           <h2 className="mega-cinema-rail-title">Ops</h2>
           <div className="mt-3 space-y-2">
+            <Link href={withProfile("/companion/admin/accounts")} className="v10-rail-chip focus-ring block">
+              Comptes
+            </Link>
             <Link href={withProfile("/companion/admin/releases")} className="v10-rail-chip focus-ring block">
               Releases OTA
             </Link>

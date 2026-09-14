@@ -43,6 +43,9 @@ export function AdminCompanionPage({ days, overview, topContentRows, pageRows, s
         </Suspense>
         <div className="mega-pill-nav">
           <AdminCsvExportButton days={days} />
+          <MegaLink href="/companion/admin/accounts" variant="ghost">
+            Comptes
+          </MegaLink>
           <MegaLink href="/companion/admin/megaproject" variant="ghost">
             MegaProject
           </MegaLink>

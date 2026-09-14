@@ -26,7 +26,8 @@ const COMPANION_INDEX: CompanionHit[] = [
   { id: "settings", label: "Réglages", hint: "Compte, fond, thème, sync", href: "/companion/settings", icon: "settings", keywords: ["réglages", "paramètres", "settings", "thème", "fond", "apparence", "sync"] },
   { id: "devices", label: "Appareils", hint: "TV et sessions liées", href: "/companion/manage/devices", icon: "cast", keywords: ["appareils", "devices", "tv", "pairer", "cast"] },
   { id: "apparence", label: "Fond d'écran", hint: "Ambiance liquid glass", href: "/companion/settings#apparence", icon: "settings", keywords: ["fond", "ambiance", "ember", "aurora", "cosmic"] },
-  { id: "admin", label: "Admin", hint: "Console plateforme", href: "/companion/admin", icon: "shield", keywords: ["admin", "console", "plateforme"] }
+  { id: "admin", label: "Admin", hint: "Console plateforme", href: "/companion/admin", icon: "shield", keywords: ["admin", "console", "plateforme"] },
+  { id: "admin-accounts", label: "Comptes admin", hint: "Plans Pro, profils et codes ami", href: "/companion/admin/accounts", icon: "shield", keywords: ["admin", "comptes", "pro", "codes", "amis", "profils"] }
 ];
 
 type Props = { open: boolean; onClose: () => void };

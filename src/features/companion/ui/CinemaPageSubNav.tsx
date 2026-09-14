@@ -129,6 +129,21 @@ function CinemaPageSubNavInner() {
     );
   }
 
+  if (pathname.startsWith("/companion/admin")) {
+    return (
+      <SubNavPills
+        ariaLabel="Sections admin"
+        tabs={[
+          { href: "/companion/admin", label: "Vue", exact: true },
+          { href: "/companion/admin/accounts", label: "Comptes" },
+          { href: "/companion/admin/releases", label: "OTA" },
+          { href: "/companion/admin/platform", label: "Plateforme" },
+          { href: "/companion/admin/megaproject", label: "MegaProject" }
+        ]}
+      />
+    );
+  }
+
   if (pathname.startsWith("/companion/settings")) {
     return (
       <SubNavPills
