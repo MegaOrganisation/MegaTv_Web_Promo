@@ -10,18 +10,21 @@ export function MegaPillTabs({
   tabs,
   withHref
 }: {
-  tabs: Array<{ href: string; label: string; shortLabel?: string; icon: LucideIcon }>;
+  tabs: Array<{ href: string; label: string; shortLabel?: string; icon: LucideIcon; exact?: boolean }>;
   withHref: (href: string) => string;
 }) {
   const pathname = usePathname();
 
   return (
     <nav
-      className="mega-pill-tabs mb-6 grid w-full grid-cols-5 gap-0.5 overflow-x-visible p-1 sm:flex sm:gap-1 sm:overflow-x-auto sm:overflow-y-visible sm:p-1.5"
+      className={clsx(
+        "mega-pill-tabs mb-6 grid w-full gap-0.5 overflow-x-visible p-1 sm:flex sm:gap-1 sm:overflow-x-auto sm:overflow-y-visible sm:p-1.5",
+        tabs.length <= 3 ? "grid-cols-3" : "grid-cols-5"
+      )}
       aria-label="Navigation secondaire"
     >
-      {tabs.map(({ href, label, shortLabel, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+      {tabs.map(({ href, label, shortLabel, icon: Icon, exact }) => {
+        const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
         const linkHref = withHref(href);
         return (
           <Link

@@ -3,8 +3,6 @@
 import { ExternalLink } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/GlassCard";
-import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
-import { CinemaHero } from "@/features/companion/ui/CinemaHero";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import type { MegaProjectTasksPayload } from "@/lib/megaproject/types";
 
@@ -12,14 +10,7 @@ export function AdminMegaProjectPage({ initial }: { initial: MegaProjectTasksPay
   const embed = initial.embedUrl;
 
   return (
-    <ResponsiveShell
-      title="MegaProject"
-      subtitle="Kanban IA et alertes tâches."
-      isAdmin
-      showRail={false}
-      hidePageHeader
-      hero={<CinemaHero title="MegaProject" subtitle={`${initial.openCount} tâche(s) ouverte(s) détectée(s) via Supabase.`} badge="Admin" />}
-    >
+    <>
       <PageEventTracker page="Companion Admin MegaProject" />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -51,6 +42,6 @@ export function AdminMegaProjectPage({ initial }: { initial: MegaProjectTasksPay
           <p className="text-sm text-white/55">URL d’embed MegaProject absente (`NEXT_PUBLIC_MEGAPROJECT_EMBED_URL`).</p>
         </GlassCard>
       )}
-    </ResponsiveShell>
+    </>
   );
 }

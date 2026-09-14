@@ -6,8 +6,6 @@ import { Suspense } from "react";
 import { BarRankingChart } from "@/components/ui/Charts";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MegaLink } from "@/components/ui/MegaButton";
-import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
-import { CinemaHero } from "@/features/companion/ui/CinemaHero";
 import { AdminActiveUsersChart } from "@/features/admin/AdminActiveUsersChart";
 import { AdminCsvExportButton } from "@/features/admin/AdminCsvExportButton";
 import { AdminInfrastructurePanel, type AdminOverview } from "@/features/admin/AdminInfrastructurePanel";
@@ -28,14 +26,7 @@ type Props = {
 
 export function AdminCompanionPage({ days, overview, topContentRows, pageRows, sentry, errors }: Props) {
   return (
-    <ResponsiveShell
-      title="Dashboard admin"
-      subtitle="Agrégats d'infrastructure, analytics Companion et monitoring Sentry."
-      isAdmin
-      showRail={false}
-      hidePageHeader
-      hero={<CinemaHero title="Dashboard" subtitle={`Période ${days} jours — agrégats cross-compte.`} badge="Admin" />}
-    >
+    <>
       <PageEventTracker page="Companion Admin" />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Suspense fallback={<AdminPeriodFallback activeDays={days} />}>
@@ -91,7 +82,7 @@ export function AdminCompanionPage({ days, overview, topContentRows, pageRows, s
           Retour dashboard utilisateur
         </Link>
       </p>
-    </ResponsiveShell>
+    </>
   );
 }
 
