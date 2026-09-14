@@ -134,10 +134,8 @@ function CinemaPageSubNavInner() {
       <SubNavPills
         ariaLabel="Sections admin"
         tabs={[
-          { href: "/companion/admin", label: "Vue", exact: true },
-          { href: "/companion/admin/accounts", label: "Comptes" },
-          { href: "/companion/admin/releases", label: "OTA" },
-          { href: "/companion/admin/platform", label: "Plateforme" },
+          { href: "/companion/admin", label: "Dashboard", exact: true },
+          { href: "/companion/admin/accounts", label: "Gestion utilisateurs" },
           { href: "/companion/admin/megaproject", label: "MegaProject" }
         ]}
       />

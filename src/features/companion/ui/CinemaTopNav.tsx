@@ -23,7 +23,7 @@ export function CinemaTopNav({ isAdmin = false }: { isAdmin?: boolean }) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  const items = isAdmin ? [...tabs, { href: "/companion/admin", label: "Admin", exact: true } as const] : [...tabs];
+  const items = isAdmin ? [...tabs, { href: "/companion/admin", label: "Admin" } as const] : [...tabs];
 
   return (
     <nav aria-label="Sections MegaCompagnon" className="mega-cinema-topnav hidden sm:flex flex-wrap">

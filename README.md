@@ -30,8 +30,9 @@ Elle combine :
 | `/companion/manage/iptv` | Gestion playlists IPTV (par profil) |
 | `/companion/manage/addons` | Gestion addons Stremio |
 | `/companion/manage/catalogs` | Gestion catalogues |
-| `/companion/admin` | Dashboard admin (périodes, CSV, graphiques) |
-| `/companion/admin/accounts` | Comptes, plans Pro, profils et codes ami (allowlist) |
+| `/companion/admin` | Dashboard admin (KPI, actifs/jour, top, Sentry, pages) |
+| `/companion/admin/accounts` | Gestion utilisateurs (photos, Pro, codes ami, suppression) |
+| `/companion/admin/megaproject` | Kanban MegaProject |
 | `/companion/admin/releases` | Console OTA `version.json` |
 | `/companion/admin/platform` | Config plateforme (révisions) |
 

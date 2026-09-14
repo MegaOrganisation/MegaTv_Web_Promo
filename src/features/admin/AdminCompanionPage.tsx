@@ -11,7 +11,6 @@ import { CinemaHero } from "@/features/companion/ui/CinemaHero";
 import { AdminActiveUsersChart } from "@/features/admin/AdminActiveUsersChart";
 import { AdminCsvExportButton } from "@/features/admin/AdminCsvExportButton";
 import { AdminInfrastructurePanel, type AdminOverview } from "@/features/admin/AdminInfrastructurePanel";
-import { AdminMegaProjectPanel } from "@/features/admin/AdminMegaProjectPanel";
 import { AdminPeriodSelector } from "@/features/admin/AdminPeriodSelector";
 import { AdminSentryPanel } from "@/features/admin/AdminSentryPanel";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
@@ -30,11 +29,12 @@ type Props = {
 export function AdminCompanionPage({ days, overview, topContentRows, pageRows, sentry, errors }: Props) {
   return (
     <ResponsiveShell
-      title="Vue Admin"
+      title="Dashboard admin"
       subtitle="Agrégats d'infrastructure, analytics Companion et monitoring Sentry."
       isAdmin
       showRail={false}
-      hero={<CinemaHero title="Console Admin" subtitle={`Période ${days} jours — agrégats cross-compte.`} badge="Admin" />}
+      hidePageHeader
+      hero={<CinemaHero title="Dashboard" subtitle={`Période ${days} jours — agrégats cross-compte.`} badge="Admin" />}
     >
       <PageEventTracker page="Companion Admin" />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -43,12 +43,6 @@ export function AdminCompanionPage({ days, overview, topContentRows, pageRows, s
         </Suspense>
         <div className="mega-pill-nav">
           <AdminCsvExportButton days={days} />
-          <MegaLink href="/companion/admin/accounts" variant="ghost">
-            Comptes
-          </MegaLink>
-          <MegaLink href="/companion/admin/megaproject" variant="ghost">
-            MegaProject
-          </MegaLink>
           <MegaLink href="/companion/admin/releases" variant="ghost">
             Console OTA
           </MegaLink>
@@ -66,10 +60,6 @@ export function AdminCompanionPage({ days, overview, topContentRows, pageRows, s
       ) : null}
 
       <AdminInfrastructurePanel overview={overview} periodDays={days} />
-
-      <section className="mt-6">
-        <AdminMegaProjectPanel />
-      </section>
 
       <section className="mt-6">
         <AdminActiveUsersChart days={days} />
@@ -98,7 +88,7 @@ export function AdminCompanionPage({ days, overview, topContentRows, pageRows, s
 
       <p className="mt-6 text-center text-xs text-white/35">
         <Link href="/companion" className="hover:text-white/60">
-          Retour dashboard
+          Retour dashboard utilisateur
         </Link>
       </p>
     </ResponsiveShell>

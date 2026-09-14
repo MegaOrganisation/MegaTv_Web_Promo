@@ -11,11 +11,12 @@ export default async function AdminAccountsPage() {
 
   return (
     <ResponsiveShell
-      title="Comptes"
-      subtitle="Liste des comptes MegaTv, plans Pro et codes ami par profil."
+      title="Gestion utilisateurs"
+      subtitle="Comptes MegaTv, photos de profil, codes ami et suppression cloud."
       isAdmin
       showRail={false}
-      hero={<CinemaHero title="Comptes" subtitle="Allowlist admin — Pro, profils et codes ami." badge="Admin" />}
+      hidePageHeader
+      hero={<CinemaHero title="Gestion utilisateurs" subtitle="Photos, plans Pro, codes ami — allowlist admin." badge="Admin" />}
     >
       <PageEventTracker page="Companion Admin Accounts" />
       <AdminAccountsConsole />

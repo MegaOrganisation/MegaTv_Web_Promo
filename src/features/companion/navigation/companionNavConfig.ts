@@ -21,8 +21,7 @@ export const COMPANION_ADMIN_ROUTE: CompanionDockRoute = {
   href: "/companion/admin",
   label: "Admin",
   shortLabel: "Admin",
-  icon: "shield",
-  exact: true
+  icon: "shield"
 };
 
 export type CompanionRailVariant = "dashboard" | "watchlist" | "manage" | "settings" | "profiles" | "admin" | "none";

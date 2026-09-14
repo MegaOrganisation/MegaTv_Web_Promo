@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/GlassCard";
-import { MegaLink } from "@/components/ui/MegaButton";
 import { ResponsiveShell } from "@/components/ui/ResponsiveShell";
 import { CinemaHero } from "@/features/companion/ui/CinemaHero";
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
@@ -19,15 +17,12 @@ export function AdminMegaProjectPage({ initial }: { initial: MegaProjectTasksPay
       subtitle="Kanban IA et alertes tâches."
       isAdmin
       showRail={false}
+      hidePageHeader
       hero={<CinemaHero title="MegaProject" subtitle={`${initial.openCount} tâche(s) ouverte(s) détectée(s) via Supabase.`} badge="Admin" />}
     >
       <PageEventTracker page="Companion Admin MegaProject" />
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <MegaLink href="/companion/admin" variant="ghost" className="inline-flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Retour admin
-        </MegaLink>
         {embed ? (
           <a href={embed} target="_blank" rel="noreferrer" className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85">
             <ExternalLink className="h-4 w-4" />
@@ -47,9 +42,15 @@ export function AdminMegaProjectPage({ initial }: { initial: MegaProjectTasksPay
         </GlassCard>
       ) : null}
 
-      <GlassCard className="overflow-hidden !p-0">
-        <iframe title="MegaProject Kanban" src={embed!} className="h-[min(78vh,920px)] w-full border-0 bg-[#0a0e12]" allow="clipboard-read; clipboard-write" />
-      </GlassCard>
+      {embed ? (
+        <GlassCard className="overflow-hidden !p-0">
+          <iframe title="MegaProject Kanban" src={embed} className="h-[min(78vh,920px)] w-full border-0 bg-[#0a0e12]" allow="clipboard-read; clipboard-write" />
+        </GlassCard>
+      ) : (
+        <GlassCard>
+          <p className="text-sm text-white/55">URL d’embed MegaProject absente (`NEXT_PUBLIC_MEGAPROJECT_EMBED_URL`).</p>
+        </GlassCard>
+      )}
     </ResponsiveShell>
   );
 }

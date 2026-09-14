@@ -26,8 +26,9 @@ const COMPANION_INDEX: CompanionHit[] = [
   { id: "settings", label: "Réglages", hint: "Compte, fond, thème, sync", href: "/companion/settings", icon: "settings", keywords: ["réglages", "paramètres", "settings", "thème", "fond", "apparence", "sync"] },
   { id: "devices", label: "Appareils", hint: "TV et sessions liées", href: "/companion/manage/devices", icon: "cast", keywords: ["appareils", "devices", "tv", "pairer", "cast"] },
   { id: "apparence", label: "Fond d'écran", hint: "Ambiance liquid glass", href: "/companion/settings#apparence", icon: "settings", keywords: ["fond", "ambiance", "ember", "aurora", "cosmic"] },
-  { id: "admin", label: "Admin", hint: "Console plateforme", href: "/companion/admin", icon: "shield", keywords: ["admin", "console", "plateforme"] },
-  { id: "admin-accounts", label: "Comptes admin", hint: "Plans Pro, profils et codes ami", href: "/companion/admin/accounts", icon: "shield", keywords: ["admin", "comptes", "pro", "codes", "amis", "profils"] }
+  { id: "admin", label: "Admin", hint: "Dashboard ops, utilisateurs, MegaProject", href: "/companion/admin", icon: "shield", keywords: ["admin", "console", "plateforme", "dashboard"] },
+  { id: "admin-accounts", label: "Gestion utilisateurs", hint: "Plans Pro, photos, codes ami, suppression", href: "/companion/admin/accounts", icon: "people", keywords: ["admin", "comptes", "utilisateurs", "pro", "codes", "amis", "profils", "supprimer"] },
+  { id: "admin-megaproject", label: "MegaProject", hint: "Kanban admin", href: "/companion/admin/megaproject", icon: "shield", keywords: ["admin", "megaproject", "kanban", "tâches"] }
 ];
 
 type Props = { open: boolean; onClose: () => void };
