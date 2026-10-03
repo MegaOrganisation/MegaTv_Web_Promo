@@ -31,6 +31,19 @@ const PRESET_COLORS = [
   { name: "Violet", label: "Violet",  hex: "#EC4899" },
 ];
 
+/** Palette Android des fonds personnalisés (AppBackgroundSwatches) */
+const APP_BACKGROUND_SWATCHES = [
+  { argb: 0xFF2C444C, hex: "#2C444C", label: "Bleu canard" },
+  { argb: 0xFF507C8B, hex: "#507C8B", label: "Bleu ardoise" },
+  { argb: 0xFF1A3A4A, hex: "#1A3A4A", label: "Bleu sarcelle" },
+  { argb: 0xFF3D2C2E, hex: "#3D2C2E", label: "Brun chaud" },
+  { argb: 0xFF1E2A38, hex: "#1E2A38", label: "Bleu nuit" },
+  { argb: 0xFF2A3520, hex: "#2A3520", label: "Vert forêt" },
+  { argb: 0xFF3A2430, hex: "#3A2430", label: "Bordeaux" },
+  { argb: 0xFF252530, hex: "#252530", label: "Gris ardoise" },
+  { argb: 0xFF000000, hex: "#000000", label: "Noir absolu" },
+];
+
 const NUANCIER_GRID = [
   ["#FFFFFF", "#E2E8F0", "#94A3B8", "#64748B", "#334155", "#1E293B"],
   ["#EF4444", "#DC2626", "#B91C1C", "#F87171", "#FB7185", "#E11D48"],
@@ -115,13 +128,20 @@ function ToggleRow({
 /** 1. ThemePreviewScreenMockup (Identique au mockup TV Bezel de l'application) */
 function ThemePreviewScreenMockup({
   mode,
+  customArgb,
   focusHex,
 }: {
   mode: string;
+  customArgb: number;
   focusHex: string;
 }) {
-  const isOled = mode === "oled_black";
-  const bg = isOled ? "#000000" : "#0D111A";
+  let bg = "#0D111A";
+  if (mode === "cover") {
+    bg = "#180B0E"; // Wash couverture
+  } else if (mode === "custom") {
+    const hex = APP_BACKGROUND_SWATCHES.find((s) => s.argb === customArgb)?.hex;
+    bg = hex || "#1E2A38";
+  }
 
   return (
     <div className="flex flex-col items-center max-w-[340px] w-full mx-auto">
@@ -180,7 +200,13 @@ function ThemePreviewScreenMockup({
         </div>
       </div>
       <span className="text-[11px] font-semibold text-white/70 mt-2">Aperçu TV & Focus D-Pad</span>
-      <span className="text-[10px] text-white/40">{isOled ? "OLED Noir Absolu (#000000)" : "Dark Standard (#0D111A)"}</span>
+      <span className="text-[10px] text-white/40">
+        {mode === "original"
+          ? "Original Dark (#0D111A)"
+          : mode === "cover"
+          ? "Couverture (Ambiance jaquette)"
+          : `Personnalisé (${APP_BACKGROUND_SWATCHES.find((s) => s.argb === customArgb)?.label || "Teinte"})`}
+      </span>
     </div>
   );
 }
@@ -517,8 +543,9 @@ export function ManageSettingsPanel() {
   const [focusCustomHex, setFocusCustomHex] = useState("#FFFFFF");
   const [useCustomColor, setUseCustomColor] = useState(false);
   const [showNuancier, setShowNuancier] = useState(false);
-  const [appBackgroundMode, setAppBackgroundMode] = useState("original");
-  const [profilePickerBackground, setProfilePickerBackground] = useState("glow");
+  const [appBackgroundMode, setAppBackgroundMode] = useState("original"); // "original" | "cover" | "custom"
+  const [appBackgroundCustomArgb, setAppBackgroundCustomArgb] = useState<number>(0xFF2C444C);
+  const [profilePickerBackground, setProfilePickerBackground] = useState("glow"); // "glow" | "wave" | "continue_watching"
   const [detailsAmbientColor, setDetailsAmbientColor] = useState(true);
   const [profileAmbientColor, setProfileAmbientColor] = useState(true);
   const [megatvIntroAnimationEnabled, setMegatvIntroAnimationEnabled] = useState(true);
@@ -607,8 +634,19 @@ export function ManageSettingsPanel() {
             setFocusBorderColor(s.focus_border_color);
           }
         }
-        if (s.app_background_mode) setAppBackgroundMode(s.app_background_mode);
-        if (s.profile_picker_background) setProfilePickerBackground(s.profile_picker_background);
+        if (s.app_background_mode) {
+          const bgm = s.app_background_mode.toLowerCase();
+          setAppBackgroundMode(bgm === "cover" ? "cover" : bgm === "custom" ? "custom" : "original");
+        }
+        if (s.app_background_custom_argb !== undefined) {
+          setAppBackgroundCustomArgb(Number(s.app_background_custom_argb));
+        }
+        if (s.profile_picker_background) {
+          const ppb = s.profile_picker_background.toLowerCase();
+          setProfilePickerBackground(
+            ppb === "wave" ? "wave" : ppb === "continue_watching" ? "continue_watching" : "glow"
+          );
+        }
         if (s.details_ambient_color !== undefined) setDetailsAmbientColor(Boolean(s.details_ambient_color));
         if (s.profile_ambient_color !== undefined) setProfileAmbientColor(Boolean(s.profile_ambient_color));
         if (s.megatv_intro_animation_enabled !== undefined) setMegatvIntroAnimationEnabled(Boolean(s.megatv_intro_animation_enabled));
@@ -678,7 +716,8 @@ export function ManageSettingsPanel() {
           settings: {
             focus_border_color: useCustomColor ? focusCustomHex : focusBorderColor,
             app_background_mode: appBackgroundMode,
-            oled_black_background: appBackgroundMode === "oled_black",
+            app_background_custom_argb: appBackgroundCustomArgb,
+            oled_black_background: appBackgroundMode === "custom" && appBackgroundCustomArgb === 0xFF000000,
             profile_picker_background: profilePickerBackground,
             details_ambient_color: detailsAmbientColor,
             profile_ambient_color: profileAmbientColor,
@@ -737,7 +776,7 @@ export function ManageSettingsPanel() {
     }
   }
 
-  /* ── Téléversement bannière profil (< 40 Ko) ── */
+  /* ── Téléversement bannière profil (< 40 Ko vers Supabase Storage) ── */
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !selectedProfileId) return;
@@ -870,7 +909,11 @@ export function ManageSettingsPanel() {
             <div className="space-y-6">
               {/* Mockup écran TV en haut de section (comme Android PJ 1) */}
               <SettingCard>
-                <ThemePreviewScreenMockup mode={appBackgroundMode} focusHex={resolvedFocusHex} />
+                <ThemePreviewScreenMockup
+                  mode={appBackgroundMode}
+                  customArgb={appBackgroundCustomArgb}
+                  focusHex={resolvedFocusHex}
+                />
               </SettingCard>
 
               {/* Couleur de Focus D-Pad TV avec Nuancier Android */}
@@ -965,56 +1008,124 @@ export function ManageSettingsPanel() {
                 </div>
               </SettingCard>
 
-              {/* Thème d'arrière-plan TV */}
+              {/* Thème d'arrière-plan TV (Modes Origine, Couverture, et les 9 teintes personnalisées) */}
               <SettingCard>
                 <SectionTitle>Thème d&apos;arrière-plan TV</SectionTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { value: "original", title: "Original Dark (#0D111A)", desc: "Fond sombre sur mesure sobre et élégant" },
-                    { value: "oled_black", title: "OLED Noir Absolu (#000000)", desc: "Pixels éteints pour écrans OLED et AMOLED" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setAppBackgroundMode(opt.value)}
-                      className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                        appBackgroundMode === opt.value
-                          ? "border-indigo-400 bg-indigo-500/15"
-                          : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
-                      }`}
-                    >
-                      <div
-                        className="w-7 h-7 rounded-lg border border-white/15 shrink-0 mt-0.5"
-                        style={{ backgroundColor: opt.value === "oled_black" ? "#000000" : "#0D111A" }}
-                      />
-                      <div>
-                        <span className="text-xs font-bold text-white block">{opt.title}</span>
-                        <span className="text-[11px] text-white/45">{opt.desc}</span>
-                      </div>
-                    </button>
-                  ))}
+                <p className="text-xs text-white/50 mb-3">
+                  Couleur d&apos;origine, wash de la jaquette du profil ou nuance personnalisée sur toute l&apos;application.
+                </p>
+
+                {/* Modes principaux : Original vs Couverture */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setAppBackgroundMode("original")}
+                    className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                      appBackgroundMode === "original"
+                        ? "border-indigo-400 bg-indigo-500/15"
+                        : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <div className="w-7 h-7 rounded-lg border border-white/15 shrink-0 mt-0.5 bg-[#0D111A]" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">Original Dark (#0D111A)</span>
+                      <span className="text-[11px] text-white/45">Fond sombre standard sobre MegaTv</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAppBackgroundMode("cover")}
+                    className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                      appBackgroundMode === "cover"
+                        ? "border-indigo-400 bg-indigo-500/15"
+                        : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <div className="w-7 h-7 rounded-lg border border-white/15 shrink-0 mt-0.5 bg-gradient-to-br from-red-600 to-indigo-900" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">Couverture profil (Dynamique)</span>
+                      <span className="text-[11px] text-white/45">Ambiance colorée extraite de la bannière</span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Teintes personnalisées officielles Android (AppBackgroundSwatches) */}
+                <div className="pt-3 border-t border-white/[0.08]">
+                  <p className="text-xs font-semibold text-white/70 mb-2.5">Nuances manuelles (Android AppBackgroundSwatches) :</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2">
+                    {APP_BACKGROUND_SWATCHES.map((swatch) => {
+                      const isSelected = appBackgroundMode === "custom" && appBackgroundCustomArgb === swatch.argb;
+                      return (
+                        <button
+                          key={swatch.label}
+                          type="button"
+                          onClick={() => {
+                            setAppBackgroundMode("custom");
+                            setAppBackgroundCustomArgb(swatch.argb);
+                          }}
+                          className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border text-center transition-all ${
+                            isSelected
+                              ? "border-white bg-white/15 shadow-md shadow-white/10 scale-105"
+                              : "border-white/10 bg-white/5 hover:bg-white/10"
+                          }`}
+                        >
+                          <div
+                            className="w-6 h-6 rounded-lg border border-white/20 shadow-inner flex items-center justify-center"
+                            style={{ backgroundColor: swatch.hex }}
+                          >
+                            {isSelected && <span className="text-[10px] text-white font-bold">✓</span>}
+                          </div>
+                          <span className="text-[10px] text-white/75 font-medium leading-tight">
+                            {swatch.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </SettingCard>
 
-              {/* Écran de sélection de profil */}
+              {/* Écran de sélection de profil TV (Éclairé, Vague, Continués à regarder) */}
               <SettingCard>
                 <SectionTitle>Écran de sélection de profil TV</SectionTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <p className="text-xs text-white/50 mb-3">
+                  Animation de fond affichée sur l&apos;écran d&apos;accueil « Qui regarde ? ».
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { value: "glow", title: "Halo lumineux (Glow)", desc: "Ambiance lumineuse douce et épurée" },
-                    { value: "illuminated", title: "Illumination douce", desc: "Éclairage diffus sur les cartes profils" },
+                    {
+                      value: "glow",
+                      title: "Éclairé",
+                      desc: "Éclairage couleur et halo ambiant doux",
+                    },
+                    {
+                      value: "wave",
+                      title: "Vague",
+                      desc: "Ondulation fluide et dynamique",
+                    },
+                    {
+                      value: "continue_watching",
+                      title: "Continués à regarder",
+                      desc: "Défilement de vos reprises en arrière-plan",
+                    },
                   ].map((bgOpt) => (
                     <button
                       key={bgOpt.value}
                       type="button"
                       onClick={() => setProfilePickerBackground(bgOpt.value)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
+                      className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
                         profilePickerBackground === bgOpt.value
-                          ? "border-indigo-400 bg-indigo-500/15"
+                          ? "border-indigo-400 bg-indigo-500/15 shadow-md shadow-indigo-500/10"
                           : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
                       }`}
                     >
-                      <span className="text-xs font-bold text-white block">{bgOpt.title}</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-white block">{bgOpt.title}</span>
+                        {profilePickerBackground === bgOpt.value && (
+                          <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                        )}
+                      </div>
                       <span className="text-[11px] text-white/45">{bgOpt.desc}</span>
                     </button>
                   ))}
@@ -1450,7 +1561,7 @@ export function ManageSettingsPanel() {
                     <label className="text-xs text-white/50 block mb-1.5 font-semibold">Sous-titres secondaires</label>
                     <select
                       value={secondarySubtitle}
-                      onChange={(e) => setSecondarySubtitle(e.target.value)}
+                      onChange={(e) => setDefaultSubtitle(e.target.value)}
                       className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
                     >
                       <option value="Off">Désactivés</option>
