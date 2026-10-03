@@ -1,6 +1,5 @@
 "use client";
 
-import Script from "next/script";
 import { useEffect, type ReactNode } from "react";
 
 import { LiquidGlassFilters } from "@/features/companion/liquid-glass/LiquidGlassFilters";
