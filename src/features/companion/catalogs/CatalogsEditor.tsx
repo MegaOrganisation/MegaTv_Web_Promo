@@ -48,6 +48,9 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const lastSyncedProfileRef = useRef(profileId);
   const lastSyncedSignatureRef = useRef(catalogSignature(initialCatalogs));
+  /** Titles/ids at last clean sync — used so Save does not wipe Android renames (INC-CLOUD-028). */
+  const baselineCatalogsRef = useRef(initialCatalogs);
+  const [serverDrift, setServerDrift] = useState(false);
 
   useEffect(() => {
     const signature = catalogSignature(initialCatalogs);
@@ -55,16 +58,33 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
     const serverChanged = lastSyncedSignatureRef.current !== signature;
 
     if (!profileChanged && !serverChanged) return;
-    if (!profileChanged && serverChanged && dirty) return;
+    if (!profileChanged && serverChanged && dirty) {
+      setServerDrift(true);
+      return;
+    }
 
     setAllCatalogs(initialCatalogs);
     setCatalogs(visibleCatalogsFromAll(initialCatalogs));
     setHiddenPreinstalled(initialHiddenPreinstalled);
     setDeletedIds(initialDeletedIds);
     setDirty(false);
+    setServerDrift(false);
     lastSyncedProfileRef.current = profileId;
     lastSyncedSignatureRef.current = signature;
+    baselineCatalogsRef.current = initialCatalogs;
   }, [dirty, initialCatalogs, initialDeletedIds, initialHiddenPreinstalled, profileId]);
+
+  const reloadFromServer = useCallback(() => {
+    setAllCatalogs(initialCatalogs);
+    setCatalogs(visibleCatalogsFromAll(initialCatalogs));
+    setHiddenPreinstalled(initialHiddenPreinstalled);
+    setDeletedIds(initialDeletedIds);
+    setDirty(false);
+    setServerDrift(false);
+    lastSyncedSignatureRef.current = catalogSignature(initialCatalogs);
+    baselineCatalogsRef.current = initialCatalogs;
+    setStatus("Catalogue rechargé depuis Supabase.");
+  }, [initialCatalogs, initialDeletedIds, initialHiddenPreinstalled]);
 
   const syncVisible = useCallback((updater: (prev: CompanionCatalog[]) => CompanionCatalog[]) => {
     setCatalogs((prev) => {
@@ -165,13 +185,37 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
     setSaving(true);
     setStatus(null);
     try {
-      const mergedCatalogs = mergeVisibleCatalogsBack(allCatalogs, catalogs);
+      // Fresh slice before replace — absorb Android renames we did not edit locally.
+      const freshRes = await fetch(`/api/companion/sync/catalogs?profile=${encodeURIComponent(profileId)}`);
+      const freshJson = (await freshRes.json()) as {
+        catalogs?: CompanionCatalog[];
+        error?: string;
+      };
+      if (!freshRes.ok) throw new Error(freshJson.error || "Lecture cloud impossible avant sauvegarde");
+
+      const localMerged = mergeVisibleCatalogsBack(allCatalogs, catalogs);
+      const baselineById = new Map(baselineCatalogsRef.current.map((c) => [c.id, c]));
+      const serverById = new Map((freshJson.catalogs ?? []).map((c) => [c.id, c]));
+      const reconciled = localMerged.map((local) => {
+        const server = serverById.get(local.id);
+        const baseline = baselineById.get(local.id);
+        if (!server) return local;
+        const titleEditedLocally = Boolean(baseline && local.title !== baseline.title);
+        if (!titleEditedLocally && server.title && server.title !== local.title) {
+          return { ...local, title: server.title };
+        }
+        return local;
+      });
+      for (const server of freshJson.catalogs ?? []) {
+        if (!reconciled.some((c) => c.id === server.id)) reconciled.push(server);
+      }
+
       const res = await fetch("/api/companion/sync/catalogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profileId,
-          catalogs: mergedCatalogs,
+          catalogs: reconciled,
           hiddenPreinstalled,
           deletedCatalogIds: deletedIds,
           forceSync: true
@@ -179,9 +223,12 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Échec de sauvegarde");
-      setAllCatalogs(mergedCatalogs);
+      setAllCatalogs(reconciled);
+      setCatalogs(visibleCatalogsFromAll(reconciled));
       setDirty(false);
-      lastSyncedSignatureRef.current = catalogSignature(mergedCatalogs);
+      setServerDrift(false);
+      lastSyncedSignatureRef.current = catalogSignature(reconciled);
+      baselineCatalogsRef.current = reconciled;
       setStatus("Catalogues sauvegardés — synchronisation envoyée à vos appareils.");
       router.refresh();
     } catch (error) {
@@ -217,6 +264,16 @@ export function CatalogsEditor({ profileId, initialCatalogs, initialHiddenPreins
           </div>
         </div>
         {status ? <p className="mt-4 text-sm text-white/60">{status}</p> : null}
+        {serverDrift ? (
+          <div className="mt-3 flex flex-col gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-amber-100/90">
+              Le cloud a changé pendant vos modifications (rename Android / autre appareil). Rechargez avant de sauver pour ne pas écraser.
+            </p>
+            <MegaButton variant="ghost" onClick={reloadFromServer}>
+              Recharger
+            </MegaButton>
+          </div>
+        ) : null}
         {dirty ? <p className="mt-2 text-xs text-amber-100/80">Modifications non sauvegardées — cliquez Sauvegarder pour pousser vers Supabase.</p> : null}
         {deletedIds.length > 0 ? (
           <p className="mt-3 text-xs text-white/40">Tombstones actifs : {deletedIds.join(", ")}</p>

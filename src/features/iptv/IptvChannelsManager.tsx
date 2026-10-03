@@ -36,7 +36,7 @@ type ChannelsPayload = {
 };
 
 const FAV_STAR = "#FFC04A";
-const SAVE_DEBOUNCE_MS = 1800;
+const SAVE_DEBOUNCE_MS = 500;
 
 type Props = {
   profileId: string;
@@ -359,15 +359,18 @@ export function IptvChannelsManager({
   }
 
   function hideAllCategories() {
+    const labels = categoryRows.map((r) => r.label);
     hiddenDirty.current = true;
-    setHidden(categoryRows.map((r) => r.label));
-    setToast(`${categoryRows.length} catégories masquées`);
+    setHidden(labels);
+    setToast(`${labels.length} catégories masquées`);
+    void pushHidden(labels);
   }
 
   function showAllCategories() {
     hiddenDirty.current = true;
     setHidden([]);
     setToast("Toutes les catégories affichées");
+    void pushHidden([]);
   }
 
   function hideAllVisibleChannels() {
@@ -566,8 +569,9 @@ export function IptvChannelsManager({
                 muted={stats.hiddenChannels === 0}
               />
               {categoryRows
-                .filter((c) => !c.hidden || activeGroup === c.label)
-                .slice(0, 40)
+                // Keep hidden chips visible (muted) so Mobile ↔ Companion parity is obvious;
+                // previously !c.hidden hid almost everything and left a single FRANCE FHD chip.
+                .slice(0, 60)
                 .map((c) => (
                   <Chip
                     key={c.label}

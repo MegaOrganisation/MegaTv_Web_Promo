@@ -6,6 +6,13 @@ export type IptvPlaylistEntry = {
   enabled?: boolean;
   /** Catégories masquées par playlist (parité Android IptvPlaylistEntry). */
   hiddenCategories?: string[];
+  /** Filtre auto langue catégories (ex. "fr") — parité Android categoryLanguageFilter. */
+  categoryLanguageFilter?: string | null;
+  /** Intervalle refresh par playlist ; null = hérite du global profil. */
+  refreshInterval?: string | null;
+  includeLive?: boolean | null;
+  includeMovies?: boolean | null;
+  includeSeries?: boolean | null;
 };
 
 export type IptvProfileState = {
@@ -39,6 +46,12 @@ export function detectPlaylistType(url: string) {
   return "M3U";
 }
 
+function optionalString(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  const value = String(raw).trim().toLowerCase();
+  return value ? value : null;
+}
+
 export function normalizePlaylistEntry(raw: Record<string, unknown>, index: number): IptvPlaylistEntry {
   const id = String(raw.id || `list_${index + 1}`);
   const name = String(raw.name || `Liste ${index + 1}`);
@@ -49,7 +62,23 @@ export function normalizePlaylistEntry(raw: Record<string, unknown>, index: numb
   const hiddenCategories = Array.isArray(hiddenRaw)
     ? [...new Set(hiddenRaw.map((v) => String(v || "").trim()).filter(Boolean))]
     : [];
-  return { id, name, m3uUrl, epgUrl, enabled, hiddenCategories };
+  const categoryLanguageFilter = optionalString(
+    raw.categoryLanguageFilter ?? raw.category_language_filter,
+  );
+  const refreshInterval = optionalString(raw.refreshInterval ?? raw.refresh_interval);
+  return {
+    id,
+    name,
+    m3uUrl,
+    epgUrl,
+    enabled,
+    hiddenCategories,
+    categoryLanguageFilter,
+    refreshInterval,
+    includeLive: typeof raw.includeLive === "boolean" ? raw.includeLive : null,
+    includeMovies: typeof raw.includeMovies === "boolean" ? raw.includeMovies : null,
+    includeSeries: typeof raw.includeSeries === "boolean" ? raw.includeSeries : null,
+  };
 }
 
 export function newPlaylistId(existing: IptvPlaylistEntry[]) {

@@ -78,7 +78,12 @@ export function IptvPlaylistEditor({ profileId, initialPlaylists }: Props) {
         m3uUrl: entry.m3uUrl.trim(),
         epgUrl: entry.epgUrl?.trim() || "",
         enabled: entry.enabled !== false,
-        hiddenCategories: entry.hiddenCategories || []
+        hiddenCategories: entry.hiddenCategories || [],
+        categoryLanguageFilter: entry.categoryLanguageFilter ?? null,
+        refreshInterval: entry.refreshInterval ?? null,
+        includeLive: entry.includeLive ?? null,
+        includeMovies: entry.includeMovies ?? null,
+        includeSeries: entry.includeSeries ?? null,
       }))
       .filter((entry) => entry.name && entry.m3uUrl);
 

@@ -8,6 +8,7 @@ import { SettingsAppearanceSection } from "@/features/companion/settings/Setting
 import { PageEventTracker } from "@/features/dashboard/PageEventTracker";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDashboardData } from "@/lib/dashboard/queries";
+import { CompanionProfileSettingsSection } from "@/features/companion/settings/CompanionProfileSettingsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,8 @@ export default async function CompanionSettingsPage() {
         <div id="apparence" className="contents">
           <SettingsAppearanceSection isAdmin={isAdmin} />
         </div>
+
+        <CompanionProfileSettingsSection />
 
         <MegaSurface as="section" elevated id="sync">
           <div className="mb-3 flex items-center gap-3">

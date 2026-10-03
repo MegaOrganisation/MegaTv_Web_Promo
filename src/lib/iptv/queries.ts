@@ -214,9 +214,16 @@ export async function saveIptvPlaylistsForProfile(profileId: string, playlists: 
     enabled: entry.enabled !== false,
     hiddenCategories: Array.isArray(entry.hiddenCategories)
       ? [...new Set(entry.hiddenCategories.map((v) => String(v || "").trim()).filter(Boolean))]
-      : []
+      : [],
+    categoryLanguageFilter: entry.categoryLanguageFilter ?? null,
+    refreshInterval: entry.refreshInterval ?? null,
+    includeLive: entry.includeLive ?? null,
+    includeMovies: entry.includeMovies ?? null,
+    includeSeries: entry.includeSeries ?? null,
   }));
 
+  // RPC fans out playlists to ALL profiles of the account (INC-CLOUD-009).
+  // Favorites / hidden stay profile-scoped via other RPCs.
   const { data, error } = await supabase.rpc("megacompanion_patch_iptv_playlists", {
     p_profile_id: profileId.trim(),
     p_playlists: payload
@@ -264,6 +271,7 @@ export async function saveIptvHiddenCategoriesForProfile(profileId: string, hidd
   const seen = new Set<string>();
   const clean = hiddenCategories
     .map((label) => (typeof label === "string" ? label.trim() : String(label ?? "").trim()))
+    .map((label) => (label.toLowerCase() === "uncategorized" ? "Ungrouped" : label))
     .filter((label) => label && !seen.has(label) && (seen.add(label), true));
 
   const { data, error } = await supabase.rpc("megacompanion_patch_iptv_hidden_categories", {

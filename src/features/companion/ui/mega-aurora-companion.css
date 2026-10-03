@@ -722,6 +722,8 @@ html[data-mega-surface="companion"] .activity-ring-chart [class*="text-white"] {
     max-height: none;
     flex-direction: row !important;
     align-items: stretch;
+    padding: 8px !important;
+    gap: 0;
   }
 
   html[data-mega-surface="companion"] .tonight-tv__hero-media {
@@ -730,6 +732,7 @@ html[data-mega-surface="companion"] .activity-ring-chart [class*="text-white"] {
     max-width: 44%;
     aspect-ratio: 16 / 10;
     align-self: stretch;
+    border-radius: 12px !important;
   }
 
   html[data-mega-surface="companion"] .tonight-tv__hero-media img {
@@ -748,7 +751,7 @@ html[data-mega-surface="companion"] .activity-ring-chart [class*="text-white"] {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 10px 12px !important;
+    padding: 8px 10px !important;
   }
 
   html[data-mega-surface="companion"] .tonight-tv__list {
@@ -1372,7 +1375,8 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   text-align: left;
   color: inherit;
   min-height: 220px;
-  padding: 0;
+  /* Légère marge autour de l’affiche (haut + côtés) — bas carré vers la méta */
+  padding: 10px 10px 0;
 }
 .tonight-tv__hero-media {
   position: relative;
@@ -1382,6 +1386,7 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   max-height: 280px;
   background: #12161a;
   overflow: hidden;
+  border-radius: 14px 14px 0 0;
 }
 .tonight-tv__hero-media img {
   position: absolute;
@@ -1399,9 +1404,10 @@ html[data-mega-surface="companion"] .media-flip-glass.companion-css-glass-panel 
   place-items: center;
   min-height: 168px;
   aspect-ratio: 16 / 9;
+  border-radius: 14px 14px 0 0;
 }
 .tonight-tv__hero-meta {
-  padding: 12px 14px 14px;
+  padding: 12px 4px 14px;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
 }
 .tonight-tv__list {

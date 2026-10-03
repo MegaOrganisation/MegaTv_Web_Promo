@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getIptvPlaylistsForProfile, saveIptvPlaylistsForProfile } from "@/lib/iptv/queries";
-import type { IptvPlaylistEntry } from "@/lib/iptv/types";
+import { normalizePlaylistEntry, type IptvPlaylistEntry } from "@/lib/iptv/types";
 import { FORCE_SYNC_ALL_SCOPES, requestForceSync } from "@/lib/companion/force-sync";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,16 +72,24 @@ export async function POST(request: Request) {
   }
 
   const playlists = body.playlists
-    .map((entry, index) => ({
-      id: String(entry.id || `list_${index + 1}`),
-      name: String(entry.name || "").trim(),
-      m3uUrl: String(entry.m3uUrl || "").trim(),
-      epgUrl: String(entry.epgUrl || "").trim(),
-      enabled: entry.enabled !== false,
-      hiddenCategories: Array.isArray(entry.hiddenCategories)
-        ? entry.hiddenCategories.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)
-        : []
-    }))
+    .map((entry, index) =>
+      normalizePlaylistEntry(
+        {
+          id: entry.id,
+          name: entry.name,
+          m3uUrl: entry.m3uUrl,
+          epgUrl: entry.epgUrl,
+          enabled: entry.enabled,
+          hiddenCategories: entry.hiddenCategories,
+          categoryLanguageFilter: entry.categoryLanguageFilter,
+          refreshInterval: entry.refreshInterval,
+          includeLive: entry.includeLive,
+          includeMovies: entry.includeMovies,
+          includeSeries: entry.includeSeries,
+        } as Record<string, unknown>,
+        index,
+      ),
+    )
     .filter((entry) => entry.name && entry.m3uUrl);
 
   if (playlists.length === 0) {

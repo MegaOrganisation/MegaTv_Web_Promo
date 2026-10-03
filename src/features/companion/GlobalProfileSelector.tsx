@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useCompanionProfile } from "@/features/companion/CompanionProfileProvider";
-import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
+import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
 
 type MenuPlacement = "end" | "sidebar";
 
@@ -15,7 +15,7 @@ type MenuPlacement = "end" | "sidebar";
  * `overflow:hidden` de la topbar.
  */
 export function GlobalProfileSelector({ menuPlacement = "end" }: { menuPlacement?: MenuPlacement }) {
-  const { profiles, activeProfileId, activeProfile, setActiveProfileId } = useCompanionProfile();
+  const { profiles, profileAvatarUrlsById, activeProfileId, activeProfile, setActiveProfileId } = useCompanionProfile();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [menuStyle, setMenuStyle] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -121,7 +121,12 @@ export function GlobalProfileSelector({ menuPlacement = "end" }: { menuPlacement
               selected ? "bg-[var(--mega-card-bg)]" : "hover:bg-[var(--mega-card-bg)]"
             )}
           >
-            <PresetAvatarCircle avatarId={profile.avatar_id || 1} size="md" label={profile.name || "Profil"} />
+            <ProfileAvatar
+              profile={profile}
+              avatarUrl={profileAvatarUrlsById[profile.profile_id]}
+              size="md"
+              label={profile.name || "Profil"}
+            />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold text-[var(--mega-text)]">{profile.name || "Profil MegaTv"}</span>
               <span className="block truncate text-xs text-[var(--mega-text-faint)]">{profile.is_kids_profile ? "Enfant" : "Adulte"}</span>
@@ -148,7 +153,13 @@ export function GlobalProfileSelector({ menuPlacement = "end" }: { menuPlacement
         )}
       >
         {activeProfile ? (
-          <PresetAvatarCircle avatarId={activeProfile.avatar_id || 1} size="sm" label={activeProfile.name || "Profil"} className="!h-9 !w-9 !border-0 !p-0" />
+          <ProfileAvatar
+            profile={activeProfile}
+            avatarUrl={profileAvatarUrlsById[activeProfile.profile_id]}
+            size="sm"
+            label={activeProfile.name || "Profil"}
+            className="!h-9 !w-9 !border-0 !p-0"
+          />
         ) : (
           <span className="grid h-9 w-9 place-items-center rounded-full bg-[linear-gradient(135deg,#3f9ae6,#d8497f)] text-sm font-black text-white">
             <UsersRound className="h-4 w-4" />

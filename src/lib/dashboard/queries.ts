@@ -98,7 +98,12 @@ async function createProfileAvatarUrls(
 
       const { data, error } = await supabase.storage.from("profile-avatars").createSignedUrl(path, 60 * 60);
       if (error || !data?.signedUrl) return null;
-      return [profile.profile_id, data.signedUrl] as const;
+      const rawUrl = data.signedUrl;
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://lciimaytmryruyooktkd.supabase.co";
+      const fullUrl = rawUrl.startsWith("http")
+        ? rawUrl
+        : `${baseUrl.replace(/\/$/, "")}/storage/v1${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+      return [profile.profile_id, fullUrl] as const;
     })
   );
 
