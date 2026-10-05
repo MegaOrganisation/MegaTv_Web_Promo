@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Agrège le temps de visionnage cumulé (historique) pour le Top contenus.
  * Priorité : somme watch_seconds par titre (film / série), pas par épisode seul.

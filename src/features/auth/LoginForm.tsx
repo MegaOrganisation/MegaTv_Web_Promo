@@ -12,7 +12,7 @@ type AuthMode = "login" | "signup";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = sanitizeNext(searchParams.get("next"));
+  const next = sanitizeNext(searchParams.get("next") || searchParams.get("redirect") || searchParams.get("returnUrl"));
   const initialMode = useMemo<AuthMode>(() => (searchParams.get("mode") === "signup" ? "signup" : "login"), [searchParams]);
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -66,8 +66,12 @@ export function LoginForm() {
         setMessage(error.message);
         return;
       }
-      router.replace(next);
-      router.refresh();
+      if (next === "/" || next.startsWith("/#")) {
+        window.location.href = next;
+      } else {
+        router.replace(next);
+        router.refresh();
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Connexion impossible pour le moment.");
     } finally {

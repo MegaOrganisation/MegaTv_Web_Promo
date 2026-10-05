@@ -6,6 +6,7 @@ import Script from "next/script";
 
 import { CompanionPwaSplash } from "@/features/companion/CompanionPwaSplash";
 import { ThemeProvider } from "@/features/theme/ThemeProvider";
+import { CookieConsent } from "@/components/ui/CookieConsent";
 
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider>
           <CompanionPwaSplash />
           {children}
+          <CookieConsent />
         </ThemeProvider>
         <Analytics />
       </body>

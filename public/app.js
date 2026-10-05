@@ -344,7 +344,7 @@ const screenData = {
   web: {
     title: "MegaTv pour le Web & Ordinateur",
     sub: "Accédez à l'ensemble de votre catalogue, vos flux TV en direct et votre progression directement depuis Google Chrome, Edge, Safari, Firefox ou Internet Explorer.",
-    image: "assets/web-screens/top10.png",
+    image: "assets/screen-web-zootopie.png",
     mockupType: "mode-web",
     logos: `
       <span class="platform-brand-badge" title="Internet Explorer & Web Browsers">
@@ -394,51 +394,35 @@ function switchScreen(platform, btn) {
 window.switchScreen = switchScreen;
 
 /* ---------- AUTH USER SYNC FOR PROMO TOP BAR ---------- */
-(function checkUserAuth() {
+async function checkUserAuth() {
+  const authBtn = document.getElementById('promo-auth-btn');
+  if (authBtn) {
+    authBtn.href = '/login?next=' + encodeURIComponent(window.location.pathname || '/');
+  }
   try {
-    sb.auth.getUser().then(async ({ data: { user } }) => {
-      const authBtn = document.getElementById('promo-auth-btn');
-      if (user && authBtn) {
-        let avatarSrc = null;
-        let displayName = user.email ? user.email.split('@')[0] : 'Profil';
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.authenticated && data.user && authBtn) {
+      const displayName = data.profile?.name || (data.user.email ? data.user.email.split('@')[0] : 'Profil');
+      const avatarSrc = data.profile?.avatar_url;
 
-        try {
-          const { data: profiles } = await sb
-            .from('user_profiles')
-            .select('id, name, avatar_id, avatar_image_version, avatar_image_storage_path')
-            .eq('user_id', user.id)
-            .order('last_used_at', { ascending: false, nullsFirst: false })
-            .limit(1);
+      const avatarHtml = avatarSrc
+        ? `<img src="${avatarSrc}" alt="${displayName}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.4);box-shadow:0 2px 8px rgba(0,0,0,0.5);shrink:0;" />`
+        : `<div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3f9ae6,#d8497f);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:#fff;">${displayName[0].toUpperCase()}</div>`;
 
-          if (profiles && profiles.length > 0) {
-            const p = profiles[0];
-            if (p.name) displayName = p.name;
-            const path = p.avatar_image_storage_path?.trim();
-            if (path && (path.startsWith('http://') || path.startsWith('https://'))) {
-              avatarSrc = path;
-            } else if (path || (p.avatar_image_version || 0) > 0) {
-              avatarSrc = `/api/profiles/${encodeURIComponent(p.id)}/avatar?v=${p.avatar_image_version || 1}`;
-            } else if (p.avatar_id && p.avatar_id > 0) {
-              const num = Math.min(Math.max(p.avatar_id, 1), 25);
-              avatarSrc = `/assets/avatars/avatar_${num}.png`;
-            }
-          }
-        } catch (_) {}
-
-        const avatarHtml = avatarSrc
-          ? `<img src="${avatarSrc}" alt="${displayName}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.35);box-shadow:0 2px 8px rgba(0,0,0,0.5);shrink:0;" />`
-          : `<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#3f9ae6,#d8497f);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">${displayName[0].toUpperCase()}</div>`;
-
-        authBtn.innerHTML = `
-          ${avatarHtml}
-          <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;">${displayName}</span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.6;"><polyline points="6 9 12 15 18 9"/></svg>
-        `;
-        authBtn.href = '/companion';
-      }
-    });
-  } catch (_) {}
-})();
+      authBtn.innerHTML = `
+        ${avatarHtml}
+        <span class="profile-name-text" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;">${displayName}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.6;"><polyline points="6 9 12 15 18 9"/></svg>
+      `;
+      authBtn.href = '/companion';
+    }
+  } catch (e) {
+    console.error('Auth sync check error:', e);
+  }
+}
+checkUserAuth();
 
 /* ---------- COOKIE CONSENT BANNER (PJ 3) ---------- */
 function initCookieConsent() {

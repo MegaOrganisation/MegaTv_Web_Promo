@@ -47,6 +47,28 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
 
   // Check auth state on client
   useEffect(() => {
+    // 1. Fetch server session from /api/auth/me immediately
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.authenticated && data.user) {
+          setIsLoggedIn(true);
+          setUserEmail(data.user.email || null);
+          if (data.profile) {
+            setFallbackProfiles([{
+              ...data.profile,
+              profile_id: data.profile.id,
+              name: data.profile.name,
+              avatar_image_storage_path: data.profile.avatar_url,
+              avatar_id: data.profile.avatar_id
+            }]);
+            setFallbackActiveProfileId(data.profile.id);
+          }
+        }
+      })
+      .catch(() => {});
+
+    // 2. Also listen with Supabase client
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
@@ -67,8 +89,6 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
             }
           } catch (_) {}
         }
-      } else {
-        setIsLoggedIn(false);
       }
     });
 
@@ -144,12 +164,12 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
   const activeAvatarSrc = getProfileAvatarSrc(effectiveActiveProfile);
 
   return (
-    <header className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] max-w-[96vw]">
-      <div className="flex items-center gap-2 sm:gap-4 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#12141c]/85 dark:bg-[#12141c]/90 light:bg-white/90 backdrop-blur-2xl border border-white/12 dark:border-white/14 shadow-[0_18px_45px_rgba(0,0,0,0.6)] transition-all">
+    <header className="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[calc(100vw-16px)] w-max">
+      <div className="flex items-center gap-1 sm:gap-3 px-2.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full bg-[#12141c]/90 light:bg-white/95 backdrop-blur-2xl border border-white/14 shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 pl-1 pr-2 hover:opacity-90 transition-opacity">
+        <Link href="/" className="flex items-center gap-2 pl-1 pr-1 sm:pr-2 hover:opacity-90 transition-opacity">
           <MegaTvMark size={28} />
-          <span className="font-bold tracking-tight text-sm sm:text-base text-white">MegaTv</span>
+          <span className="hidden sm:inline font-extrabold tracking-tight text-base sm:text-lg text-white">MegaTv</span>
         </Link>
 
         {/* Center Pill Nav Links */}
@@ -157,10 +177,10 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/"
             className={clsx(
-              "px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all",
+              "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14.5px] transition-all",
               activeTab === "home"
-                ? "bg-white text-black shadow-sm font-bold"
-                : "text-white/70 hover:text-white hover:bg-white/5"
+                ? "bg-white text-black shadow-md font-extrabold"
+                : "text-white/75 hover:text-white font-bold hover:bg-white/6"
             )}
           >
             Home
@@ -168,10 +188,10 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/premium"
             className={clsx(
-              "px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all",
+              "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14.5px] transition-all font-extrabold",
               activeTab === "premium"
-                ? "bg-white text-black shadow-sm font-bold"
-                : "text-white/70 hover:text-white hover:bg-white/5"
+                ? "bg-white text-black shadow-md font-extrabold"
+                : "bg-gradient-to-r from-[#3f9ae6] via-[#1fa8a0] via-[#5fbf5a] via-[#f2b43c] via-[#ee6a54] to-[#d8497f] bg-clip-text text-transparent hover:opacity-90"
             )}
           >
             Premium
@@ -179,10 +199,10 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/companion"
             className={clsx(
-              "px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all",
+              "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14.5px] transition-all",
               activeTab === "companion"
-                ? "bg-white text-black shadow-sm font-bold"
-                : "text-white/70 hover:text-white hover:bg-white/5"
+                ? "bg-white text-black shadow-md font-extrabold"
+                : "text-white/75 hover:text-white font-bold hover:bg-white/6"
             )}
           >
             Compagnon
@@ -320,11 +340,11 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
             </div>
           ) : (
             <Link
-              href="/login"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/18 text-white transition-colors"
+              href={`/login?next=${encodeURIComponent(pathname || "/")}`}
+              className="flex items-center gap-1.5 px-3 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14px] font-bold bg-white/12 hover:bg-white/20 text-white transition-all shadow-sm"
             >
               <UserIcon size={14} />
-              <span>Connexion</span>
+              <span className="hidden xs:inline sm:inline">Connexion</span>
             </Link>
           )}
         </div>
