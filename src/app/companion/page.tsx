@@ -19,6 +19,7 @@ export default async function CompanionPage({ searchParams }: { searchParams: Pr
       watchHistory={watchHistory}
       activeProfileId={activeProfileId}
       activeProfile={activeProfile}
+      profiles={profiles}
       profileAvatarUrlsById={profileAvatarUrlsById}
       isAdmin={isAdmin}
       errors={errors}

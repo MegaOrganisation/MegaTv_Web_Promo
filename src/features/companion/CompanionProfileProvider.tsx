@@ -30,10 +30,18 @@ export function CompanionProfileProvider({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlProfileId = searchParams.get("profile")?.trim() || null;
+  const storedProfileId = typeof window !== "undefined" ? readStoredProfileId() : null;
+  const effectiveProfileId = urlProfileId || storedProfileId;
 
   const activeProfile = useMemo(
-    () => (urlProfileId ? profiles.find((profile) => profile.profile_id === urlProfileId) || null : null),
-    [urlProfileId, profiles]
+    () => {
+      if (effectiveProfileId) {
+        const found = profiles.find((profile) => profile.profile_id === effectiveProfileId);
+        if (found) return found;
+      }
+      return profiles[0] || null;
+    },
+    [effectiveProfileId, profiles]
   );
 
   useEffect(() => {

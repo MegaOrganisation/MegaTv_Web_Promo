@@ -19,6 +19,7 @@ type Props = {
   watchHistory: WatchHistoryRow[];
   activeProfileId: string | null;
   activeProfile: ProfileRow | null;
+  profiles?: ProfileRow[];
   profileAvatarUrlsById: Record<string, string>;
   isAdmin: boolean;
   errors: string[];
@@ -31,6 +32,7 @@ export function CompanionDashboardPage({
   watchHistory,
   activeProfileId,
   activeProfile,
+  profiles = [],
   profileAvatarUrlsById,
   isAdmin,
   errors
@@ -81,6 +83,9 @@ export function CompanionDashboardPage({
         continueWatching={continueWatching}
         watchHistory={watchHistory}
         activeProfileId={activeProfileId}
+        activeProfile={activeProfile}
+        profiles={profiles}
+        profileAvatarUrlsById={profileAvatarUrlsById}
         isKids={Boolean(activeProfile?.is_kids_profile)}
         editMode={editMode && !activeProfile?.is_kids_profile}
         onEditModeChange={setEditMode}

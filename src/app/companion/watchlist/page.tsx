@@ -46,9 +46,10 @@ export default async function CompanionWatchlistPage({
 
   return (
     <ResponsiveShell
-      title="Watchlist"
+      title="Watch Progress"
       subtitle="Synchronisée depuis MegaTv Cloud."
       isAdmin={isAdmin}
+      hidePageHeader
     >
       <PageEventTracker page="Companion Watchlist" />
       <div className="watchlist-page-shell">

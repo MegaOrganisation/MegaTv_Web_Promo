@@ -273,7 +273,101 @@ if(track){ track.innerHTML += track.innerHTML; }
   } catch (_) { /* ignore */ }
 })();
 
+/* ---------- SCREEN PICKER TABS (ISO PJ 1) ---------- */
+const screenData = {
+  mobile: {
+    title: "MegaTv pour Android et iPhone",
+    sub: "Parcourez, découvrez et lancez vos contenus en mobilité. Connectez votre compte cloud pour synchroniser votre bibliothèque et vos reprises entre tous vos écrans.",
+    image: "assets/screen-home-mobile.jpg",
+    logos: `
+      <svg viewBox="0 0 24 24" fill="#3ddc84" style="width:28px;height:28px;"><path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/></svg>
+      <svg viewBox="0 0 24 24" fill="#fff" style="width:26px;height:26px;"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.79 1.06-1.88.94-2.97-1 .04-2.13.67-2.8 1.45-.58.67-1.09 1.76-.95 2.83 1.1.08 2.19-.57 2.81-1.31"/></svg>
+    `,
+    ctas: `
+      <a href="/api/download/android" class="btn-spectrum">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 5 3.5z"/></svg>
+        <span>Android APK</span>
+      </a>
+      <a href="#features" class="btn-ghost"><span>Google Play (Bientôt)</span></a>
+      <a href="/web" class="btn-ghost"><span>Web PWA</span></a>
+    `
+  },
+  tv: {
+    title: "MegaTv pour Android TV & Fire TV",
+    sub: "Expérience grand écran pensée pour la télécommande. Hero immersif 4K, bascule ultra-fluide des flux IPTV, guide EPG direct et synchronisation des profils.",
+    image: "assets/tv-home-new.png",
+    logos: `
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:28px;height:28px;"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 20h8"/><path d="M12 18v2"/></svg>
+      <svg viewBox="0 0 24 24" fill="#ff9900" style="width:26px;height:26px;"><path d="M17.9 2.318A5.006 5.006 0 0 0 12.9 0H5a5 5 0 0 0-5 5v14a5 5 0 0 0 5 5h7.9a5.006 5.006 0 0 0 5-4.318L19.2 12l-1.3-9.682zM17 12l-7 4V8l7 4z"/></svg>
+    `,
+    ctas: `
+      <a href="/api/download/android" class="btn-spectrum">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 5 3.5z"/></svg>
+        <span>Télécharger APK TV</span>
+      </a>
+      <a href="#ecosysteme" class="btn-ghost"><span>Guide Downloader / Sideload</span></a>
+    `
+  },
+  web: {
+    title: "MegaTv pour le Web & Ordinateur",
+    sub: "Accédez à l'ensemble de votre catalogue, vos flux TV en direct et votre progression directement depuis Google Chrome, Edge, Safari ou Firefox.",
+    image: "assets/web-screens/top10.png",
+    logos: `
+      <svg viewBox="0 0 24 24" fill="none" stroke="#3f9ae6" stroke-width="2" style="width:28px;height:28px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:26px;height:26px;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+    `,
+    ctas: `
+      <a href="/web" class="btn-spectrum">
+        <span>Lancer l'App Web</span>
+      </a>
+      <a href="/companion" class="btn-ghost">
+        <span>Ouvrir Compagnon</span>
+      </a>
+    `
+  }
+};
+
+function switchScreen(platform, btn) {
+  document.querySelectorAll('.screen-tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const d = screenData[platform];
+  if (!d) return;
+  const titleEl = document.getElementById('screen-card-title');
+  const subEl = document.getElementById('screen-card-sub');
+  const logosEl = document.getElementById('screen-card-logos');
+  const ctasEl = document.getElementById('screen-card-ctas');
+  const imgEl = document.getElementById('screen-card-img');
+  if (titleEl) titleEl.textContent = d.title;
+  if (subEl) subEl.textContent = d.sub;
+  if (logosEl) logosEl.innerHTML = d.logos;
+  if (ctasEl) ctasEl.innerHTML = d.ctas;
+  if (imgEl) {
+    imgEl.style.opacity = '0';
+    setTimeout(() => { imgEl.src = d.image; imgEl.style.opacity = '1'; }, 150);
+  }
+}
+window.switchScreen = switchScreen;
+
+/* ---------- AUTH USER SYNC FOR PROMO TOP BAR ---------- */
+(function checkUserAuth() {
+  try {
+    sb.auth.getUser().then(({ data: { user } }) => {
+      const authBtn = document.getElementById('promo-auth-btn');
+      if (user && authBtn) {
+        const name = user.email ? user.email.split('@')[0] : 'Profil';
+        authBtn.innerHTML = `
+          <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#3f9ae6,#d8497f);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">${name[0].toUpperCase()}</div>
+          <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        `;
+        authBtn.href = '/companion';
+      }
+    });
+  } catch (_) {}
+})();
+
 /* ---------- INIT ---------- */
 onNav();
 applyParallax();
 applyLang('fr');
+

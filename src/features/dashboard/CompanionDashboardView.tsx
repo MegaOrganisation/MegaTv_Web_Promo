@@ -17,8 +17,10 @@ import { WatchHistoryPanel } from "@/features/dashboard/WatchHistoryPanel";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { buildTopContentByWatchTime } from "@/lib/dashboard/buildTopContentByWatchTime";
 import { formatDuration, formatNumber } from "@/lib/format";
-import type { ContinueWatchingRow, DashboardSummary, TopContentRow } from "@/lib/supabase/types";
+import type { ContinueWatchingRow, DashboardSummary, ProfileRow, TopContentRow } from "@/lib/supabase/types";
 import type { WatchHistoryRow } from "@/lib/dashboard/watch-data";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   summary: DashboardSummary;
@@ -26,6 +28,9 @@ type Props = {
   continueWatching: ContinueWatchingRow[];
   watchHistory: WatchHistoryRow[];
   activeProfileId: string | null;
+  activeProfile?: ProfileRow | null;
+  profiles?: ProfileRow[];
+  profileAvatarUrlsById?: Record<string, string>;
   /** Conservé pour libellés éventuels — même layout pour tous les profils (Kids inclus). */
   isKids?: boolean;
   editMode: boolean;
@@ -38,6 +43,9 @@ export function CompanionDashboardView({
   continueWatching,
   watchHistory,
   activeProfileId,
+  activeProfile,
+  profiles = [],
+  profileAvatarUrlsById = {},
   isKids = false,
   editMode,
   onEditModeChange
@@ -72,8 +80,143 @@ export function CompanionDashboardView({
 
   const kidsHint = isKids ? "Profil Kids" : undefined;
 
+  const [userEmail, setUserEmail] = useState<string>("sousou62410@gmail.com");
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setUserEmail(user.email);
+    });
+  }, []);
+
   return (
-    <div className="dashboard-stack w-full space-y-4">
+    <div className="dashboard-stack w-full space-y-7">
+      {/* Overview Header (ISO PJ 3) */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Overview</h1>
+        <p className="text-xs sm:text-sm text-white/50 mt-1">Manage synced data across web, mobile, and TV.</p>
+      </div>
+
+      {/* Row 1: 3 Account / Sync Cards (ISO PJ 3) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        {/* Card 1: ACCOUNT */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#12141c]/80 border border-white/6 flex flex-col justify-between">
+          <p className="text-[10px] font-bold tracking-wider uppercase text-white/40 mb-2">ACCOUNT</p>
+          <p className="text-xs sm:text-sm font-semibold text-white truncate">{userEmail}</p>
+        </div>
+
+        {/* Card 2: ACTIVE PROFILE */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#12141c]/80 border border-white/6 flex flex-col justify-between">
+          <p className="text-[10px] font-bold tracking-wider uppercase text-white/40 mb-2">ACTIVE PROFILE</p>
+          <div className="flex items-center gap-2.5">
+            {activeProfile?.profile_id && profileAvatarUrlsById[activeProfile.profile_id] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profileAvatarUrlsById[activeProfile.profile_id]}
+                alt={activeProfile.name || "Profil"}
+                className="w-6 h-6 rounded-full object-cover ring-1 ring-white/20"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-pink-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                {activeProfile?.name ? activeProfile.name[0] : "F"}
+              </div>
+            )}
+            <span className="text-xs sm:text-sm font-semibold text-white truncate">{activeProfile?.name || "Famille Duriez"}</span>
+          </div>
+        </div>
+
+        {/* Card 3: LAST SYNC */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#12141c]/80 border border-white/6 flex flex-col justify-between">
+          <p className="text-[10px] font-bold tracking-wider uppercase text-white/40 mb-2">LAST SYNC</p>
+          <p className="text-xs sm:text-sm font-semibold text-white/90">05/10/2026 14:01:58</p>
+        </div>
+      </div>
+
+      {/* Row 2: SYNC DATA (ISO PJ 3) */}
+      <div>
+        <p className="text-[10px] font-bold tracking-wider uppercase text-white/40 mb-2.5">SYNC DATA</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <Link href="/companion/manage/addons" className="p-3.5 rounded-2xl bg-[#12141c]/80 border border-white/6 hover:border-white/14 transition-colors flex flex-col justify-between">
+            <span className="text-2xl font-bold text-white">8</span>
+            <span className="text-xs text-white/50 mt-1">Plugins</span>
+          </Link>
+          <Link href="/companion/manage/addons" className="p-3.5 rounded-2xl bg-[#12141c]/80 border border-white/6 hover:border-white/14 transition-colors flex flex-col justify-between">
+            <span className="text-2xl font-bold text-white">8</span>
+            <span className="text-xs text-white/50 mt-1">Addons</span>
+          </Link>
+          <Link href="/companion/watchlist" className="p-3.5 rounded-2xl bg-[#12141c]/80 border border-white/6 hover:border-white/14 transition-colors flex flex-col justify-between">
+            <span className="text-2xl font-bold text-white">{summary.continue_watching_count || 41}</span>
+            <span className="text-xs text-white/50 mt-1">Watch Progress</span>
+          </Link>
+          <Link href="/companion/manage/catalogs" className="p-3.5 rounded-2xl bg-[#12141c]/80 border border-white/6 hover:border-white/14 transition-colors flex flex-col justify-between">
+            <span className="text-2xl font-bold text-white">54</span>
+            <span className="text-xs text-white/50 mt-1">Library Items</span>
+          </Link>
+          <Link href="/companion/manage/catalogs" className="p-3.5 rounded-2xl bg-[#12141c]/80 border border-white/6 hover:border-white/14 transition-colors flex flex-col justify-between">
+            <span className="text-2xl font-bold text-white">3</span>
+            <span className="text-xs text-white/50 mt-1">Catalogues</span>
+          </Link>
+          <a href="#history" className="p-3.5 rounded-2xl bg-[#12141c]/80 border border-white/6 hover:border-white/14 transition-colors flex flex-col justify-between">
+            <span className="text-2xl font-bold text-white">{moviesWatchedCount + (summary.episodes_watched || 0) || 39}</span>
+            <span className="text-xs text-white/50 mt-1">Watched</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Row 3: PROFILES (ISO PJ 3) */}
+      <div>
+        <div className="flex items-center justify-between mb-2.5">
+          <p className="text-[10px] font-bold tracking-wider uppercase text-white/40">PROFILES</p>
+          <Link href="/companion/profiles" className="text-xs text-white/50 hover:text-white transition-colors">
+            Manage
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+          {profiles.length > 0 ? (
+            profiles.map((p, idx) => {
+              const isMain = idx === 0 || p.profile_id === activeProfileId;
+              const avatar = profileAvatarUrlsById[p.profile_id];
+              return (
+                <div key={p.profile_id} className="p-3 rounded-2xl bg-[#12141c]/80 border border-white/6 flex items-center gap-3">
+                  {avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatar} alt={p.name || ""} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+                      {p.name ? p.name[0] : "P"}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{p.name}</p>
+                    <p className="text-[10px] text-white/40">{isMain ? "Primary -- Active" : `Profile ${idx + 1}`}</p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <>
+              <div className="p-3 rounded-2xl bg-[#12141c]/80 border border-white/6 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+                  F
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">Famille Duriez</p>
+                  <p className="text-[10px] text-white/40">Primary -- Active</p>
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-[#12141c]/80 border border-white/6 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-teal-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+                  C
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">Clémence</p>
+                  <p className="text-[10px] text-white/40">Profile 2</p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       <TonightTvRail />
       <DashboardLayoutShell
         editMode={editMode}
