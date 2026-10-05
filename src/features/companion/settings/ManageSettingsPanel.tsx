@@ -48,13 +48,88 @@ const NUANCIER_GRID = [
   ["#FFFFFF", "#E2E8F0", "#94A3B8", "#64748B", "#334155", "#1E293B"],
   ["#EF4444", "#DC2626", "#B91C1C", "#F87171", "#FB7185", "#E11D48"],
   ["#F97316", "#EA580C", "#F59E0B", "#D97706", "#EAB308", "#CA8A04"],
-  ["#22C55E", "#16A34AL", "#10B981", "#059669", "#14B8A6", "#0D9488"],
+  ["#22C55E", "#16A34A", "#10B981", "#059669", "#14B8A6", "#0D9488"],
   ["#06B6D4", "#0891B2", "#0EA5E9", "#0284C7", "#3B82F6", "#2563EB"],
   ["#6366F1", "#4F46E5", "#8B5CF6", "#7C3AED", "#A855F7", "#EC4899"],
 ];
 
 const POSTER_PREVIEW_POSTER_URL = "https://image.tmdb.org/t/p/w780/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg";
 const POSTER_PREVIEW_BACKDROP_URL = "https://image.tmdb.org/t/p/w780/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg";
+
+/** Langues complètes disponibles pour les sous-titres */
+const SUBTITLE_LANGUAGES = [
+  { value: "Off", label: "Désactivés" },
+  { value: "French", label: "Français" },
+  { value: "English", label: "Anglais" },
+  { value: "Spanish", label: "Espagnol" },
+  { value: "German", label: "Allemand" },
+  { value: "Italian", label: "Italien" },
+  { value: "Portuguese", label: "Portugais" },
+  { value: "Portuguese (Brazil)", label: "Portugais (Brésil)" },
+  { value: "Arabic", label: "Arabe" },
+  { value: "Russian", label: "Russe" },
+  { value: "Japanese", label: "Japonais" },
+  { value: "Korean", label: "Coréen" },
+  { value: "Chinese", label: "Chinois" },
+  { value: "Dutch", label: "Néerlandais" },
+  { value: "Turkish", label: "Turc" },
+  { value: "Polish", label: "Polonais" },
+  { value: "Swedish", label: "Suédois" },
+  { value: "Norwegian", label: "Norvégien" },
+  { value: "Danish", label: "Danois" },
+  { value: "Finnish", label: "Finnois" },
+  { value: "Greek", label: "Grec" },
+  { value: "Czech", label: "Tchèque" },
+  { value: "Hungarian", label: "Hongrois" },
+  { value: "Romanian", label: "Roumain" },
+  { value: "Thai", label: "Thaï" },
+  { value: "Vietnamese", label: "Vietnamien" },
+  { value: "Indonesian", label: "Indonésien" },
+  { value: "Hebrew", label: "Hébreu" },
+  { value: "Hindi", label: "Hindi" },
+  { value: "Ukrainian", label: "Ukrainien" },
+  { value: "Croatian", label: "Croate" },
+  { value: "Slovak", label: "Slovaque" },
+  { value: "Slovenian", label: "Slovène" },
+  { value: "Bulgarian", label: "Bulgare" },
+];
+
+/** Langues audio disponibles */
+const AUDIO_LANGUAGES = [
+  { value: "auto", label: "Automatique (Original)" },
+  { value: "fr", label: "Français" },
+  { value: "en", label: "Anglais" },
+  { value: "es", label: "Espagnol" },
+  { value: "de", label: "Allemand" },
+  { value: "it", label: "Italien" },
+  { value: "pt", label: "Portugais" },
+  { value: "ja", label: "Japonais" },
+  { value: "ko", label: "Coréen" },
+  { value: "zh", label: "Chinois" },
+  { value: "ru", label: "Russe" },
+  { value: "ar", label: "Arabe" },
+  { value: "hi", label: "Hindi" },
+  { value: "tr", label: "Turc" },
+  { value: "pl", label: "Polonais" },
+  { value: "nl", label: "Néerlandais" },
+];
+
+/** Parse une valeur brute de sous-titre vers langue de base et booléen forcé */
+function parseSubtitleValue(raw: string | undefined): { lang: string; forced: boolean } {
+  const s = (raw || "Off").trim();
+  if (!s || s.toLowerCase() === "off") return { lang: "Off", forced: false };
+  if (s.toLowerCase() === "forced") return { lang: "French", forced: true };
+  const forced = /[\(\[]?\s*(forced|forcé)s?\s*[\)\]]?/i.test(s);
+  const lang = s.replace(/[\(\[]?\s*(forced|forcé)s?\s*[\)\]]?/i, "").trim() || (forced ? "French" : "Off");
+  return { lang, forced };
+}
+
+/** Formate la valeur de sous-titre pour la sauvegarde synchronisée */
+function formatSubtitleValue(lang: string, forced: boolean): string {
+  if (!lang || lang === "Off") return "Off";
+  if (forced) return `${lang} (Forced)`;
+  return lang;
+}
 
 const TABS = [
   { id: "appearance", label: "Interface & Thème",   icon: Palette },
@@ -70,7 +145,7 @@ type TabId = typeof TABS[number]["id"];
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/45 mb-3 flex items-center gap-2">
+    <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/50 mb-3 flex items-center gap-2">
       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
       {children}
     </h3>
@@ -79,7 +154,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function SettingCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl bg-white/[0.04] border border-white/[0.08] p-4.5 sm:p-5 backdrop-blur-md ${className}`}>
+    <div className={`rounded-2xl bg-white/[0.04] border border-white/[0.08] p-4 sm:p-5 backdrop-blur-md transition-all ${className}`}>
       {children}
     </div>
   );
@@ -98,18 +173,18 @@ function ToggleRow({
 }) {
   return (
     <label className="flex items-center justify-between gap-3 cursor-pointer py-2.5 group">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">{label}</p>
-        {sub && <p className="text-xs text-white/40 mt-0.5">{sub}</p>}
+      <div className="flex-1 min-w-0 pr-2">
+        <p className="text-xs sm:text-sm font-medium text-white/90 group-hover:text-white transition-colors">{label}</p>
+        {sub && <p className="text-[11px] text-white/40 mt-0.5 leading-snug">{sub}</p>}
       </div>
       <div
-        className={`w-11 h-6 rounded-full transition-all duration-200 relative shrink-0 ${
+        className={`w-10 h-5.5 sm:w-11 sm:h-6 rounded-full transition-all duration-200 relative shrink-0 ${
           checked ? "bg-indigo-500 shadow-sm shadow-indigo-500/50" : "bg-white/15"
         }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-            checked ? "translate-x-5" : "translate-x-0"
+          className={`absolute top-0.5 left-0.5 h-4.5 w-4.5 sm:h-5 sm:w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+            checked ? "translate-x-4.5 sm:translate-x-5" : "translate-x-0"
           }`}
         />
         <input
@@ -125,7 +200,7 @@ function ToggleRow({
 
 /* ─── APERÇUS RÉALISTES IDENTIQUES À L'APPLICATION ───────────────────────── */
 
-/** 1. ThemePreviewScreenMockup (Identique au mockup TV Bezel de l'application) */
+/** 1. ThemePreviewScreenMockup */
 function ThemePreviewScreenMockup({
   mode,
   customArgb,
@@ -137,32 +212,29 @@ function ThemePreviewScreenMockup({
 }) {
   let bg = "#0D111A";
   if (mode === "cover") {
-    bg = "#180B0E"; // Wash couverture
+    bg = "#180B0E";
   } else if (mode === "custom") {
     const hex = APP_BACKGROUND_SWATCHES.find((s) => s.argb === customArgb)?.hex;
     bg = hex || "#1E2A38";
   }
 
   return (
-    <div className="flex flex-col items-center max-w-[340px] w-full mx-auto">
-      {/* Cadre Bezel Moniteur TV */}
+    <div className="flex flex-col items-center w-full">
       <div
-        className="w-full rounded-2xl p-1.5 shadow-2xl transition-all duration-300"
+        className="w-full max-w-[310px] rounded-2xl p-1.5 shadow-2xl transition-all duration-300"
         style={{
           background: "linear-gradient(to bottom, #162132, #0A0F18)",
           border: "1.5px solid #334560",
           boxShadow: `0 8px 24px ${focusHex}26`,
         }}
       >
-        {/* Écran TV Intérieur */}
         <div
-          className="w-full h-36 rounded-xl p-2.5 flex flex-col justify-between border border-white/10 overflow-hidden transition-colors duration-300"
+          className="w-full h-34 rounded-xl p-2.5 flex flex-col justify-between border border-white/10 overflow-hidden transition-colors duration-300"
           style={{ background: bg }}
         >
           {/* Top Bar Capsule */}
           <div className="flex items-center justify-between rounded-full bg-black/60 px-2 py-1 backdrop-blur-sm border border-white/5">
             <div className="flex items-center gap-1.5">
-              {/* Onglet Accueil sélectionné avec couleur focus */}
               <div
                 className="px-2 py-0.5 rounded-full text-[9px] font-bold text-black flex items-center gap-1 shadow-sm transition-all"
                 style={{ backgroundColor: focusHex }}
@@ -179,17 +251,17 @@ function ThemePreviewScreenMockup({
           </div>
 
           {/* Hero Banner Centre */}
-          <div className="w-full h-12 rounded-lg bg-gradient-to-r from-white/10 to-transparent border border-white/10 p-2 flex flex-col justify-center">
+          <div className="w-full h-10 rounded-lg bg-gradient-to-r from-white/10 to-transparent border border-white/10 p-2 flex flex-col justify-center">
             <div className="h-1.5 w-16 bg-white/90 rounded mb-1" />
             <div className="h-1 w-24 bg-white/40 rounded" />
           </div>
 
-          {/* Rangée de Miniatures en bas */}
+          {/* Rangée de Miniatures */}
           <div className="grid grid-cols-4 gap-1.5">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-6 rounded bg-neutral-800/80 border transition-all"
+                className="h-5.5 rounded bg-neutral-800/80 border transition-all"
                 style={{
                   borderColor: i === 0 ? focusHex : "rgba(255,255,255,0.08)",
                   boxShadow: i === 0 ? `0 0 6px ${focusHex}88` : "none",
@@ -199,7 +271,7 @@ function ThemePreviewScreenMockup({
           </div>
         </div>
       </div>
-      <span className="text-[11px] font-semibold text-white/70 mt-2">Aperçu TV & Focus D-Pad</span>
+      <span className="text-[11px] font-semibold text-white/80 mt-2">Aperçu TV & Focus D-Pad</span>
       <span className="text-[10px] text-white/40">
         {mode === "original"
           ? "Original Dark (#0D111A)"
@@ -211,7 +283,7 @@ function ThemePreviewScreenMockup({
   );
 }
 
-/** 2. PosterLivePreview (Identique à PreviewPosterCard d'Android avec étoiles 5 branches) */
+/** 2. PosterLivePreview */
 function PosterLivePreview({
   mode,
   radiusDp,
@@ -249,12 +321,11 @@ function PosterLivePreview({
           borderRadius: `${radiusDp + 4}px`,
         }}
       >
-        {/* Conteneur Image avec rayon configuré */}
         <div
           className="relative overflow-hidden bg-neutral-900 transition-all duration-200"
           style={{
-            width: isLandscape ? 200 : 120,
-            height: isLandscape ? 112 : 180,
+            width: isLandscape ? 190 : 120,
+            height: isLandscape ? 107 : 175,
             borderRadius: `${radiusDp}px`,
           }}
         >
@@ -265,7 +336,6 @@ function PosterLivePreview({
             className="w-full h-full object-cover"
           />
 
-          {/* Badges Amis en haut à gauche */}
           <div className="absolute top-2 left-2 flex -space-x-1.5">
             <div className="w-5 h-5 rounded-full bg-indigo-500 border border-black text-[9px] flex items-center justify-center font-bold text-white shadow">
               S
@@ -276,10 +346,9 @@ function PosterLivePreview({
           </div>
         </div>
 
-        {/* Rangée d'étoiles FocusStarRatingRow (Identique à Android TV Focus) */}
         <div
           className="flex items-center justify-center gap-1 mt-1 mb-0.5"
-          style={{ width: isLandscape ? 200 : 120, height: "18px" }}
+          style={{ width: isLandscape ? 190 : 120, height: "18px" }}
         >
           {[1, 2, 3, 4, 5].map((star) => (
             <svg
@@ -298,13 +367,13 @@ function PosterLivePreview({
         <span className="text-xs font-semibold text-white/90 block">
           {isLandscape ? "Paysage 16:9" : "Portrait 2:3"} · {radiusDp} dp
         </span>
-        <span className="text-[11px] text-emerald-400 font-medium">Source : TMDB Officiel</span>
+        <span className="text-[10px] text-emerald-400 font-medium">Source : TMDB Officiel</span>
       </div>
     </div>
   );
 }
 
-/** 3. CwMockupPreview (Identique à CwStyleSelectorCard d'Android) */
+/** 3. CwMockupPreview */
 function CwMockupPreview({
   style,
   selected,
@@ -318,20 +387,19 @@ function CwMockupPreview({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-2xl p-3 border transition-all text-left flex flex-col justify-between ${
+      className={`w-full rounded-xl p-2.5 border transition-all text-left flex flex-col justify-between ${
         selected
           ? "border-red-500 bg-red-500/10 shadow-lg shadow-red-500/10"
           : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
       }`}
     >
-      {/* Aperçu Miniature Wireframe fidèle */}
-      <div className="h-16 w-full rounded-xl bg-neutral-900 border border-white/10 p-2 flex items-center justify-center mb-2 overflow-hidden">
+      <div className="h-14 w-full rounded-lg bg-neutral-900 border border-white/10 p-2 flex items-center justify-center mb-2 overflow-hidden">
         {style === "carte" && (
           <div className="w-full flex items-center gap-2">
-            <div className="w-9 h-12 rounded bg-neutral-700 shrink-0 border border-white/15" />
+            <div className="w-8 h-10 rounded bg-neutral-700 shrink-0 border border-white/15" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-2 w-3/4 rounded bg-white/80" />
-              <div className="h-1.5 w-1/2 rounded bg-white/40" />
+              <div className="h-1.5 w-3/4 rounded bg-white/80" />
+              <div className="h-1 w-1/2 rounded bg-white/40" />
               <div className="h-1 w-full rounded-full bg-white/20 overflow-hidden">
                 <div className="h-full w-2/3 bg-red-500" />
               </div>
@@ -340,9 +408,9 @@ function CwMockupPreview({
         )}
 
         {style === "paysage" && (
-          <div className="w-full h-12 rounded-lg bg-neutral-800 border border-white/15 p-1.5 flex flex-col justify-between">
+          <div className="w-full h-10 rounded-lg bg-neutral-800 border border-white/15 p-1.5 flex flex-col justify-between">
             <div className="flex justify-end">
-              <span className="text-[8px] px-1 rounded bg-black/60 text-white/60">Ép. 4</span>
+              <span className="text-[7px] px-1 rounded bg-black/60 text-white/60">Ép. 4</span>
             </div>
             <div className="space-y-1">
               <div className="h-1.5 w-2/3 rounded bg-white/80" />
@@ -354,7 +422,7 @@ function CwMockupPreview({
         )}
 
         {style === "poster" && (
-          <div className="w-8 h-12 rounded bg-neutral-800 border border-white/15 p-1 flex flex-col justify-end">
+          <div className="w-7 h-10 rounded bg-neutral-800 border border-white/15 p-1 flex flex-col justify-end">
             <div className="h-1 w-full rounded-full bg-white/20 overflow-hidden mb-0.5">
               <div className="h-full w-3/4 bg-red-500" />
             </div>
@@ -376,7 +444,7 @@ function CwMockupPreview({
   );
 }
 
-/** 4. MobileNavPhoneWireframe (Identique à NavBarPhoneWireframe d'Android) */
+/** 4. MobileNavPhoneWireframe */
 function MobileNavPhoneWireframe({
   styleKey,
   selected,
@@ -398,25 +466,20 @@ function MobileNavPhoneWireframe({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-2xl p-3 border transition-all flex flex-col items-center gap-2.5 ${
+      className={`w-full rounded-xl p-2.5 border transition-all flex flex-col items-center gap-2 ${
         selected
           ? "border-white bg-white/10 shadow-lg shadow-indigo-500/10"
           : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
       }`}
     >
-      {/* Silhouette Téléphone avec Dynamic Island */}
-      <div className="w-20 h-28 rounded-xl bg-neutral-950 border border-white/20 p-1.5 flex flex-col justify-between relative overflow-hidden">
-        {/* Dynamic Island */}
+      <div className="w-18 h-26 rounded-xl bg-neutral-950 border border-white/20 p-1.5 flex flex-col justify-between relative overflow-hidden">
         <div className="w-6 h-1 rounded-full bg-white/30 mx-auto" />
-
-        {/* Lignes de contenu factice */}
         <div className="space-y-1 my-auto">
           <div className="h-1 w-8 rounded bg-white/20" />
-          <div className="h-6 w-full rounded bg-white/5 border border-white/10" />
+          <div className="h-5 w-full rounded bg-white/5 border border-white/10" />
           <div className="h-1 w-12 rounded bg-white/15" />
         </div>
 
-        {/* Barre de navigation selon le style */}
         <div className="relative">
           {glowEnabled && (
             <div className="absolute -inset-1 bg-indigo-500/30 blur-sm rounded-full" />
@@ -453,20 +516,20 @@ function MobileNavPhoneWireframe({
       </div>
 
       <div className="flex flex-col items-center">
-        <span className="text-xs font-semibold text-white">{titles[styleKey]}</span>
+        <span className="text-[11px] font-semibold text-white text-center">{titles[styleKey]}</span>
         <div
-          className={`w-4 h-4 rounded-full border mt-1 flex items-center justify-center ${
+          className={`w-3.5 h-3.5 rounded-full border mt-1 flex items-center justify-center ${
             selected ? "border-white" : "border-white/30"
           }`}
         >
-          {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+          {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
         </div>
       </div>
     </button>
   );
 }
 
-/** 5. EpisodeCardStyleWireframe (Identique à EpisodeCardPhoneWireframe d'Android) */
+/** 5. EpisodeCardStyleWireframe */
 function EpisodeCardStyleWireframe({
   styleKey,
   selected,
@@ -480,35 +543,35 @@ function EpisodeCardStyleWireframe({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-2xl p-3 border transition-all flex flex-col items-center gap-2.5 ${
+      className={`w-full rounded-xl p-2.5 border transition-all flex flex-col items-center gap-2 ${
         selected
           ? "border-white bg-white/10 shadow-lg shadow-indigo-500/10"
           : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
       }`}
     >
-      <div className="w-24 h-32 rounded-xl bg-neutral-950 border border-white/20 p-2 flex flex-col justify-between">
+      <div className="w-full h-26 rounded-xl bg-neutral-950 border border-white/20 p-2 flex flex-col justify-between">
         <div className="w-7 h-1 rounded-full bg-white/30 mx-auto" />
 
         {styleKey === "horizontal" ? (
-          <div className="space-y-2 my-auto">
-            <div className="w-full h-8 rounded bg-white/15 border border-white/10" />
-            <div className="w-full h-8 rounded bg-white/15 border border-white/10" />
+          <div className="space-y-1.5 my-auto">
+            <div className="w-full h-7 rounded bg-white/15 border border-white/10" />
+            <div className="w-full h-7 rounded bg-white/15 border border-white/10" />
           </div>
         ) : (
-          <div className="space-y-1.5 my-auto">
+          <div className="space-y-1 my-auto">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center gap-1.5">
-                <div className="w-5 h-4 rounded bg-white/20 shrink-0" />
+                <div className="w-5 h-3.5 rounded bg-white/20 shrink-0" />
                 <div className="space-y-0.5 flex-1">
                   <div className="h-1 w-full bg-white/40 rounded" />
-                  <div className="h-1 w-2/3 bg-white/20 rounded" />
+                  <div className="h-0.5 w-2/3 bg-white/20 rounded" />
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        <div className="h-1.5 w-full bg-white/10 rounded" />
+        <div className="h-1 w-full bg-white/10 rounded" />
       </div>
 
       <div className="flex flex-col items-center">
@@ -516,11 +579,11 @@ function EpisodeCardStyleWireframe({
           {styleKey === "horizontal" ? "Horizontal (Grille)" : "Liste compacte"}
         </span>
         <div
-          className={`w-4 h-4 rounded-full border mt-1 flex items-center justify-center ${
+          className={`w-3.5 h-3.5 rounded-full border mt-1 flex items-center justify-center ${
             selected ? "border-white" : "border-white/30"
           }`}
         >
-          {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+          {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
         </div>
       </div>
     </button>
@@ -578,10 +641,16 @@ export function ManageSettingsPanel() {
   const [heroTrailerDelaySeconds, setHeroTrailerDelaySeconds] = useState(5);
   const [heroTrailerFullscreenDelaySeconds, setHeroTrailerFullscreenDelaySeconds] = useState(8);
 
-  // 4. Sous-titres & Audio
+  // 4. Sous-titres & Audio (Avec gestion fine de la langue et de l'état Forced)
   const [defaultAudioLanguage, setDefaultAudioLanguage] = useState("auto");
   const [defaultSubtitle, setDefaultSubtitle] = useState("Off");
+  const [defaultSubLang, setDefaultSubLang] = useState("Off");
+  const [defaultSubForced, setDefaultSubForced] = useState(false);
+
   const [secondarySubtitle, setSecondarySubtitle] = useState("Off");
+  const [secondarySubLang, setSecondarySubLang] = useState("Off");
+  const [secondarySubForced, setSecondarySubForced] = useState(false);
+
   const [subtitleSize, setSubtitleSize] = useState("Medium");
   const [subtitleColor, setSubtitleColor] = useState("White");
   const [subtitleStyle, setSubtitleStyle] = useState("Bold");
@@ -682,8 +751,31 @@ export function ManageSettingsPanel() {
         if (s.hero_trailer_fullscreen_delay_seconds !== undefined) setHeroTrailerFullscreenDelaySeconds(Number(s.hero_trailer_fullscreen_delay_seconds));
 
         if (s.default_audio_language) setDefaultAudioLanguage(s.default_audio_language);
-        if (s.default_subtitle) setDefaultSubtitle(s.default_subtitle);
-        if (s.secondary_subtitle) setSecondarySubtitle(s.secondary_subtitle);
+
+        // Sous-titres principaux
+        if (s.default_subtitle) {
+          setDefaultSubtitle(s.default_subtitle);
+          const parsed = parseSubtitleValue(s.default_subtitle);
+          setDefaultSubLang(parsed.lang);
+          setDefaultSubForced(parsed.forced);
+        } else {
+          setDefaultSubtitle("Off");
+          setDefaultSubLang("Off");
+          setDefaultSubForced(false);
+        }
+
+        // Sous-titres secondaires
+        if (s.secondary_subtitle) {
+          setSecondarySubtitle(s.secondary_subtitle);
+          const parsedSec = parseSubtitleValue(s.secondary_subtitle);
+          setSecondarySubLang(parsedSec.lang);
+          setSecondarySubForced(parsedSec.forced);
+        } else {
+          setSecondarySubtitle("Off");
+          setSecondarySubLang("Off");
+          setSecondarySubForced(false);
+        }
+
         if (s.subtitle_size) setSubtitleSize(s.subtitle_size);
         if (s.subtitle_color) setSubtitleColor(s.subtitle_color);
         if (s.subtitle_style) setSubtitleStyle(s.subtitle_style);
@@ -706,6 +798,9 @@ export function ManageSettingsPanel() {
     if (!selectedProfileId) return;
     setSaving(true);
     setSaveSuccess(false);
+
+    const resolvedDefSub = formatSubtitleValue(defaultSubLang, defaultSubForced);
+    const resolvedSecSub = formatSubtitleValue(secondarySubLang, secondarySubForced);
 
     try {
       const res = await fetch("/api/companion/settings", {
@@ -750,8 +845,8 @@ export function ManageSettingsPanel() {
             hero_trailer_fullscreen_delay_seconds: heroTrailerFullscreenDelaySeconds,
 
             default_audio_language: defaultAudioLanguage,
-            default_subtitle: defaultSubtitle,
-            secondary_subtitle: secondarySubtitle,
+            default_subtitle: resolvedDefSub,
+            secondary_subtitle: resolvedSecSub,
             subtitle_size: subtitleSize,
             subtitle_color: subtitleColor,
             subtitle_style: subtitleStyle,
@@ -841,7 +936,7 @@ export function ManageSettingsPanel() {
                   setSelectedProfileId(e.target.value);
                   companionProfile?.setActiveProfileId(e.target.value);
                 }}
-                className="rounded-lg bg-neutral-900 px-2.5 py-1 text-xs font-semibold text-white border border-white/15 focus:outline-none focus:border-indigo-500"
+                className="rounded-lg bg-neutral-900 px-2.5 py-1 text-xs font-semibold text-white border border-white/15 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -856,7 +951,7 @@ export function ManageSettingsPanel() {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 active:scale-95 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-500/25"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 active:scale-95 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
           >
             {saving ? (
               <>
@@ -882,7 +977,7 @@ export function ManageSettingsPanel() {
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
               activeTab === id
                 ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -903,619 +998,665 @@ export function ManageSettingsPanel() {
         <div className="space-y-6">
 
           {/* ═════════════════════════════════════════════════════════════════
-              TAB 1 : INTERFACE & THÈME TV
+              TAB 1 : INTERFACE & THÈME TV (Blocs homogènes et bien proportionnés)
              ═════════════════════════════════════════════════════════════════ */}
           {activeTab === "appearance" && (
-            <div className="space-y-6">
-              {/* Mockup écran TV en haut de section (comme Android PJ 1) */}
-              <SettingCard>
-                <ThemePreviewScreenMockup
-                  mode={appBackgroundMode}
-                  customArgb={appBackgroundCustomArgb}
-                  focusHex={resolvedFocusHex}
-                />
-              </SettingCard>
-
-              {/* Couleur de Focus D-Pad TV avec Nuancier Android */}
-              <SettingCard>
-                <SectionTitle>Couleur de Focus D-Pad TV</SectionTitle>
-                <p className="text-xs text-white/50 mb-4">
-                  Bordure lumineuse qui entoure l&apos;élément sélectionné à la télécommande.
-                </p>
-
-                {/* Grille presets */}
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5 mb-4">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c.name}
-                      type="button"
-                      onClick={() => {
-                        setFocusBorderColor(c.name);
-                        setUseCustomColor(false);
-                      }}
-                      className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border transition-all ${
-                        !useCustomColor && focusBorderColor.toLowerCase() === c.name.toLowerCase()
-                          ? "border-white bg-white/15 scale-105 shadow-md shadow-white/10"
-                          : "border-white/10 bg-white/5 hover:bg-white/10"
-                      }`}
-                    >
-                      <div
-                        className="h-7 w-7 rounded-full border border-black/30 shadow-inner"
-                        style={{ backgroundColor: c.hex }}
-                      />
-                      <span className="text-[11px] text-white/80 font-medium">{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Bouton Nuancier Personnalisé (Matrix Palette) */}
-                <div className="pt-3 border-t border-white/[0.08]">
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setShowNuancier(!showNuancier)}
-                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all ${
-                        useCustomColor
-                          ? "border-indigo-400 bg-indigo-500/20 text-white"
-                          : "border-white/15 bg-white/5 text-white/70 hover:text-white"
-                      }`}
-                    >
-                      <div
-                        className="h-4 w-4 rounded-full border border-white/30"
-                        style={{
-                          background: useCustomColor
-                            ? focusCustomHex
-                            : "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)",
-                        }}
-                      />
-                      {useCustomColor ? `Couleur personnalisée (${focusCustomHex})` : "Choisir une nuance personnalisée"}
-                    </button>
-                    {useCustomColor && (
-                      <span className="text-xs font-mono text-indigo-400">{focusCustomHex}</span>
-                    )}
-                  </div>
-
-                  {/* Nuancier Matrix 6x6 comme ColorNuancierDialog d'Android */}
-                  {showNuancier && (
-                    <div className="mt-4 p-4 rounded-xl bg-neutral-900 border border-white/10 space-y-2 animate-in fade-in duration-200">
-                      <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider mb-2">
-                        Palette de nuances précises
-                      </p>
-                      {NUANCIER_GRID.map((row, rIdx) => (
-                        <div key={rIdx} className="flex justify-between gap-2">
-                          {row.map((colorHex) => (
-                            <button
-                              key={colorHex}
-                              type="button"
-                              onClick={() => {
-                                setFocusCustomHex(colorHex);
-                                setUseCustomColor(true);
-                              }}
-                              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/20 transition-transform hover:scale-110 flex items-center justify-center"
-                              style={{ backgroundColor: colorHex }}
-                            >
-                              {useCustomColor && focusCustomHex.toUpperCase() === colorHex.toUpperCase() && (
-                                <span className={`text-xs font-bold ${colorHex === "#FFFFFF" ? "text-black" : "text-white"}`}>
-                                  ✓
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </SettingCard>
-
-              {/* Thème d'arrière-plan TV (Modes Origine, Couverture, et les 9 teintes personnalisées) */}
-              <SettingCard>
-                <SectionTitle>Thème d&apos;arrière-plan TV</SectionTitle>
-                <p className="text-xs text-white/50 mb-3">
-                  Couleur d&apos;origine, wash de la jaquette du profil ou nuance personnalisée sur toute l&apos;application.
-                </p>
-
-                {/* Modes principaux : Original vs Couverture */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setAppBackgroundMode("original")}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                      appBackgroundMode === "original"
-                        ? "border-indigo-400 bg-indigo-500/15"
-                        : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-lg border border-white/15 shrink-0 mt-0.5 bg-[#0D111A]" />
-                    <div>
-                      <span className="text-xs font-bold text-white block">Original Dark (#0D111A)</span>
-                      <span className="text-[11px] text-white/45">Fond sombre standard sobre MegaTv</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAppBackgroundMode("cover")}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                      appBackgroundMode === "cover"
-                        ? "border-indigo-400 bg-indigo-500/15"
-                        : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-lg border border-white/15 shrink-0 mt-0.5 bg-gradient-to-br from-red-600 to-indigo-900" />
-                    <div>
-                      <span className="text-xs font-bold text-white block">Couverture profil (Dynamique)</span>
-                      <span className="text-[11px] text-white/45">Ambiance colorée extraite de la bannière</span>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Teintes personnalisées officielles Android (AppBackgroundSwatches) */}
-                <div className="pt-3 border-t border-white/[0.08]">
-                  <p className="text-xs font-semibold text-white/70 mb-2.5">Nuances manuelles (Android AppBackgroundSwatches) :</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2">
-                    {APP_BACKGROUND_SWATCHES.map((swatch) => {
-                      const isSelected = appBackgroundMode === "custom" && appBackgroundCustomArgb === swatch.argb;
-                      return (
-                        <button
-                          key={swatch.label}
-                          type="button"
-                          onClick={() => {
-                            setAppBackgroundMode("custom");
-                            setAppBackgroundCustomArgb(swatch.argb);
-                          }}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border text-center transition-all ${
-                            isSelected
-                              ? "border-white bg-white/15 shadow-md shadow-white/10 scale-105"
-                              : "border-white/10 bg-white/5 hover:bg-white/10"
-                          }`}
-                        >
-                          <div
-                            className="w-6 h-6 rounded-lg border border-white/20 shadow-inner flex items-center justify-center"
-                            style={{ backgroundColor: swatch.hex }}
-                          >
-                            {isSelected && <span className="text-[10px] text-white font-bold">✓</span>}
-                          </div>
-                          <span className="text-[10px] text-white/75 font-medium leading-tight">
-                            {swatch.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </SettingCard>
-
-              {/* Écran de sélection de profil TV (Éclairé, Vague, Continués à regarder) */}
-              <SettingCard>
-                <SectionTitle>Écran de sélection de profil TV</SectionTitle>
-                <p className="text-xs text-white/50 mb-3">
-                  Animation de fond affichée sur l&apos;écran d&apos;accueil « Qui regarde ? ».
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    {
-                      value: "glow",
-                      title: "Éclairé",
-                      desc: "Éclairage couleur et halo ambiant doux",
-                    },
-                    {
-                      value: "wave",
-                      title: "Vague",
-                      desc: "Ondulation fluide et dynamique",
-                    },
-                    {
-                      value: "continue_watching",
-                      title: "Continués à regarder",
-                      desc: "Défilement de vos reprises en arrière-plan",
-                    },
-                  ].map((bgOpt) => (
-                    <button
-                      key={bgOpt.value}
-                      type="button"
-                      onClick={() => setProfilePickerBackground(bgOpt.value)}
-                      className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                        profilePickerBackground === bgOpt.value
-                          ? "border-indigo-400 bg-indigo-500/15 shadow-md shadow-indigo-500/10"
-                          : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-white block">{bgOpt.title}</span>
-                        {profilePickerBackground === bgOpt.value && (
-                          <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                        )}
-                      </div>
-                      <span className="text-[11px] text-white/45">{bgOpt.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </SettingCard>
-
-              {/* Options d'ambiance, audio navigation et horloge */}
-              <SettingCard>
-                <SectionTitle>Comportements & Ambiance</SectionTitle>
-                <div className="divide-y divide-white/[0.06]">
-                  <ToggleRow
-                    label="Couleurs d'ambiance (Fiches détails)"
-                    sub="Arrière-plans adaptatifs colorés selon la jaquette du film"
-                    checked={detailsAmbientColor}
-                    onChange={setDetailsAmbientColor}
-                  />
-                  <ToggleRow
-                    label="Ambiance sur l'écran profil"
-                    sub="Teinte dynamique issue de la photo de couverture"
-                    checked={profileAmbientColor}
-                    onChange={setProfileAmbientColor}
-                  />
-                  <ToggleRow
-                    label="Animation d'introduction MegaTv"
-                    sub="Joue l'animation logo MegaTv au lancement"
-                    checked={megatvIntroAnimationEnabled}
-                    onChange={setMegatvIntroAnimationEnabled}
-                  />
-                  <ToggleRow
-                    label="Sons de navigation TV"
-                    sub="Bips sonores lors du clic D-pad à la télécommande"
-                    checked={uiNavSoundsEnabled}
-                    onChange={setUiNavSoundsEnabled}
-                  />
-                  <ToggleRow
-                    label="Passer la sélection de profil"
-                    sub="Connexion directe au dernier profil sans écran d'accueil"
-                    checked={skipProfileSelection}
-                    onChange={setSkipProfileSelection}
-                  />
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+            <div className="space-y-5">
+              {/* Rangée 1 : 3 Blocs (Aperçu Live | Nuancier Focus | Horloge & Navigation) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {/* Bloc 1 : Aperçu TV & Rendu D-Pad */}
+                <SettingCard className="h-full flex flex-col justify-between">
                   <div>
-                    <span className="text-sm font-medium text-white block">Format de l&apos;horloge TV</span>
-                    <span className="text-xs text-white/40">Affichage de l&apos;heure en haut à droite</span>
+                    <SectionTitle>Aperçu TV & Rendu Focus</SectionTitle>
+                    <p className="text-xs text-white/50 mb-3">
+                      Rendu live de l&apos;interface TV avec le thème et le focus actifs.
+                    </p>
+                    <ThemePreviewScreenMockup
+                      mode={appBackgroundMode}
+                      customArgb={appBackgroundCustomArgb}
+                      focusHex={resolvedFocusHex}
+                    />
                   </div>
-                  <div className="flex gap-2">
-                    {["24h", "12h"].map((fmt) => (
+                  <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-white/60">
+                    <span>Focus : <strong className="text-white">{useCustomColor ? focusCustomHex : focusBorderColor}</strong></span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full border border-black/30 shrink-0" style={{ backgroundColor: resolvedFocusHex }} />
+                      {useCustomColor ? "Nuance perso" : "Préréglage"}
+                    </span>
+                  </div>
+                </SettingCard>
+
+                {/* Bloc 2 : Couleur de Focus D-Pad TV */}
+                <SettingCard className="h-full flex flex-col justify-between">
+                  <div>
+                    <SectionTitle>Couleur de Focus D-Pad TV</SectionTitle>
+                    <p className="text-xs text-white/50 mb-3.5">
+                      Bordure lumineuse qui entoure l&apos;élément sélectionné à la télécommande.
+                    </p>
+
+                    {/* Grille 4x2 compacte */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3.5">
+                      {PRESET_COLORS.map((c) => {
+                        const isSelected = !useCustomColor && focusBorderColor.toLowerCase() === c.name.toLowerCase();
+                        return (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => {
+                              setFocusBorderColor(c.name);
+                              setUseCustomColor(false);
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-white bg-white/15 shadow-md shadow-white/10"
+                                : "border-white/10 bg-white/5 hover:bg-white/10"
+                            }`}
+                          >
+                            <div
+                              className="h-5 w-5 rounded-full border border-black/30 shadow-inner shrink-0"
+                              style={{ backgroundColor: c.hex }}
+                            />
+                            <span className="text-xs text-white/90 font-medium truncate">{c.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bouton Nuancier Personnalisé */}
+                    <div className="pt-3 border-t border-white/[0.08]">
                       <button
-                        key={fmt}
                         type="button"
-                        onClick={() => setClockFormat(fmt)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                          clockFormat === fmt
+                        onClick={() => setShowNuancier(!showNuancier)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                          useCustomColor
                             ? "border-indigo-400 bg-indigo-500/20 text-white"
-                            : "border-white/10 text-white/50"
+                            : "border-white/15 bg-white/5 text-white/70 hover:text-white"
                         }`}
                       >
-                        {fmt === "24h" ? "24 Heures (14:30)" : "12 Heures (2:30 PM)"}
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-4 w-4 rounded-full border border-white/30"
+                            style={{
+                              background: useCustomColor
+                                ? focusCustomHex
+                                : "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)",
+                            }}
+                          />
+                          <span>{useCustomColor ? `Nuance (${focusCustomHex})` : "Palette de nuances"}</span>
+                        </div>
+                        <span className="text-[11px] text-white/40">{showNuancier ? "Masquer ▲" : "Choisir ▼"}</span>
                       </button>
-                    ))}
+
+                      {showNuancier && (
+                        <div className="mt-3 p-3 rounded-xl bg-neutral-900 border border-white/10 space-y-2 animate-in fade-in duration-200">
+                          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-1">
+                            Palette de nuances précises
+                          </p>
+                          {NUANCIER_GRID.map((row, rIdx) => (
+                            <div key={rIdx} className="flex justify-between gap-1.5">
+                              {row.map((colorHex) => (
+                                <button
+                                  key={colorHex}
+                                  type="button"
+                                  onClick={() => {
+                                    setFocusCustomHex(colorHex);
+                                    setUseCustomColor(true);
+                                  }}
+                                  className="h-7 w-7 rounded-full border border-white/20 transition-transform hover:scale-110 flex items-center justify-center shrink-0 cursor-pointer"
+                                  style={{ backgroundColor: colorHex }}
+                                >
+                                  {useCustomColor && focusCustomHex.toUpperCase() === colorHex.toUpperCase() && (
+                                    <span className={`text-[10px] font-bold ${colorHex === "#FFFFFF" ? "text-black" : "text-white"}`}>
+                                      ✓
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </SettingCard>
-            </div>
-          )}
+                </SettingCard>
 
-          {/* ═════════════════════════════════════════════════════════════════
-              TAB 2 : POSTERS & ACCUEIL
-             ═════════════════════════════════════════════════════════════════ */}
-          {activeTab === "posters" && (
-            <div className="space-y-6">
-              {/* Galerie d'aperçu live poster (comme Android PosterLivePreviewGallery) */}
-              <SettingCard>
-                <PosterLivePreview
-                  mode={cardLayoutMode}
-                  radiusDp={posterCardRadiusDp}
-                  focusColorMode={posterFocusColorMode}
-                  focusAlpha={posterFocusAlpha}
-                  resolvedFocusHex={resolvedFocusHex}
-                />
-              </SettingCard>
+                {/* Bloc 3 : Horloge TV & Navigation */}
+                <SettingCard className="h-full flex flex-col justify-between">
+                  <div>
+                    <SectionTitle>Horloge & Navigation</SectionTitle>
+                    <div className="mb-4">
+                      <span className="text-xs font-semibold text-white block mb-1.5">Format de l&apos;horloge TV</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {["24h", "12h"].map((fmt) => (
+                          <button
+                            key={fmt}
+                            type="button"
+                            onClick={() => setClockFormat(fmt)}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                              clockFormat === fmt
+                                ? "border-indigo-400 bg-indigo-500/20 text-white"
+                                : "border-white/10 text-white/50 hover:text-white/80"
+                            }`}
+                          >
+                            {fmt === "24h" ? "24 Heures (14:30)" : "12 Heures (2:30 PM)"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-              {/* Format & Rayon des affiches */}
-              <SettingCard>
-                <SectionTitle>Format & Courbure des affiches</SectionTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                  {[
-                    { value: "landscape", title: "Paysage 16:9", desc: "Format large moderne type streaming" },
-                    { value: "portrait", title: "Portrait 2:3", desc: "Affiche cinéma verticale classique" },
-                  ].map((layout) => (
+                    <div className="divide-y divide-white/[0.06] pt-1 border-t border-white/[0.08]">
+                      <ToggleRow
+                        label="Sons de navigation TV"
+                        sub="Bips sonores lors du clic D-pad à la télécommande"
+                        checked={uiNavSoundsEnabled}
+                        onChange={setUiNavSoundsEnabled}
+                      />
+                      <ToggleRow
+                        label="Animation logo MegaTv"
+                        sub="Joue l'intro au démarrage de l'app"
+                        checked={megatvIntroAnimationEnabled}
+                        onChange={setMegatvIntroAnimationEnabled}
+                      />
+                      <ToggleRow
+                        label="Passer la sélection profil"
+                        sub="Connexion directe au dernier profil actif"
+                        checked={skipProfileSelection}
+                        onChange={setSkipProfileSelection}
+                      />
+                    </div>
+                  </div>
+                </SettingCard>
+              </div>
+
+              {/* Rangée 2 : 2 Blocs Homogènes (Thème Arrière-plan | Écran d'accueil & Ambiances) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Bloc 4 : Thème d'arrière-plan TV */}
+                <SettingCard>
+                  <SectionTitle>Thème d&apos;arrière-plan TV</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Couleur d&apos;ambiance sur toute l&apos;application TV & Mobile.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
                     <button
-                      key={layout.value}
                       type="button"
-                      onClick={() => setCardLayoutMode(layout.value)}
-                      className={`p-3.5 rounded-xl border text-left transition-all ${
-                        cardLayoutMode === layout.value
+                      onClick={() => setAppBackgroundMode("original")}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                        appBackgroundMode === "original"
                           ? "border-indigo-400 bg-indigo-500/15"
                           : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
                       }`}
                     >
-                      <span className="text-xs font-bold text-white block">{layout.title}</span>
-                      <span className="text-[11px] text-white/45">{layout.desc}</span>
+                      <div className="w-6 h-6 rounded-lg border border-white/15 shrink-0 mt-0.5 bg-[#0D111A]" />
+                      <div>
+                        <span className="text-xs font-bold text-white block">Original Dark</span>
+                        <span className="text-[10px] text-white/45">Fond sombre standard</span>
+                      </div>
                     </button>
-                  ))}
-                </div>
 
-                {/* Slider rayon coins (0 à 32 dp par pas de 4) */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/70 font-semibold">Rayon des coins :</span>
-                    <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-lg">
-                      {posterCardRadiusDp} dp {posterCardRadiusDp === 28 ? "(Défaut)" : ""}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAppBackgroundMode("cover")}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                        appBackgroundMode === "cover"
+                          ? "border-indigo-400 bg-indigo-500/15"
+                          : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      <div className="w-6 h-6 rounded-lg border border-white/15 shrink-0 mt-0.5 bg-gradient-to-br from-red-600 to-indigo-900" />
+                      <div>
+                        <span className="text-xs font-bold text-white block">Couverture profil</span>
+                        <span className="text-[10px] text-white/45">Wash dynamique jaquette</span>
+                      </div>
+                    </button>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="32"
-                    step="4"
-                    value={posterCardRadiusDp}
-                    onChange={(e) => setPosterCardRadiusDp(Number(e.target.value))}
-                    className="w-full accent-indigo-500 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-white/30 font-mono">
-                    <span>0 dp (Carré)</span>
-                    <span>8 dp</span>
-                    <span>16 dp</span>
-                    <span>28 dp</span>
-                    <span>32 dp (Rond)</span>
-                  </div>
-                </div>
-              </SettingCard>
 
-              {/* Cadre Focus d'affiche (Couleur & Opacité Android) */}
-              <SettingCard>
-                <SectionTitle>Cadre Focus (Affiches & Acteurs)</SectionTitle>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-medium text-white block">Couleur du cadre</span>
-                      <span className="text-xs text-white/40">
-                        {posterFocusColorMode === "white" ? "Blanc classique" : "Couleur du profil"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPosterFocusColorMode("profile")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                          posterFocusColorMode !== "white"
-                            ? "border-indigo-400 bg-indigo-500/20 text-white"
-                            : "border-white/10 text-white/50"
-                        }`}
-                      >
-                        Couleur profil
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPosterFocusColorMode("white")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                          posterFocusColorMode === "white"
-                            ? "border-indigo-400 bg-indigo-500/20 text-white"
-                            : "border-white/10 text-white/50"
-                        }`}
-                      >
-                        Blanc
-                      </button>
+                  <div className="pt-3 border-t border-white/[0.08]">
+                    <p className="text-xs font-semibold text-white/70 mb-2">Nuances manuelles Android :</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {APP_BACKGROUND_SWATCHES.map((swatch) => {
+                        const isSelected = appBackgroundMode === "custom" && appBackgroundCustomArgb === swatch.argb;
+                        return (
+                          <button
+                            key={swatch.label}
+                            type="button"
+                            onClick={() => {
+                              setAppBackgroundMode("custom");
+                              setAppBackgroundCustomArgb(swatch.argb);
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-white bg-white/15 shadow-md shadow-white/10"
+                                : "border-white/10 bg-white/5 hover:bg-white/10"
+                            }`}
+                          >
+                            <div
+                              className="w-5 h-5 rounded-md border border-white/20 shrink-0 flex items-center justify-center text-[9px] text-white font-bold"
+                              style={{ backgroundColor: swatch.hex }}
+                            >
+                              {isSelected && "✓"}
+                            </div>
+                            <span className="text-[11px] text-white/80 font-medium truncate">{swatch.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+                </SettingCard>
 
-                  {/* Transparence du cadre (20, 40, 60, 80, 100%) */}
-                  <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                {/* Bloc 5 : Écran de sélection & Ambiances */}
+                <SettingCard>
+                  <SectionTitle>Écran d&apos;accueil & Ambiances</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Animation de fond sur l&apos;écran « Qui regarde ? » et reflets immersifs.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {[
+                      { value: "glow", title: "Éclairé", desc: "Halo doux" },
+                      { value: "wave", title: "Vague", desc: "Ondulation" },
+                      { value: "continue_watching", title: "Reprises", desc: "Carrousel" },
+                    ].map((bgOpt) => (
+                      <button
+                        key={bgOpt.value}
+                        type="button"
+                        onClick={() => setProfilePickerBackground(bgOpt.value)}
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                          profilePickerBackground === bgOpt.value
+                            ? "border-indigo-400 bg-indigo-500/15 shadow-md shadow-indigo-500/10"
+                            : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
+                        }`}
+                      >
+                        <span className="text-xs font-bold text-white block">{bgOpt.title}</span>
+                        <span className="text-[10px] text-white/40">{bgOpt.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="divide-y divide-white/[0.06] pt-1 border-t border-white/[0.08]">
+                    <ToggleRow
+                      label="Couleurs d'ambiance (Fiches détails)"
+                      sub="Arrière-plans adaptatifs colorés selon la jaquette du film"
+                      checked={detailsAmbientColor}
+                      onChange={setDetailsAmbientColor}
+                    />
+                    <ToggleRow
+                      label="Ambiance sur l'écran profil"
+                      sub="Teinte dynamique extraite de la photo de couverture"
+                      checked={profileAmbientColor}
+                      onChange={setProfileAmbientColor}
+                    />
+                  </div>
+                </SettingCard>
+              </div>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════════
+              TAB 2 : POSTERS & ACCUEIL (Regroupé en 3 colonnes homogènes)
+             ═════════════════════════════════════════════════════════════════ */}
+          {activeTab === "posters" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* COLONNE 1 : Format & Cadre */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Format & Courbure des affiches</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Présentation générale des affiches dans les grilles et carrousels.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2.5 mb-4">
+                    {[
+                      { value: "landscape", title: "Paysage 16:9", desc: "Format large streaming" },
+                      { value: "portrait", title: "Portrait 2:3", desc: "Affiche cinéma classique" },
+                    ].map((layout) => (
+                      <button
+                        key={layout.value}
+                        type="button"
+                        onClick={() => setCardLayoutMode(layout.value)}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          cardLayoutMode === layout.value
+                            ? "border-indigo-400 bg-indigo-500/15"
+                            : "border-white/10 bg-white/5 hover:bg-white/[0.08]"
+                        }`}
+                      >
+                        <span className="text-xs font-bold text-white block">{layout.title}</span>
+                        <span className="text-[10px] text-white/45 leading-tight">{layout.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Slider Rayon coins */}
+                  <div className="space-y-2 mb-5">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-white/70 font-semibold">Opacité du cadre focus :</span>
-                      <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-lg">
-                        {posterFocusAlpha}%
+                      <span className="text-white/70 font-semibold">Rayon des coins :</span>
+                      <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg text-xs">
+                        {posterCardRadiusDp} dp {posterCardRadiusDp === 28 ? "(Défaut)" : ""}
                       </span>
                     </div>
                     <input
                       type="range"
-                      min="20"
-                      max="100"
-                      step="20"
-                      value={posterFocusAlpha}
-                      onChange={(e) => setPosterFocusAlpha(Number(e.target.value))}
+                      min="0"
+                      max="32"
+                      step="4"
+                      value={posterCardRadiusDp}
+                      onChange={(e) => setPosterCardRadiusDp(Number(e.target.value))}
                       className="w-full accent-indigo-500 cursor-pointer"
                     />
                     <div className="flex justify-between text-[10px] text-white/30 font-mono">
-                      <span>20% (Subtil)</span>
-                      <span>40%</span>
-                      <span>60%</span>
-                      <span>80%</span>
-                      <span>100% (Solide)</span>
+                      <span>0 dp</span>
+                      <span>8 dp</span>
+                      <span>16 dp</span>
+                      <span>28 dp</span>
+                      <span>32 dp</span>
+                    </div>
+                  </div>
+
+                  {/* Cadre Focus */}
+                  <div className="pt-3 border-t border-white/[0.08] space-y-3">
+                    <SectionTitle>Cadre Focus (Affiches & Acteurs)</SectionTitle>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-white/80">Couleur du cadre :</span>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPosterFocusColorMode("profile")}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                            posterFocusColorMode !== "white"
+                              ? "border-indigo-400 bg-indigo-500/20 text-white"
+                              : "border-white/10 text-white/50"
+                          }`}
+                        >
+                          Couleur profil
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPosterFocusColorMode("white")}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                            posterFocusColorMode === "white"
+                              ? "border-indigo-400 bg-indigo-500/20 text-white"
+                              : "border-white/10 text-white/50"
+                          }`}
+                        >
+                          Blanc
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-white/70 font-medium">Opacité du cadre focus :</span>
+                        <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg text-xs">
+                          {posterFocusAlpha}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="20"
+                        max="100"
+                        step="20"
+                        value={posterFocusAlpha}
+                        onChange={(e) => setPosterFocusAlpha(Number(e.target.value))}
+                        className="w-full accent-indigo-500 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-white/30 font-mono">
+                        <span>20%</span>
+                        <span>40%</span>
+                        <span>60%</span>
+                        <span>80%</span>
+                        <span>100%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </SettingCard>
 
-              {/* Anti-spoiler & Badges Amis */}
-              <SettingCard>
-                <SectionTitle>Social & Anti-spoiler</SectionTitle>
-                <div className="divide-y divide-white/[0.06]">
-                  <ToggleRow
-                    label="Flou anti-spoiler"
-                    sub="Floute les vignettes d'épisodes non vus sur les fiches"
-                    checked={spoilerBlurEnabled}
-                    onChange={setSpoilerBlurEnabled}
-                  />
-                  <ToggleRow
-                    label="Badge amis — En cours"
-                    sub="Affiche la photo des amis qui regardent ce titre"
-                    checked={posterFriendsWatching}
-                    onChange={setPosterFriendsWatching}
-                  />
-                  <ToggleRow
-                    label="Badge amis — Terminé"
-                    sub="Affiche la photo des amis ayant terminé le film ou la série"
-                    checked={posterFriendsCompleted}
-                    onChange={setPosterFriendsCompleted}
-                  />
+              {/* COLONNE 2 : Aperçu Live & Bannière */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Aperçu en direct (TV Focus)</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Rendu dynamique avec contour focus, étoiles et rayon configuré.
+                  </p>
+                  <div className="py-2 flex justify-center">
+                    <PosterLivePreview
+                      mode={cardLayoutMode}
+                      radiusDp={posterCardRadiusDp}
+                      focusColorMode={posterFocusColorMode}
+                      focusAlpha={posterFocusAlpha}
+                      resolvedFocusHex={resolvedFocusHex}
+                    />
+                  </div>
+                </div>
+
+                {/* Bannière profil */}
+                <div className="pt-4 border-t border-white/[0.08]">
+                  <SectionTitle>Photo de couverture (Bannière profil)</SectionTitle>
+                  <p className="text-[11px] text-white/45 mb-2.5">
+                    Image compressée automatiquement (max 960x540, auto ≤ 40 Ko).
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-xs font-semibold text-white cursor-pointer transition-all active:scale-95">
+                      <Upload className="h-3.5 w-3.5" />
+                      {coverUploading ? "Envoi..." : "Changer l'image"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleCoverUpload}
+                        disabled={coverUploading}
+                      />
+                    </label>
+                    {coverSynced && (
+                      <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                        <Check className="h-3.5 w-3.5" /> Couverture synchronisée
+                      </span>
+                    )}
+                  </div>
                 </div>
               </SettingCard>
 
-              {/* Photo de couverture du profil (< 40 Ko vers Supabase Storage) */}
-              <SettingCard>
-                <SectionTitle>Photo de couverture (Bannière profil)</SectionTitle>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-xs font-semibold text-white cursor-pointer transition-all active:scale-95">
-                    <Upload className="h-4 w-4" />
-                    {coverUploading ? "Compression & Envoi..." : "Changer l'image (auto ≤ 40 Ko)"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleCoverUpload}
-                      disabled={coverUploading}
+              {/* COLONNE 3 : Social, Anti-spoiler & Langues */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Social & Anti-spoiler</SectionTitle>
+                  <div className="divide-y divide-white/[0.06]">
+                    <ToggleRow
+                      label="Flou anti-spoiler"
+                      sub="Floute les vignettes d'épisodes non vus sur les fiches"
+                      checked={spoilerBlurEnabled}
+                      onChange={setSpoilerBlurEnabled}
                     />
-                  </label>
-                  {coverSynced && (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
-                      <Check className="h-4 w-4" /> Couverture synchronisée
-                    </span>
-                  )}
+                    <ToggleRow
+                      label="Badge amis — En cours"
+                      sub="Affiche la photo des amis qui regardent ce titre"
+                      checked={posterFriendsWatching}
+                      onChange={setPosterFriendsWatching}
+                    />
+                    <ToggleRow
+                      label="Badge amis — Terminé"
+                      sub="Affiche la photo des amis ayant terminé le titre"
+                      checked={posterFriendsCompleted}
+                      onChange={setPosterFriendsCompleted}
+                    />
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-white/[0.08] space-y-3">
+                    <SectionTitle>Langue & Métadonnées</SectionTitle>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-medium text-white block">Langue des affiches</span>
+                        <span className="text-[10px] text-white/40">Priorité des visuels TMDB</span>
+                      </div>
+                      <select
+                        value={posterArtLang}
+                        onChange={(e) => setPosterArtLang(e.target.value)}
+                        className="rounded-xl bg-neutral-900 border border-white/15 px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="fr">Français (fr)</option>
+                        <option value="en">Anglais (en)</option>
+                        <option value="original">Original</option>
+                      </select>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-center gap-2">
+                      <span>✓</span>
+                      <span>Source officielle TMDB certifiée conforme TV</span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[11px] text-white/40 mt-2">
-                  L&apos;image est automatiquement compressée côté navigateur (max 960x540) avant stockage pour préserver votre base.
-                </p>
               </SettingCard>
             </div>
           )}
 
           {/* ═════════════════════════════════════════════════════════════════
-              TAB 3 : LECTURE & CONTINUE WATCHING
+              TAB 3 : LECTURE & CONTINUE WATCHING (3 Colonnes homogènes)
              ═════════════════════════════════════════════════════════════════ */}
           {activeTab === "playback" && (
-            <div className="space-y-6">
-              {/* Style des cartes Continue Watching avec aperçus réels */}
-              <SettingCard>
-                <SectionTitle>Style des cartes Continuer à regarder</SectionTitle>
-                <p className="text-xs text-white/50 mb-3">
-                  Choisissez la présentation des cartes de reprise sur votre accueil.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {(["carte", "paysage", "poster"] as const).map((cwStyle) => (
-                    <CwMockupPreview
-                      key={cwStyle}
-                      style={cwStyle}
-                      selected={continueWatchingCardStyle === cwStyle}
-                      onClick={() => setContinueWatchingCardStyle(cwStyle)}
-                    />
-                  ))}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                  <ToggleRow
-                    label="Préférer les vignettes d'épisode"
-                    sub="Affiche la capture de la scène plutôt que l'affiche globale de la série"
-                    checked={cwPreferEpisodeThumbnail}
-                    onChange={setCwPreferEpisodeThumbnail}
-                  />
-                </div>
-              </SettingCard>
-
-              {/* Style des cartes d'épisodes (Horizontal vs Liste) */}
-              <SettingCard>
-                <SectionTitle>Style des cartes d&apos;épisodes (Fiche Série)</SectionTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <EpisodeCardStyleWireframe
-                    styleKey="horizontal"
-                    selected={episodeCardStyle === "horizontal"}
-                    onClick={() => setEpisodeCardStyle("horizontal")}
-                  />
-                  <EpisodeCardStyleWireframe
-                    styleKey="list"
-                    selected={episodeCardStyle === "list"}
-                    onClick={() => setEpisodeCardStyle("list")}
-                  />
-                </div>
-              </SettingCard>
-
-              {/* Enchaînement & Autoplay */}
-              <SettingCard>
-                <SectionTitle>Enchaînement automatique (Autoplay)</SectionTitle>
-                <div className="divide-y divide-white/[0.06]">
-                  <ToggleRow
-                    label="Épisode suivant automatique"
-                    sub="Enchaîne directement l'épisode suivant sans repasser par le menu"
-                    checked={autoPlayNext}
-                    onChange={setAutoPlayNext}
-                  />
-                  <ToggleRow
-                    label="Lancer la source unique directement"
-                    sub="Évite le panneau de sélection de flux lorsqu'une seule source est détectée"
-                    checked={autoPlaySingleSource}
-                    onChange={setAutoPlaySingleSource}
-                  />
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-medium text-white block">Qualité minimale pour l&apos;Autoplay</span>
-                    <span className="text-xs text-white/40">Filtre de résolution de lecture automatique</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* COLONNE 1 : Continuer à regarder */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Continuer à regarder</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Présentation des cartes de reprise sur votre accueil.
+                  </p>
+                  <div className="space-y-2.5 mb-4">
+                    {(["carte", "paysage", "poster"] as const).map((cwStyle) => (
+                      <CwMockupPreview
+                        key={cwStyle}
+                        style={cwStyle}
+                        selected={continueWatchingCardStyle === cwStyle}
+                        onClick={() => setContinueWatchingCardStyle(cwStyle)}
+                      />
+                    ))}
                   </div>
-                  <select
-                    value={autoPlayMinQuality}
-                    onChange={(e) => setAutoPlayMinQuality(e.target.value)}
-                    className="rounded-xl bg-neutral-900 border border-white/15 px-3 py-1.5 text-xs font-semibold text-white focus:outline-none"
-                  >
-                    <option value="Any">Toutes qualités acceptées</option>
-                    <option value="1080p">1080p FHD minimum</option>
-                    <option value="4K">4K UHD minimum</option>
-                  </select>
+                  <div className="pt-3 border-t border-white/[0.08]">
+                    <ToggleRow
+                      label="Préférer les vignettes d'épisode"
+                      sub="Capture de scène plutôt que l'affiche globale de la série"
+                      checked={cwPreferEpisodeThumbnail}
+                      onChange={setCwPreferEpisodeThumbnail}
+                    />
+                  </div>
                 </div>
               </SettingCard>
 
-              {/* Bandes-annonces Hero TV */}
-              <SettingCard>
-                <SectionTitle>Bandes-annonces à l&apos;accueil (Hero TV)</SectionTitle>
-                <div className="divide-y divide-white/[0.06]">
-                  <ToggleRow
-                    label="Lecture automatique de la bande-annonce"
-                    sub="Démarre la vidéo en haut de la page d'accueil après inactivité"
-                    checked={trailerAutoPlay}
-                    onChange={setTrailerAutoPlay}
-                  />
-                  <ToggleRow
-                    label="Son de la bande-annonce"
-                    sub="Active l'audio d'arrière-plan de la vidéo"
-                    checked={trailerSoundEnabled}
-                    onChange={setTrailerSoundEnabled}
-                  />
-                  <ToggleRow
-                    label="Plein écran automatique"
-                    sub="Agrandit automatiquement la vidéo en plein écran"
-                    checked={trailerFullscreenEnabled}
-                    onChange={setTrailerFullscreenEnabled}
-                  />
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-white/[0.06] grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-white/70 font-semibold">Délai avant démarrage vidéo :</span>
-                      <span className="font-mono text-indigo-400">{heroTrailerDelaySeconds} s</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="15"
-                      value={heroTrailerDelaySeconds}
-                      onChange={(e) => setHeroTrailerDelaySeconds(Number(e.target.value))}
-                      className="w-full accent-indigo-500 cursor-pointer"
+              {/* COLONNE 2 : Fiches Séries & Autoplay */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Cartes d&apos;épisodes (Fiche Série)</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Disposition des épisodes dans les fiches de séries.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5 mb-4">
+                    <EpisodeCardStyleWireframe
+                      styleKey="horizontal"
+                      selected={episodeCardStyle === "horizontal"}
+                      onClick={() => setEpisodeCardStyle("horizontal")}
+                    />
+                    <EpisodeCardStyleWireframe
+                      styleKey="list"
+                      selected={episodeCardStyle === "list"}
+                      onClick={() => setEpisodeCardStyle("list")}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-white/70 font-semibold">Délai avant plein écran :</span>
-                      <span className="font-mono text-indigo-400">{heroTrailerFullscreenDelaySeconds} s</span>
+                  <div className="pt-3 border-t border-white/[0.08] space-y-3">
+                    <SectionTitle>Enchaînement automatique (Autoplay)</SectionTitle>
+                    <div className="divide-y divide-white/[0.06]">
+                      <ToggleRow
+                        label="Épisode suivant automatique"
+                        sub="Enchaîne directement l'épisode suivant"
+                        checked={autoPlayNext}
+                        onChange={setAutoPlayNext}
+                      />
+                      <ToggleRow
+                        label="Lancer la source unique"
+                        sub="Évite le menu de flux quand un seul existe"
+                        checked={autoPlaySingleSource}
+                        onChange={setAutoPlaySingleSource}
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min="3"
-                      max="20"
-                      value={heroTrailerFullscreenDelaySeconds}
-                      onChange={(e) => setHeroTrailerFullscreenDelaySeconds(Number(e.target.value))}
-                      className="w-full accent-indigo-500 cursor-pointer"
+
+                    <div className="pt-2 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-medium text-white block">Qualité minimale</span>
+                        <span className="text-[10px] text-white/40">Filtre de résolution</span>
+                      </div>
+                      <select
+                        value={autoPlayMinQuality}
+                        onChange={(e) => setAutoPlayMinQuality(e.target.value)}
+                        className="rounded-xl bg-neutral-900 border border-white/15 px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="Any">Toutes qualités</option>
+                        <option value="1080p">1080p FHD min</option>
+                        <option value="4K">4K UHD min</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </SettingCard>
+
+              {/* COLONNE 3 : Bandes-annonces Hero TV */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Bandes-annonces Hero TV</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Comportement du teaser vidéo en haut de la page d&apos;accueil.
+                  </p>
+                  <div className="divide-y divide-white/[0.06] mb-4">
+                    <ToggleRow
+                      label="Lecture auto vidéo"
+                      sub="Démarre après inactivité sur la fiche hero"
+                      checked={trailerAutoPlay}
+                      onChange={setTrailerAutoPlay}
                     />
+                    <ToggleRow
+                      label="Son de la bande-annonce"
+                      sub="Active l'audio d'arrière-plan du teaser"
+                      checked={trailerSoundEnabled}
+                      onChange={setTrailerSoundEnabled}
+                    />
+                    <ToggleRow
+                      label="Plein écran automatique"
+                      sub="Agrandit automatiquement la vidéo"
+                      checked={trailerFullscreenEnabled}
+                      onChange={setTrailerFullscreenEnabled}
+                    />
+                  </div>
+
+                  <div className="pt-3 border-t border-white/[0.08] space-y-4">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/70 font-medium">Délai démarrage vidéo :</span>
+                        <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg text-xs">
+                          {heroTrailerDelaySeconds} s
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="15"
+                        value={heroTrailerDelaySeconds}
+                        onChange={(e) => setHeroTrailerDelaySeconds(Number(e.target.value))}
+                        className="w-full accent-indigo-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/70 font-medium">Délai avant plein écran :</span>
+                        <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg text-xs">
+                          {heroTrailerFullscreenDelaySeconds} s
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="3"
+                        max="20"
+                        value={heroTrailerFullscreenDelaySeconds}
+                        onChange={(e) => setHeroTrailerFullscreenDelaySeconds(Number(e.target.value))}
+                        className="w-full accent-indigo-500 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
               </SettingCard>
@@ -1523,206 +1664,356 @@ export function ManageSettingsPanel() {
           )}
 
           {/* ═════════════════════════════════════════════════════════════════
-              TAB 4 : SOUS-TITRES & AUDIO
+              TAB 4 : SOUS-TITRES & AUDIO (Langues complètes + Choix Forced)
              ═════════════════════════════════════════════════════════════════ */}
           {activeTab === "subtitles" && (
-            <div className="space-y-6">
-              {/* Sélecteurs de langues par défaut */}
-              <SettingCard>
-                <SectionTitle>Pistes audio et sous-titres par défaut</SectionTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Piste audio</label>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* COLONNE 1 : Audio & Sous-titres principaux */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Audio & Sous-titres principaux</SectionTitle>
+
+                  {/* Piste Audio */}
+                  <div className="mb-4">
+                    <label className="text-xs text-white/60 block mb-1.5 font-semibold">Piste audio par défaut</label>
                     <select
                       value={defaultAudioLanguage}
                       onChange={(e) => setDefaultAudioLanguage(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
+                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                     >
-                      <option value="auto">Automatique (Original)</option>
-                      <option value="fr">Français</option>
-                      <option value="en">Anglais</option>
+                      {AUDIO_LANGUAGES.map((al) => (
+                        <option key={al.value} value={al.value}>
+                          {al.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Sous-titres principaux</label>
-                    <select
-                      value={defaultSubtitle}
-                      onChange={(e) => setDefaultSubtitle(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="Off">Désactivés</option>
-                      <option value="French">Français</option>
-                      <option value="English">Anglais</option>
-                    </select>
-                  </div>
+                  {/* Sous-titres principaux */}
+                  <div className="pt-3 border-t border-white/[0.08] space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs text-white/60 font-semibold">
+                          Sous-titres principaux
+                        </label>
+                        {defaultSubLang !== "Off" && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            defaultSubForced ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                          }`}>
+                            {defaultSubForced ? "Forcés uniquement" : "Complets"}
+                          </span>
+                        )}
+                      </div>
+                      <select
+                        value={defaultSubLang}
+                        onChange={(e) => {
+                          const newLang = e.target.value;
+                          setDefaultSubLang(newLang);
+                          setDefaultSubtitle(formatSubtitleValue(newLang, defaultSubForced));
+                        }}
+                        className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        {SUBTITLE_LANGUAGES.map((sl) => (
+                          <option key={sl.value} value={sl.value}>
+                            {sl.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Sous-titres secondaires</label>
-                    <select
-                      value={secondarySubtitle}
-                      onChange={(e) => setDefaultSubtitle(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="Off">Désactivés</option>
-                      <option value="English">Anglais</option>
-                      <option value="French">Français</option>
-                    </select>
+                    {/* Choix Forcé vs Complet */}
+                    {defaultSubLang !== "Off" && (
+                      <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 space-y-2">
+                        <span className="text-[11px] font-semibold text-white/70 block">
+                          Type d&apos;affichage de la piste :
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDefaultSubForced(false);
+                              setDefaultSubtitle(formatSubtitleValue(defaultSubLang, false));
+                            }}
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
+                              !defaultSubForced
+                                ? "border-indigo-400 bg-indigo-500/20 text-white shadow-sm"
+                                : "border-white/10 bg-white/5 text-white/50 hover:text-white"
+                            }`}
+                          >
+                            Complets
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDefaultSubForced(true);
+                              setDefaultSubtitle(formatSubtitleValue(defaultSubLang, true));
+                            }}
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
+                              defaultSubForced
+                                ? "border-amber-400 bg-amber-500/20 text-amber-200 shadow-sm"
+                                : "border-white/10 bg-white/5 text-white/50 hover:text-white"
+                            }`}
+                          >
+                            Forcés (Forced) ✓
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-white/40 leading-relaxed pt-1">
+                          {defaultSubForced
+                            ? "⚡ Forcés : s'affiche uniquement lors des dialogues en langue étrangère non traduite."
+                            : "Complets : sous-titres intégraux sur l'ensemble de la lecture."}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </SettingCard>
 
-              {/* Rendu visuel & typographie des sous-titres */}
-              <SettingCard>
-                <SectionTitle>Apparence & Typographie du texte</SectionTitle>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Taille</label>
-                    <select
-                      value={subtitleSize}
-                      onChange={(e) => setSubtitleSize(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="Small">Petit</option>
-                      <option value="Medium">Moyen (Défaut)</option>
-                      <option value="Large">Grand</option>
-                      <option value="Extra Large">Très grand</option>
-                    </select>
+              {/* COLONNE 2 : Sous-titres secondaires & Filtrage */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Sous-titres secondaires & Filtrage</SectionTitle>
+
+                  <div className="space-y-3 mb-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs text-white/60 font-semibold">
+                          Sous-titres secondaires (Secours)
+                        </label>
+                        {secondarySubLang !== "Off" && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            secondarySubForced ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                          }`}>
+                            {secondarySubForced ? "Forcés" : "Complets"}
+                          </span>
+                        )}
+                      </div>
+                      <select
+                        value={secondarySubLang}
+                        onChange={(e) => {
+                          const newLang = e.target.value;
+                          setSecondarySubLang(newLang);
+                          setSecondarySubtitle(formatSubtitleValue(newLang, secondarySubForced));
+                        }}
+                        className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        {SUBTITLE_LANGUAGES.map((sl) => (
+                          <option key={sl.value} value={sl.value}>
+                            {sl.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Choix Forcé pour secondaires */}
+                    {secondarySubLang !== "Off" && (
+                      <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 space-y-2">
+                        <span className="text-[11px] font-semibold text-white/70 block">
+                          Type de piste secondaire :
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSecondarySubForced(false);
+                              setSecondarySubtitle(formatSubtitleValue(secondarySubLang, false));
+                            }}
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
+                              !secondarySubForced
+                                ? "border-indigo-400 bg-indigo-500/20 text-white shadow-sm"
+                                : "border-white/10 bg-white/5 text-white/50 hover:text-white"
+                            }`}
+                          >
+                            Complets
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSecondarySubForced(true);
+                              setSecondarySubtitle(formatSubtitleValue(secondarySubLang, true));
+                            }}
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
+                              secondarySubForced
+                                ? "border-amber-400 bg-amber-500/20 text-amber-200 shadow-sm"
+                                : "border-white/10 bg-white/5 text-white/50 hover:text-white"
+                            }`}
+                          >
+                            Forcés (Forced) ✓
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Couleur</label>
-                    <select
-                      value={subtitleColor}
-                      onChange={(e) => setSubtitleColor(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="White">Blanc</option>
-                      <option value="Yellow">Jaune</option>
-                      <option value="Green">Vert</option>
-                      <option value="Cyan">Cyan</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Style</label>
-                    <select
-                      value={subtitleStyle}
-                      onChange={(e) => setSubtitleStyle(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="Bold">Gras</option>
-                      <option value="Normal">Normal</option>
-                      <option value="Background">Avec fond sombre</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-white/50 block mb-1.5 font-semibold">Position</label>
-                    <select
-                      value={subtitleOffset}
-                      onChange={(e) => setSubtitleOffset(e.target.value)}
-                      className="w-full rounded-xl bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="Bottom">Bas (par défaut)</option>
-                      <option value="Low">Légèrement surélevé</option>
-                      <option value="Medium">Moyen</option>
-                      <option value="High">Haut</option>
-                    </select>
+                  <div className="pt-3 border-t border-white/[0.08] divide-y divide-white/[0.06]">
+                    <ToggleRow
+                      label="Filtrer les pistes par langue"
+                      sub="Masque les langues secondaires non configurées"
+                      checked={filterSubtitlesByLanguage}
+                      onChange={setFilterSubtitlesByLanguage}
+                    />
+                    <ToggleRow
+                      label="Sous-titres stylisés"
+                      sub="Contours renforcés et ombres portées pour une lisibilité maximale"
+                      checked={subtitleStylized}
+                      onChange={setSubtitleStylized}
+                    />
                   </div>
                 </div>
+              </SettingCard>
 
-                {/* Boîte d'aperçu en direct du sous-titre */}
-                <div className="rounded-xl bg-black/80 border border-white/10 p-5 flex items-center justify-center min-h-[70px] mb-4">
-                  <p
-                    className="text-center leading-tight transition-all duration-200"
-                    style={{
-                      fontSize:
-                        subtitleSize === "Small"
-                          ? "12px"
-                          : subtitleSize === "Large"
-                          ? "18px"
-                          : subtitleSize === "Extra Large"
-                          ? "22px"
-                          : "15px",
-                      fontWeight: subtitleStyle === "Bold" ? 700 : 400,
-                      color:
-                        subtitleColor === "Yellow"
-                          ? "#FFDD44"
-                          : subtitleColor === "Green"
-                          ? "#1DB954"
-                          : subtitleColor === "Cyan"
-                          ? "#06B6D4"
-                          : "#FFFFFF",
-                      backgroundColor: subtitleStyle === "Background" ? "rgba(0,0,0,0.7)" : "transparent",
-                      padding: subtitleStyle === "Background" ? "4px 8px" : "0",
-                      borderRadius: "4px",
-                      textShadow: subtitleStylized ? "0 2px 4px rgba(0,0,0,0.9)" : "none",
-                    }}
-                  >
-                    Exemple de réplique affichée à l&apos;écran
-                  </p>
-                </div>
+              {/* COLONNE 3 : Typographie & Aperçu Live */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Typographie & Rendu en direct</SectionTitle>
 
-                <div className="divide-y divide-white/[0.06]">
-                  <ToggleRow
-                    label="Sous-titres stylisés"
-                    sub="Ombres portées et contours renforcés pour une lisibilité optimale"
-                    checked={subtitleStylized}
-                    onChange={setSubtitleStylized}
-                  />
-                  <ToggleRow
-                    label="Filtrer les pistes par langue"
-                    sub="Masque les langues secondaires non prioritaires"
-                    checked={filterSubtitlesByLanguage}
-                    onChange={setFilterSubtitlesByLanguage}
-                  />
+                  {/* Aperçu en direct */}
+                  <div className="rounded-xl bg-black/90 border border-white/10 p-4 flex items-center justify-center min-h-[75px] mb-4">
+                    <p
+                      className="text-center leading-tight transition-all duration-200"
+                      style={{
+                        fontSize:
+                          subtitleSize === "Small"
+                            ? "12px"
+                            : subtitleSize === "Large"
+                            ? "18px"
+                            : subtitleSize === "Extra Large"
+                            ? "22px"
+                            : "15px",
+                        fontWeight: subtitleStyle === "Bold" ? 700 : 400,
+                        color:
+                          subtitleColor === "Yellow"
+                            ? "#FFDD44"
+                            : subtitleColor === "Green"
+                            ? "#1DB954"
+                            : subtitleColor === "Cyan"
+                            ? "#06B6D4"
+                            : "#FFFFFF",
+                        backgroundColor: subtitleStyle === "Background" ? "rgba(0,0,0,0.75)" : "transparent",
+                        padding: subtitleStyle === "Background" ? "4px 8px" : "0",
+                        borderRadius: "4px",
+                        textShadow: subtitleStylized ? "0 2px 4px rgba(0,0,0,0.9)" : "none",
+                      }}
+                    >
+                      Exemple de sous-titre affiché à l&apos;écran
+                    </p>
+                  </div>
+
+                  {/* 4 Sélecteurs Typo */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] text-white/50 block mb-1 font-semibold">Taille</label>
+                      <select
+                        value={subtitleSize}
+                        onChange={(e) => setSubtitleSize(e.target.value)}
+                        className="w-full rounded-xl bg-neutral-900 border border-white/15 px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="Small">Petit</option>
+                        <option value="Medium">Moyen (Défaut)</option>
+                        <option value="Large">Grand</option>
+                        <option value="Extra Large">Très grand</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-white/50 block mb-1 font-semibold">Couleur</label>
+                      <select
+                        value={subtitleColor}
+                        onChange={(e) => setSubtitleColor(e.target.value)}
+                        className="w-full rounded-xl bg-neutral-900 border border-white/15 px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="White">Blanc</option>
+                        <option value="Yellow">Jaune</option>
+                        <option value="Green">Vert</option>
+                        <option value="Cyan">Cyan</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-white/50 block mb-1 font-semibold">Style</label>
+                      <select
+                        value={subtitleStyle}
+                        onChange={(e) => setSubtitleStyle(e.target.value)}
+                        className="w-full rounded-xl bg-neutral-900 border border-white/15 px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="Bold">Gras</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Background">Fond sombre</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-white/50 block mb-1 font-semibold">Position</label>
+                      <select
+                        value={subtitleOffset}
+                        onChange={(e) => setSubtitleOffset(e.target.value)}
+                        className="w-full rounded-xl bg-neutral-900 border border-white/15 px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none cursor-pointer"
+                      >
+                        <option value="Bottom">Bas (Défaut)</option>
+                        <option value="Low">Surélevé</option>
+                        <option value="Medium">Moyen</option>
+                        <option value="High">Haut</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </SettingCard>
             </div>
           )}
 
           {/* ═════════════════════════════════════════════════════════════════
-              TAB 5 : ERGONOMIE MOBILE
+              TAB 5 : ERGONOMIE MOBILE (2 Blocs bien équilibrés)
              ═════════════════════════════════════════════════════════════════ */}
           {activeTab === "mobile" && (
-            <div className="space-y-6">
-              {/* Wireframe Phone Cards côte à côte pour le style de la nav bar (PJ 2 Android) */}
-              <SettingCard>
-                <SectionTitle>Style de la barre de navigation mobile</SectionTitle>
-                <p className="text-xs text-white/50 mb-3">
-                  Choisissez l&apos;ergonomie de votre dock flottant sur smartphone et tablette.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {(["separated", "grouped", "classic"] as const).map((sKey) => (
-                    <MobileNavPhoneWireframe
-                      key={sKey}
-                      styleKey={sKey}
-                      selected={mobileNavBarStyle === sKey}
-                      glowEnabled={mobileNavGlowEnabled}
-                      onClick={() => setMobileNavBarStyle(sKey)}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Bloc 1 : Barre de navigation */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Style de la barre de navigation mobile</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Choisissez l&apos;ergonomie de votre dock flottant sur smartphone et tablette.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2.5 mb-4">
+                    {(["separated", "grouped", "classic"] as const).map((sKey) => (
+                      <MobileNavPhoneWireframe
+                        key={sKey}
+                        styleKey={sKey}
+                        selected={mobileNavBarStyle === sKey}
+                        glowEnabled={mobileNavGlowEnabled}
+                        onClick={() => setMobileNavBarStyle(sKey)}
+                      />
+                    ))}
+                  </div>
+                  <div className="pt-3 border-t border-white/[0.08]">
+                    <ToggleRow
+                      label="Effet Glow (Lueur lumineuse)"
+                      sub="Lueur lumineuse douce sous la barre de navigation"
+                      checked={mobileNavGlowEnabled}
+                      onChange={setMobileNavGlowEnabled}
                     />
-                  ))}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                  <ToggleRow
-                    label="Effet Glow (Lueur lumineuse)"
-                    sub="Affiche une lueur lumineuse subtile sous la barre de navigation"
-                    checked={mobileNavGlowEnabled}
-                    onChange={setMobileNavGlowEnabled}
-                  />
+                  </div>
                 </div>
               </SettingCard>
 
-              {/* Rappel d'isolation Per-Device */}
-              <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-start gap-3">
-                <ShieldAlert className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" />
-                <div className="text-xs text-indigo-200/80 leading-relaxed">
-                  <span className="font-semibold text-white block mb-0.5">Isolation matérielle (Per-Device) active :</span>
-                  Les réglages matériels locaux (taux de rafraîchissement AFR, lecteur externe, amplification sonore locale et résolveurs DNS) demeurent spécifiques à chaque écran physique pour assurer une compatibilité optimale.
+              {/* Bloc 2 : Isolation & Matériel */}
+              <SettingCard className="h-full flex flex-col justify-between">
+                <div>
+                  <SectionTitle>Isolation matérielle & Synchronisation</SectionTitle>
+                  <p className="text-xs text-white/50 mb-3">
+                    Gestion multi-écrans et sécurité des paramètres matériels.
+                  </p>
+                  <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-start gap-3 mb-4">
+                    <ShieldAlert className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-indigo-200/80 leading-relaxed">
+                      <span className="font-semibold text-white block mb-0.5">Isolation matérielle (Per-Device) active :</span>
+                      Les réglages physiques locaux (taux de rafraîchissement AFR, lecteur externe, amplification sonore locale et résolveurs DNS) ne sont pas écrasés par la synchronisation cloud et restent adaptés à chaque écran.
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-white/60">
+                    <span className="font-semibold text-white block mb-1">Synchronisation instantanée</span>
+                    Vos choix d&apos;interface, d&apos;affiches et de préférences de sous-titres sont instantanément répercutés dès que vous cliquez sur <strong className="text-white">Enregistrer & Sync TV</strong>.
+                  </div>
                 </div>
-              </div>
+              </SettingCard>
             </div>
           )}
 
