@@ -135,7 +135,7 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
       return `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`;
     }
     if (profile.avatar_id && profile.avatar_id > 0) {
-      const num = Math.min(Math.max(profile.avatar_id, 1), 25);
+      const num = Math.min(Math.max(profile.avatar_id, 1), 20);
       return `/assets/avatars/avatar_${num}.png`;
     }
     return null;
