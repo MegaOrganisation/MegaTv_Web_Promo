@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Palette, Monitor, Film, Sliders, Check, RefreshCw, Upload } from "lucide-react";
+import { Sparkles, Palette, Monitor, Film, Sliders, Check, RefreshCw, Upload, Volume2 } from "lucide-react";
 import { MegaSurface } from "@/features/companion/ui/MegaSurface";
 
 const FOCUS_COLORS = [
@@ -14,6 +14,61 @@ const FOCUS_COLORS = [
   { name: "Indigo", label: "Indigo", hex: "#6366F1" },
   { name: "Violet", label: "Rose / Violet", hex: "#EC4899" },
 ];
+
+/** Langues complètes disponibles pour les sous-titres */
+const SUBTITLE_LANGUAGES = [
+  { value: "Off", label: "Désactivés" },
+  { value: "French", label: "Français" },
+  { value: "English", label: "Anglais" },
+  { value: "Spanish", label: "Espagnol" },
+  { value: "German", label: "Allemand" },
+  { value: "Italian", label: "Italien" },
+  { value: "Portuguese", label: "Portugais" },
+  { value: "Portuguese (Brazil)", label: "Portugais (Brésil)" },
+  { value: "Arabic", label: "Arabe" },
+  { value: "Russian", label: "Russe" },
+  { value: "Japanese", label: "Japonais" },
+  { value: "Korean", label: "Coréen" },
+  { value: "Chinese", label: "Chinois" },
+  { value: "Dutch", label: "Néerlandais" },
+  { value: "Turkish", label: "Turc" },
+  { value: "Polish", label: "Polonais" },
+  { value: "Swedish", label: "Suédois" },
+  { value: "Norwegian", label: "Norvégien" },
+  { value: "Danish", label: "Danois" },
+  { value: "Finnish", label: "Finnois" },
+  { value: "Greek", label: "Grec" },
+  { value: "Czech", label: "Tchèque" },
+  { value: "Hungarian", label: "Hongrois" },
+  { value: "Romanian", label: "Roumain" },
+  { value: "Thai", label: "Thaï" },
+  { value: "Vietnamese", label: "Vietnamien" },
+  { value: "Indonesian", label: "Indonésien" },
+  { value: "Hebrew", label: "Hébreu" },
+  { value: "Hindi", label: "Hindi" },
+  { value: "Ukrainian", label: "Ukrainien" },
+  { value: "Croatian", label: "Croate" },
+  { value: "Slovak", label: "Slovaque" },
+  { value: "Slovenian", label: "Slovène" },
+  { value: "Bulgarian", label: "Bulgare" },
+];
+
+/** Parse une valeur brute de sous-titre vers langue de base et booléen forcé */
+function parseSubtitleValue(raw: string | undefined): { lang: string; forced: boolean } {
+  const s = (raw || "Off").trim();
+  if (!s || s.toLowerCase() === "off") return { lang: "Off", forced: false };
+  if (s.toLowerCase() === "forced") return { lang: "French", forced: true };
+  const forced = /[\(\[]?\s*(forced|forcé)s?\s*[\)\]]?/i.test(s);
+  const lang = s.replace(/[\(\[]?\s*(forced|forcé)s?\s*[\)\]]?/i, "").trim() || (forced ? "French" : "Off");
+  return { lang, forced };
+}
+
+/** Formate la valeur de sous-titre pour la sauvegarde synchronisée */
+function formatSubtitleValue(lang: string, forced: boolean): string {
+  if (!lang || lang === "Off") return "Off";
+  if (forced) return `${lang} (Forced)`;
+  return lang;
+}
 
 export function CompanionProfileSettingsSection() {
   const [profiles, setProfiles] = useState<Array<{ id: string; name: string }>>([]);
@@ -29,6 +84,8 @@ export function CompanionProfileSettingsSection() {
   const [posterCardRadiusDp, setPosterCardRadiusDp] = useState(28);
   const [autoPlayNext, setAutoPlayNext] = useState(true);
   const [defaultSubtitle, setDefaultSubtitle] = useState("Off");
+  const [defaultSubLang, setDefaultSubLang] = useState("Off");
+  const [defaultSubForced, setDefaultSubForced] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
 
@@ -66,7 +123,16 @@ export function CompanionProfileSettingsSection() {
           if (s.card_layout_mode) setCardLayoutMode(s.card_layout_mode);
           if (s.poster_card_radius_dp !== undefined) setPosterCardRadiusDp(Number(s.poster_card_radius_dp));
           if (s.auto_play_next !== undefined) setAutoPlayNext(Boolean(s.auto_play_next));
-          if (s.default_subtitle) setDefaultSubtitle(s.default_subtitle);
+          if (s.default_subtitle) {
+            setDefaultSubtitle(s.default_subtitle);
+            const parsed = parseSubtitleValue(s.default_subtitle);
+            setDefaultSubLang(parsed.lang);
+            setDefaultSubForced(parsed.forced);
+          } else {
+            setDefaultSubtitle("Off");
+            setDefaultSubLang("Off");
+            setDefaultSubForced(false);
+          }
         }
       } catch (err) {
         console.error("Failed to load settings", err);
@@ -357,7 +423,103 @@ export function CompanionProfileSettingsSection() {
             </div>
           </div>
 
-          {/* Lecture & Sous-titres */}
+          {/* Sous-titres (Langue puis Forced) */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Volume2 className="h-4 w-4 text-white/70" />
+                <label className="text-xs font-semibold uppercase tracking-wider text-white/75">
+                  Sous-titres par défaut
+                </label>
+              </div>
+              {defaultSubLang !== "Off" && (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                  defaultSubForced
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                    : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                }`}>
+                  {defaultSubForced ? "Forcés uniquement" : "Complets"}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Choix 1 : Langue */}
+              <div>
+                <label className="text-[11px] text-white/60 block mb-1.5 font-medium">
+                  1. Sélectionner la langue
+                </label>
+                <select
+                  value={defaultSubLang}
+                  onChange={(e) => {
+                    const newLang = e.target.value;
+                    setDefaultSubLang(newLang);
+                    setDefaultSubtitle(formatSubtitleValue(newLang, defaultSubForced));
+                  }}
+                  className="w-full rounded-lg bg-neutral-900 border border-white/15 px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  {SUBTITLE_LANGUAGES.map((sl) => (
+                    <option key={sl.value} value={sl.value} className="bg-neutral-900 text-white">
+                      {sl.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Choix 2 : Forcé ou non */}
+              <div>
+                <label className="text-[11px] text-white/60 block mb-1.5 font-medium">
+                  2. Type de piste
+                </label>
+                {defaultSubLang === "Off" ? (
+                  <div className="h-[38px] flex items-center px-3 rounded-lg bg-white/[0.03] border border-white/10 text-xs text-white/40 italic">
+                    Désactivé (aucun sous-titre)
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDefaultSubForced(false);
+                        setDefaultSubtitle(formatSubtitleValue(defaultSubLang, false));
+                      }}
+                      className={`py-2 px-2.5 rounded-lg text-xs font-semibold border transition-all text-center cursor-pointer ${
+                        !defaultSubForced
+                          ? "border-indigo-400 bg-indigo-500/20 text-white shadow-sm"
+                          : "border-white/10 bg-white/5 text-white/50 hover:text-white"
+                      }`}
+                    >
+                      Complets
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDefaultSubForced(true);
+                        setDefaultSubtitle(formatSubtitleValue(defaultSubLang, true));
+                      }}
+                      className={`py-2 px-2.5 rounded-lg text-xs font-semibold border transition-all text-center cursor-pointer ${
+                        defaultSubForced
+                          ? "border-amber-400 bg-amber-500/20 text-amber-200 shadow-sm"
+                          : "border-white/10 bg-white/5 text-white/50 hover:text-white"
+                      }`}
+                    >
+                      Forcés (Forced) ✓
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {defaultSubLang !== "Off" && (
+              <p className="text-[10px] text-white/40 leading-relaxed pt-1">
+                {defaultSubForced
+                  ? "Seulement pour les dialogues en langue étrangère (ex: scènes traduites dans un film VF)."
+                  : "Sous-titres affichés en permanence pour l'intégralité du programme."}
+              </p>
+            )}
+          </div>
+
+          {/* Lecture (Autoplay) & Sauvegarde */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-3">
               <input
