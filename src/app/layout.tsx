@@ -44,11 +44,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/assets/megatv-icon.png?v=3", sizes: "32x32", type: "image/png" },
-      { url: "/assets/megatv-icon.png?v=3", sizes: "180x180", type: "image/png" }
+      { url: "/assets/favicon-32.png?v=2026t", sizes: "32x32", type: "image/png" },
+      { url: "/assets/megatv-icon.png?v=2026t", sizes: "192x192", type: "image/png" }
     ],
-    apple: [{ url: "/assets/megatv-icon.png?v=3", sizes: "180x180", type: "image/png" }],
-    shortcut: [{ url: "/assets/megatv-icon.png?v=3", type: "image/png" }]
+    apple: [{ url: "/assets/apple-touch-icon.png?v=2026t", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/favicon.ico?v=2026t", type: "image/x-icon" }]
   },
   openGraph: {
     title: "MegaTv — Site officiel & MegaCompagnon",
