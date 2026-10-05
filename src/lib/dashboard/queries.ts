@@ -21,12 +21,23 @@ export async function getDashboardData(profileId?: string | null, options: { dev
   const deviceLimit = options.deviceLimit ?? 8;
 
   const [profilesResult, devicesResult, adminResult] = await Promise.all([
-    supabase.from("v_megacompanion_user_profiles").select("*").order("last_used_at", { ascending: false, nullsFirst: false }),
+    supabase
+      .from("user_profiles")
+      .select("id, user_id, name, avatar_color, avatar_id, avatar_image_version, avatar_image_storage_path, is_kids_profile, pin, is_locked, last_used_at, updated_at, cover_type, cover_value, cover_version, cover_image_storage_path")
+      .order("last_used_at", { ascending: false, nullsFirst: false }),
     supabase.from("v_megacompanion_devices").select("*").order("last_seen_at", { ascending: false, nullsFirst: false }).limit(deviceLimit),
     supabase.rpc("megacompanion_is_admin")
   ]);
 
-  const profiles = (profilesResult.data || []) as ProfileRow[];
+  const rawProfiles = profilesResult.data && profilesResult.data.length > 0
+    ? profilesResult.data
+    : (await supabase.from("v_megacompanion_user_profiles").select("*").order("last_used_at", { ascending: false, nullsFirst: false })).data || [];
+
+  const profiles = (rawProfiles as any[]).map((p) => ({
+    ...p,
+    profile_id: p.id || p.profile_id
+  })) as ProfileRow[];
+
   const normalizedProfileId = requestedProfileId && profiles.some((profile) => profile.profile_id === requestedProfileId) ? requestedProfileId : null;
   const activeProfile = normalizedProfileId ? profiles.find((profile) => profile.profile_id === normalizedProfileId) || null : null;
 
@@ -46,8 +57,7 @@ export async function getDashboardData(profileId?: string | null, options: { dev
     continueQuery
   ]);
 
-  const profileAvatarUrlsById =
-    user && !options.skipAvatarUrls ? await createProfileAvatarUrls(supabase, user.id, profiles) : {};
+  const profileAvatarUrlsById = createProfileAvatarUrls(profiles);
 
   return {
     activeProfileId: normalizedProfileId,
@@ -84,28 +94,20 @@ export async function getAdminDashboardData(fromInput?: Date, toInput?: Date) {
   };
 }
 
-async function createProfileAvatarUrls(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  profiles: ProfileRow[]
-) {
-  const entries = await Promise.all(
-    profiles.map(async (profile) => {
-      const path = profile.avatar_image_storage_path?.trim();
-      if (!path || !profile.avatar_image_version || profile.avatar_image_version <= 0) return null;
-      if ((profile.avatar_id || 0) > 0) return null;
-      if (!path.startsWith(`${userId}/${profile.profile_id}/`)) return null;
-
-      const { data, error } = await supabase.storage.from("profile-avatars").createSignedUrl(path, 60 * 60);
-      if (error || !data?.signedUrl) return null;
-      const rawUrl = data.signedUrl;
-      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://lciimaytmryruyooktkd.supabase.co";
-      const fullUrl = rawUrl.startsWith("http")
-        ? rawUrl
-        : `${baseUrl.replace(/\/$/, "")}/storage/v1${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
-      return [profile.profile_id, fullUrl] as const;
-    })
-  );
-
-  return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, string]>);
+function createProfileAvatarUrls(profiles: ProfileRow[]) {
+  const map: Record<string, string> = {};
+  for (const profile of profiles) {
+    if ((profile.avatar_image_version || 0) > 0 || profile.avatar_image_storage_path) {
+      const p = profile.avatar_image_storage_path?.trim();
+      if (p && (p.startsWith("http://") || p.startsWith("https://"))) {
+        map[profile.profile_id] = p;
+      } else {
+        map[profile.profile_id] = `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`;
+      }
+    } else if (profile.avatar_id && profile.avatar_id > 0) {
+      const num = Math.min(Math.max(profile.avatar_id, 1), 20);
+      map[profile.profile_id] = `/assets/avatars/avatar_${num}.png`;
+    }
+  }
+  return map;
 }

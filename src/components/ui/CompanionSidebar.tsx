@@ -17,7 +17,9 @@ import {
   CreditCard,
   Laptop2,
   SlidersHorizontal,
-  ShieldAlert
+  ShieldAlert,
+  Flame,
+  Settings2
 } from "lucide-react";
 
 import { useCompanionProfile } from "@/features/companion/CompanionProfileProvider";
@@ -205,12 +207,45 @@ export function CompanionSidebar({ userEmail, counts, isAdmin }: CompanionSideba
           </div>
         </div>
 
-        {/* Section: SYSTEM */}
+        {/* Section: SOCIAL */}
         <div>
           <p className="px-2 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-white/35">
-            SYSTEM
+            COMMUNAUTÉ
           </p>
           <div className="space-y-0.5">
+            <Link
+              href={withProfile("/companion/social")}
+              className={clsx(
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
+                isPrefixActive("/companion/social")
+                  ? "bg-white/12 text-white font-semibold"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Flame size={14} className="opacity-80 text-pink-400" />
+              <span>Social &amp; Matchs</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Section: PARAMÈTRES (ex-System / Mobile Settings) */}
+        <div>
+          <p className="px-2 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-white/35">
+            PARAMÈTRES
+          </p>
+          <div className="space-y-0.5">
+            <Link
+              href={withProfile("/companion/settings")}
+              className={clsx(
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
+                isPrefixActive("/companion/settings")
+                  ? "bg-white/12 text-white font-semibold"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Settings2 size={14} className="opacity-80 text-cyan-400" />
+              <span>Paramètres Compagnon</span>
+            </Link>
             <Link
               href={withProfile("/companion/manage/settings")}
               className={clsx(
@@ -221,19 +256,7 @@ export function CompanionSidebar({ userEmail, counts, isAdmin }: CompanionSideba
               )}
             >
               <Tv2 size={14} className="opacity-70" />
-              <span>TV Settings</span>
-            </Link>
-            <Link
-              href={withProfile("/companion/settings")}
-              className={clsx(
-                "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
-                isPrefixActive("/companion/settings")
-                  ? "bg-white/12 text-white font-semibold"
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Smartphone size={14} className="opacity-70" />
-              <span>Mobile Settings</span>
+              <span>Paramètres TV</span>
             </Link>
           </div>
         </div>

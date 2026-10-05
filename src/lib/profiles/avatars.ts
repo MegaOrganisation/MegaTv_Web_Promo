@@ -26,7 +26,8 @@ const avatarGradients: Record<number, [string, string]> = {
   17: ["#0A1810", "#152818"],
   18: ["#0A1028", "#151A40"],
   19: ["#280A18", "#401025"],
-  20: ["#2A2000", "#3D3010"]
+  20: ["#2A2000", "#3D3010"],
+  21: ["#0B1E36", "#143C60"]
 };
 
 export function resolveAvatarId(avatarId?: number | null) {

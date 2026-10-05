@@ -1,40 +1,74 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Baby, Camera, Check, KeyRound, Loader2, RotateCcw, Save, Sparkles, Trash2 } from "lucide-react";
+import {
+  Baby,
+  Camera,
+  Check,
+  Film,
+  Image as ImageIcon,
+  KeyRound,
+  Loader2,
+  RotateCcw,
+  Save,
+  Search,
+  Sparkles,
+  Trash2,
+  X
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import NextImage from "next/image";
-import { useMemo, useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { useMemo, useState, useEffect, useRef, type ChangeEvent, type FormEvent } from "react";
 
 import { MegaButton } from "@/components/ui/MegaButton";
 import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
-import { AVATAR_REGISTRY, avatarAssetPath, avatarGradientCss } from "@/lib/profiles/avatars";
-import { formatPinInput } from "@/lib/profiles/pin";
+import { AVATAR_REGISTRY } from "@/lib/profiles/avatars";
 import type { ProfileRow } from "@/lib/supabase/types";
 
 type Props = {
   profiles: ProfileRow[];
+  avatarUrls?: Record<string, string>;
 };
 
 type ProfileFormState = {
   name: string;
   avatarId: number;
+  usePresetAvatar: boolean;
   isKidsProfile: boolean;
   pin: string;
   currentPin: string;
   removePin: boolean;
 };
 
-export function ProfileManagementPanel({ profiles }: Props) {
+type TmdbSearchResult = {
+  mediaId: string;
+  mediaType: string;
+  tmdbId: number;
+  title: string;
+  subtitle: string | null;
+  posterUrl: string | null;
+  backdropUrl: string | null;
+  overview: string | null;
+};
+
+export function ProfileManagementPanel({ profiles, avatarUrls = {} }: Props) {
   const router = useRouter();
   const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.profile_id || "");
   const selectedProfile = profiles.find((profile) => profile.profile_id === selectedProfileId) || profiles[0] || null;
+
   const [formByProfileId, setFormByProfileId] = useState<Record<string, ProfileFormState>>(() =>
     Object.fromEntries(profiles.map((profile) => [profile.profile_id, profileToForm(profile)]))
   );
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // TMDB Search Modal State
+  const [tmdbModalOpen, setTmdbModalOpen] = useState(false);
+  const [tmdbTarget, setTmdbTarget] = useState<"avatar" | "cover">("avatar");
+  const [tmdbQuery, setTmdbQuery] = useState("");
+  const [tmdbResults, setTmdbResults] = useState<TmdbSearchResult[]>([]);
+  const [tmdbSearching, setTmdbSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const form = useMemo(() => {
     if (!selectedProfile) return null;
@@ -59,6 +93,25 @@ export function ProfileManagementPanel({ profiles }: Props) {
     return <p className="text-sm text-white/45">Aucun profil cloud détecté pour le moment.</p>;
   }
 
+  function getAvatarSrc(profile: ProfileRow) {
+    if (avatarUrls[profile.profile_id]) {
+      return avatarUrls[profile.profile_id];
+    }
+    const path = profile.avatar_image_storage_path?.trim();
+    if (path) {
+      if (path.startsWith("http://") || path.startsWith("https://")) return path;
+      return `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`;
+    }
+    if ((profile.avatar_image_version || 0) > 0) {
+      return `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`;
+    }
+    if (profile.avatar_id && profile.avatar_id > 0) {
+      const num = Math.min(Math.max(profile.avatar_id, 1), 20);
+      return `/assets/avatars/avatar_${num}.png`;
+    }
+    return null;
+  }
+
   function updateForm(patch: Partial<ProfileFormState>) {
     if (!selectedProfile) return;
     setMessage(null);
@@ -81,10 +134,13 @@ export function ProfileManagementPanel({ profiles }: Props) {
 
     const payload: Record<string, unknown> = {
       name: form.name,
-      avatarId: form.avatarId,
-      usePresetAvatar: true,
       isKidsProfile: form.isKidsProfile
     };
+
+    if (form.usePresetAvatar && form.avatarId > 0) {
+      payload.avatarId = form.avatarId;
+      payload.usePresetAvatar = true;
+    }
 
     if (form.removePin) {
       payload.removePin = true;
@@ -107,7 +163,7 @@ export function ProfileManagementPanel({ profiles }: Props) {
       return;
     }
 
-    setMessage("Profil mis à jour.");
+    setMessage("Profil mis à jour avec succès.");
     router.refresh();
   }
 
@@ -143,7 +199,36 @@ export function ProfileManagementPanel({ profiles }: Props) {
       return;
     }
 
+    updateForm({ usePresetAvatar: false });
     setMessage("Photo de profil importée.");
+    router.refresh();
+  }
+
+  async function uploadCover(event: ChangeEvent<HTMLInputElement>) {
+    if (!selectedProfile) return;
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(`/api/profiles/${encodeURIComponent(selectedProfile.profile_id)}/cover`, {
+      method: "POST",
+      body: formData
+    });
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    setIsSaving(false);
+
+    if (!response.ok) {
+      setError(body.error || "Import de la couverture impossible.");
+      return;
+    }
+
+    setMessage("Photo de couverture mise à jour.");
     router.refresh();
   }
 
@@ -156,7 +241,7 @@ export function ProfileManagementPanel({ profiles }: Props) {
     const response = await fetch(`/api/profiles/${encodeURIComponent(selectedProfile.profile_id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ removeCustomAvatar: true })
+      body: JSON.stringify({ removeCustomAvatar: true, avatarId: 1, usePresetAvatar: true })
     });
     const body = (await response.json().catch(() => ({}))) as { error?: string };
     setIsSaving(false);
@@ -166,17 +251,108 @@ export function ProfileManagementPanel({ profiles }: Props) {
       return;
     }
 
+    updateForm({ avatarId: 1, usePresetAvatar: true });
     setMessage("Photo personnalisée retirée.");
     router.refresh();
   }
 
+  async function removeCover() {
+    if (!selectedProfile) return;
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+
+    const response = await fetch(`/api/profiles/${encodeURIComponent(selectedProfile.profile_id)}/cover`, {
+      method: "DELETE"
+    });
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    setIsSaving(false);
+
+    if (!response.ok) {
+      setError(body.error || "Suppression de la couverture impossible.");
+      return;
+    }
+
+    setMessage("Photo de couverture supprimée.");
+    router.refresh();
+  }
+
+  function handleTmdbSearch(q: string) {
+    setTmdbQuery(q);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (q.trim().length < 2) {
+      setTmdbResults([]);
+      setTmdbSearching(false);
+      return;
+    }
+    setTmdbSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/web/search?q=${encodeURIComponent(q.trim())}`);
+        const data = await res.json();
+        setTmdbResults(data.results || []);
+      } catch (_) {
+        setTmdbResults([]);
+      } finally {
+        setTmdbSearching(false);
+      }
+    }, 300);
+  }
+
+  async function applyTmdbImage(url: string) {
+    if (!selectedProfile || !url) return;
+    setIsSaving(true);
+    setError(null);
+    setMessage(null);
+    setTmdbModalOpen(false);
+
+    if (tmdbTarget === "avatar") {
+      const response = await fetch(`/api/profiles/${encodeURIComponent(selectedProfile.profile_id)}/avatar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tmdbPosterUrl: url })
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      setIsSaving(false);
+      if (!response.ok) {
+        setError(body.error || "Application du poster TMDB impossible.");
+        return;
+      }
+      updateForm({ usePresetAvatar: false });
+      setMessage("Poster TMDB appliqué comme avatar !");
+      router.refresh();
+    } else {
+      // Cover mode
+      const formData = new FormData();
+      formData.append("tmdbUrl", url);
+      const response = await fetch(`/api/profiles/${encodeURIComponent(selectedProfile.profile_id)}/cover`, {
+        method: "POST",
+        body: formData
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      setIsSaving(false);
+      if (!response.ok) {
+        setError(body.error || "Application de la couverture TMDB impossible.");
+        return;
+      }
+      setMessage("Fond TMDB appliqué comme couverture !");
+      router.refresh();
+    }
+  }
+
+  const selectedAvatarSrc = form.usePresetAvatar && form.avatarId > 0
+    ? `/assets/avatars/avatar_${form.avatarId}.png`
+    : getAvatarSrc(selectedProfile);
+
+  const selectedCoverSrc = selectedProfile.cover_value?.trim() || null;
+
   return (
     <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+      {/* Profile selector left list */}
       <div className="space-y-3">
         {profiles.map((profile) => {
           const active = profile.profile_id === selectedProfile.profile_id;
-          const itemForm = active ? form : formByProfileId[profile.profile_id] || profileToForm(profile);
-          const displayAvatarId = itemForm.avatarId;
+          const avatarSrc = getAvatarSrc(profile);
           return (
             <button
               key={profile.profile_id}
@@ -188,176 +364,291 @@ export function ProfileManagementPanel({ profiles }: Props) {
               }}
               className={clsx("mega-profile-row focus-ring", active && "is-active")}
             >
-              <PresetAvatarCircle
-                key={`${profile.profile_id}-${displayAvatarId}`}
-                avatarId={displayAvatarId}
-                size="lg"
-                label={profile.name || "Profil MegaTv"}
-              />
-              <span className="min-w-0 flex-1">
+              <div className="relative h-12 w-12 shrink-0 rounded-full overflow-hidden border border-white/15 bg-white/10 flex items-center justify-center">
+                {avatarSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarSrc} alt={profile.name || "Profil"} className="h-full w-full object-cover" />
+                ) : (
+                  <PresetAvatarCircle
+                    avatarId={profile.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1}
+                    size="md"
+                    label={profile.name || "Profil"}
+                  />
+                )}
+              </div>
+              <span className="min-w-0 flex-1 text-left">
                 <span className="block truncate text-sm font-bold text-[var(--mega-text)]">{profile.name || "Profil MegaTv"}</span>
                 <span className="mt-1 block truncate text-xs text-[var(--mega-text-faint)]">
                   {profile.is_kids_profile ? "Profil enfant" : "Profil adulte"}
                   {profile.is_locked ? " · PIN actif" : ""}
                 </span>
               </span>
-              {active ? <Check className="h-5 w-5 text-[var(--brand-blue)]" /> : null}
+              {active ? <Check className="h-5 w-5 text-[var(--brand-blue)] shrink-0" /> : null}
             </button>
           );
         })}
       </div>
 
-      <form onSubmit={submit} className="mega-surface mega-surface-elevated rounded-[26px] p-4 sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <PresetAvatarCircle avatarId={form.avatarId} size="xl" label={selectedProfile.name || "Profil MegaTv"} />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Profil sélectionné</p>
-            <h3 className="mt-1 truncate text-2xl font-black text-white">{selectedProfile.name || "Profil MegaTv"}</h3>
-            <p className="mt-1 text-sm text-white/45">Avatars MegaTv, mode Kids et PIN synchronisés avec l&apos;application.</p>
-            {(selectedProfile.avatar_image_version || 0) > 0 && (selectedProfile.avatar_id || 0) > 0 ? (
-              <p className="mt-2 rounded-xl border border-yellow-300/20 bg-yellow-300/8 px-3 py-2 text-xs text-yellow-100">
-                Ancienne photo personnalisée détectée — cliquez Enregistrer pour basculer sur l&apos;avatar MegaTv.
+      {/* Profile edit pane right */}
+      <form onSubmit={submit} className="mega-surface mega-surface-elevated rounded-[26px] overflow-hidden">
+        {/* Cover Photo Header */}
+        <div className="relative w-full h-36 sm:h-44 bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 overflow-hidden border-b border-white/10">
+          {selectedCoverSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selectedCoverSrc} alt="Couverture" className="w-full h-full object-cover opacity-60" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white/20 text-xs font-semibold uppercase tracking-wider">
+              Aucune couverture configurée
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#10131b] via-[#10131b]/40 to-transparent" />
+
+          {/* Cover management action buttons top right */}
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+            <button
+              type="button"
+              onClick={() => {
+                setTmdbTarget("cover");
+                setTmdbModalOpen(true);
+              }}
+              className="px-2.5 py-1.5 rounded-full text-xs font-semibold bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border border-white/15 flex items-center gap-1.5 transition-colors"
+            >
+              <Film size={12} className="text-indigo-400" />
+              <span>Cover TMDB</span>
+            </button>
+            <label className="cursor-pointer px-2.5 py-1.5 rounded-full text-xs font-semibold bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border border-white/15 flex items-center gap-1.5 transition-colors">
+              <Camera size={12} className="text-teal-400" />
+              <span>Importer</span>
+              <input type="file" accept="image/*" onChange={uploadCover} className="hidden" />
+            </label>
+            {selectedCoverSrc && (
+              <button
+                type="button"
+                onClick={removeCover}
+                title="Supprimer la couverture"
+                className="p-1.5 rounded-full text-xs font-semibold bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-colors"
+              >
+                <Trash2 size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Avatar on top of cover */}
+          <div className="absolute bottom-3 left-4 sm:left-6 flex items-end gap-3 z-10">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-white/80 shadow-2xl bg-black/50 shrink-0">
+              {selectedAvatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedAvatarSrc} alt={selectedProfile.name || "Profil"} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-bold text-white text-xl">
+                  {selectedProfile.name?.[0] || "P"}
+                </div>
+              )}
+            </div>
+            <div className="pb-1">
+              <h3 className="truncate text-xl sm:text-2xl font-black text-white drop-shadow-md">
+                {selectedProfile.name || "Profil MegaTv"}
+              </h3>
+              <p className="text-xs text-white/70 drop-shadow">
+                {selectedProfile.is_kids_profile ? "Profil Enfant" : "Profil Adulte"}
               </p>
-            ) : null}
+            </div>
           </div>
         </div>
 
-        <label className="mt-6 block">
-          <span className="text-sm font-semibold text-white/70">Nom du profil</span>
-          <input
-            value={form.name}
-            onChange={(event) => updateForm({ name: event.target.value })}
-            maxLength={60}
-            className="focus-ring mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-black/22 px-4 text-sm font-semibold text-white outline-none placeholder:text-white/28"
-            placeholder="Nom du profil"
-          />
-        </label>
+        <div className="p-4 sm:p-6 space-y-6">
+          {/* Avatar action buttons */}
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-white/40 block mb-2">Photo de profil</span>
+            <div className="flex items-center flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTmdbTarget("avatar");
+                  setTmdbModalOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/10 flex items-center gap-1.5 transition-colors"
+              >
+                <Film size={13} className="text-indigo-400" />
+                <span>Poster TMDB</span>
+              </button>
+              <label className="cursor-pointer px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/10 flex items-center gap-1.5 transition-colors">
+                <Camera size={13} className="text-emerald-400" />
+                <span>Importer une photo</span>
+                <input type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
+              </label>
+              {((selectedProfile.avatar_image_version || 0) > 0 || selectedProfile.avatar_image_storage_path) && (
+                <button
+                  type="button"
+                  onClick={removeCustomAvatar}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 flex items-center gap-1.5 transition-colors"
+                >
+                  <RotateCcw size={13} />
+                  <span>Réinitialiser</span>
+                </button>
+              )}
+            </div>
+          </div>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/18 p-4">
-          <label className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-sm font-semibold text-white/70">
-              <Baby className="h-4 w-4" />
-              Profil Kids
-            </span>
+          <label className="block">
+            <span className="text-sm font-semibold text-white/70">Nom du profil</span>
             <input
-              type="checkbox"
-              checked={form.isKidsProfile}
-              onChange={(event) => updateForm({ isKidsProfile: event.target.checked })}
-              className="h-5 w-5 rounded border-white/20 bg-black/30"
+              value={form.name}
+              onChange={(event) => updateForm({ name: event.target.value })}
+              maxLength={60}
+              className="focus-ring mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-black/22 px-4 text-sm font-semibold text-white outline-none placeholder:text-white/28"
+              placeholder="Nom du profil"
             />
           </label>
-          <p className="mt-2 text-xs leading-5 text-white/42">Active le filtrage contenu enfant côté MegaTv, comme dans l&apos;app Android.</p>
-        </div>
 
-        <div className="mt-6">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
-            <Sparkles className="h-4 w-4" />
-            Avatars MegaTv
-          </div>
-          {AVATAR_REGISTRY.categories.map((category) => (
-            <div key={category.label} className="mb-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/35">{category.label}</p>
-              <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
-                {category.ids.map((avatarId) => {
-                  const active = form.avatarId === avatarId;
-                  return (
-                    <button
-                      key={avatarId}
-                      type="button"
-                      onClick={() => updateForm({ avatarId })}
-                      className={clsx(
-                        "focus-ring relative aspect-square max-h-12 max-w-12 overflow-hidden rounded-full border p-0.5 transition sm:max-h-14 sm:max-w-14",
-                        active ? "border-white scale-105" : "border-white/10 hover:border-white/35"
-                      )}
-                      style={{ background: avatarGradientCss(avatarId) }}
-                      aria-label={`Avatar ${avatarId}`}
-                    >
-                      <NextImage src={avatarAssetPath(avatarId)} alt="" width={48} height={48} className="h-full w-full rounded-full object-cover" />
-                      {active ? (
-                        <span className="absolute inset-0 grid place-items-center rounded-full bg-black/32">
-                          <Check className="h-4 w-4 text-white" />
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/18 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-white/70">
-            <KeyRound className="h-4 w-4" />
-            Code PIN
-          </div>
-          <p className="mt-1 text-xs leading-5 text-white/42">4 ou 5 chiffres, identique au format MegaTv Android.</p>
-          {selectedProfile.is_locked ? (
-            <label className="mt-3 block">
-              <span className="text-xs text-white/45">PIN actuel</span>
+          <div className="rounded-2xl border border-white/10 bg-black/18 p-4">
+            <label className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-semibold text-white/70">
+                <Baby className="h-4 w-4 text-amber-400" />
+                Profil Kids
+              </span>
               <input
-                value={form.currentPin}
-                onChange={(event) => updateForm({ currentPin: formatPinInput(event.target.value) })}
-                inputMode="numeric"
-                className="focus-ring mt-1 min-h-11 w-full rounded-2xl border border-white/10 bg-black/22 px-4 text-sm font-semibold text-white outline-none"
-                placeholder="••••"
+                type="checkbox"
+                checked={form.isKidsProfile}
+                onChange={(event) => updateForm({ isKidsProfile: event.target.checked })}
+                className="h-5 w-5 rounded border-white/20 bg-black/30"
               />
             </label>
-          ) : null}
-          <label className="mt-3 block">
-            <span className="text-xs text-white/45">{selectedProfile.is_locked ? "Nouveau PIN" : "Définir un PIN"}</span>
-            <input
-              value={form.pin}
-              onChange={(event) => updateForm({ pin: formatPinInput(event.target.value), removePin: false })}
-              inputMode="numeric"
-              className="focus-ring mt-1 min-h-11 w-full rounded-2xl border border-white/10 bg-black/22 px-4 text-sm font-semibold text-white outline-none"
-              placeholder="1234"
-            />
-          </label>
-          {selectedProfile.is_locked ? (
-            <label className="mt-3 flex items-center gap-2 text-sm text-white/60">
-              <input type="checkbox" checked={form.removePin} onChange={(event) => updateForm({ removePin: event.target.checked, pin: "" })} />
-              Supprimer le PIN
-            </label>
-          ) : null}
-        </div>
+            <p className="mt-2 text-xs leading-5 text-white/42">Active le filtrage contenu enfant côté MegaTv, comme dans l&apos;app Android.</p>
+          </div>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/18 p-4">
-          <p className="text-sm font-semibold text-white/70">Photo personnalisée</p>
-          <p className="mt-1 text-xs leading-5 text-white/42">Import JPG, PNG ou WebP. Recadrage carré 512×512 avant stockage Supabase.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <label className="focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-white inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.055] px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/24 hover:bg-white/[0.09]">
-              <Camera className="h-4 w-4" />
-              Importer
-              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadAvatar} className="sr-only" disabled={isSaving} />
-            </label>
-            {(selectedProfile.avatar_image_version || 0) > 0 ? (
-              <MegaButton type="button" variant="ghost" onClick={removeCustomAvatar} disabled={isSaving}>
-                <RotateCcw className="h-4 w-4" />
-                Retirer la photo
-              </MegaButton>
-            ) : null}
+          {/* Preset MegaTv Avatars */}
+          <div>
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/70">
+              <Sparkles className="h-4 w-4 text-purple-400" />
+              Avatars Officiels MegaTv
+            </div>
+            {AVATAR_REGISTRY.categories.map((category) => (
+              <div key={category.label} className="mb-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/35">{category.label}</p>
+                <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+                  {category.ids.map((avatarId) => {
+                    const selected = form.usePresetAvatar && form.avatarId === avatarId;
+                    return (
+                      <button
+                        key={avatarId}
+                        type="button"
+                        onClick={() => updateForm({ avatarId, usePresetAvatar: true })}
+                        className={clsx(
+                          "relative rounded-full p-0.5 transition-transform hover:scale-110",
+                          selected ? "ring-2 ring-white scale-105" : "opacity-80 hover:opacity-100"
+                        )}
+                      >
+                        <PresetAvatarCircle avatarId={avatarId} size="md" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Feedback messages */}
+          {error && <p className="text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">{error}</p>}
+          {message && <p className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">{message}</p>}
+
+          <div className="flex justify-end pt-2">
+            <MegaButton type="submit" disabled={isSaving} className="min-w-32">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <span>{isSaving ? "Enregistrement..." : "Enregistrer"}</span>
+            </MegaButton>
           </div>
         </div>
-
-        {message ? <p className="mt-4 rounded-2xl border border-emerald-300/20 bg-emerald-300/8 px-4 py-3 text-sm text-emerald-100">{message}</p> : null}
-        {error ? <p className="mt-4 rounded-2xl border border-red-300/20 bg-red-500/8 px-4 py-3 text-sm text-red-100">{error}</p> : null}
-
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
-          <MegaButton type="submit" disabled={isSaving}>
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Enregistrer
-          </MegaButton>
-        </div>
       </form>
+
+      {/* TMDB Search Modal for Poster / Cover Picker */}
+      {tmdbModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-2xl max-h-[85vh] rounded-3xl bg-[#141622] border border-white/12 shadow-[0_25px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden text-white">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <Film className="h-5 w-5 text-indigo-400" />
+                <h3 className="text-base font-bold">
+                  {tmdbTarget === "avatar" ? "Choisir un poster TMDB (Avatar)" : "Choisir un fond TMDB (Couverture)"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTmdbModalOpen(false)}
+                className="p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Search Input */}
+            <div className="p-4 border-b border-white/8 bg-black/20">
+              <div className="relative flex items-center">
+                <Search size={16} className="absolute left-3.5 text-white/40" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={tmdbQuery}
+                  onChange={(e) => handleTmdbSearch(e.target.value)}
+                  placeholder="Rechercher un film ou une série (ex: Supergirl, Dune, Arcane...)"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/8 border border-white/10 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+                {tmdbSearching && <Loader2 size={16} className="absolute right-3.5 animate-spin text-white/40" />}
+              </div>
+            </div>
+
+            {/* Results Grid */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              {tmdbResults.length === 0 ? (
+                <div className="text-center py-12 text-white/40 text-sm">
+                  {tmdbQuery.trim().length < 2 ? "Tapez au moins 2 caractères pour rechercher sur TMDB." : "Aucun résultat trouvé."}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {tmdbResults.map((item) => {
+                    const pickedUrl = tmdbTarget === "avatar"
+                      ? (item.posterUrl || item.backdropUrl)
+                      : (item.backdropUrl || item.posterUrl);
+                    if (!pickedUrl) return null;
+                    return (
+                      <button
+                        key={`${item.mediaType}-${item.tmdbId}`}
+                        type="button"
+                        onClick={() => applyTmdbImage(pickedUrl)}
+                        className="group relative rounded-xl overflow-hidden border border-white/10 bg-black/40 text-left transition-all hover:scale-[1.03] hover:border-indigo-400 focus:outline-none"
+                      >
+                        <div className={clsx("w-full bg-[#0a0c14] overflow-hidden", tmdbTarget === "avatar" ? "aspect-[2/3]" : "aspect-[16/9]")}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={pickedUrl}
+                            alt={item.title}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="p-2">
+                          <p className="text-xs font-semibold text-white truncate">{item.title}</p>
+                          <p className="text-[10px] text-white/40">{item.subtitle || item.mediaType.toUpperCase()}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function profileToForm(profile: ProfileRow): ProfileFormState {
+  const hasCustom = (profile.avatar_image_version || 0) > 0 || Boolean(profile.avatar_image_storage_path);
   return {
     name: profile.name || "Profil",
-    avatarId: profile.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : AVATAR_REGISTRY.allIds[0] || 1,
+    avatarId: profile.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1,
+    usePresetAvatar: !hasCustom && Boolean(profile.avatar_id && profile.avatar_id > 0),
     isKidsProfile: Boolean(profile.is_kids_profile),
     pin: "",
     currentPin: "",

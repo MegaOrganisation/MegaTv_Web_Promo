@@ -30,16 +30,27 @@ const avatarPixelSizes = {
 export function ProfileAvatar({ profile, avatarUrl, size = "md", className, label, preferPreset = false }: Props) {
   const resolvedLabel = label || profile?.name || "Profil MegaTv";
   const avatarId = profile?.avatar_id && profile.avatar_id > 0 ? profile.avatar_id : 1;
-  const hasCustomImage =
-    !preferPreset &&
-    (profile?.avatar_id || 0) === 0 &&
-    Boolean(avatarUrl && (profile?.avatar_image_version || 0) > 0);
 
-  if (hasCustomImage) {
+  const storagePath = profile?.avatar_image_storage_path?.trim();
+  const customSrc = !preferPreset ? (
+    avatarUrl ||
+    (storagePath && (storagePath.startsWith("http://") || storagePath.startsWith("https://")) ? storagePath : null) ||
+    (profile?.profile_id && (storagePath || (profile?.avatar_image_version || 0) > 0)
+      ? `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`
+      : null)
+  ) : null;
+
+  const hasCustomImage = Boolean(
+    customSrc &&
+    !customSrc.includes("/assets/avatars/avatar_") &&
+    (profile?.avatar_id === 0 || Boolean(storagePath) || Boolean((profile?.avatar_image_version || 0) > 0) || Boolean(avatarUrl))
+  );
+
+  if (hasCustomImage && customSrc) {
     return (
       <span className={clsx("relative inline-grid shrink-0 overflow-hidden rounded-full border border-white/15 bg-white/10", sizeClasses[size], className)}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URLs are private and already fixed-size avatar thumbnails. */}
-        <img src={avatarUrl || ""} alt={resolvedLabel} className="h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={customSrc} alt={resolvedLabel} className="h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
       </span>
     );
   }

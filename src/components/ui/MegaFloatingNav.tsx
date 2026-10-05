@@ -55,14 +55,15 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
         if (!profileContext?.profiles?.length) {
           try {
             const { data } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("account_id", user.id)
-              .order("created_at", { ascending: true });
+              .from("user_profiles")
+              .select("id, user_id, name, avatar_color, avatar_id, avatar_image_version, avatar_image_storage_path, is_kids_profile, pin, is_locked, last_used_at, cover_type, cover_value")
+              .eq("user_id", user.id)
+              .order("last_used_at", { ascending: false, nullsFirst: false });
             if (data && data.length > 0) {
-              setFallbackProfiles(data);
+              const mapped = (data as any[]).map((p) => ({ ...p, profile_id: p.id }));
+              setFallbackProfiles(mapped);
               const storedId = localStorage.getItem("megacompanion_active_profile_id");
-              setFallbackActiveProfileId(storedId || data[0].profile_id);
+              setFallbackActiveProfileId(storedId || mapped[0].profile_id);
             }
           } catch (_) {}
         }
@@ -123,23 +124,42 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
 
   const displayName = effectiveActiveProfile?.name || (userEmail ? userEmail.split("@")[0] : "Mon Compte");
 
+  const getProfileAvatarSrc = (profile: any) => {
+    if (!profile) return null;
+    if (profileAvatarUrls[profile.profile_id]) {
+      return profileAvatarUrls[profile.profile_id];
+    }
+    if ((profile.avatar_image_version || 0) > 0 || profile.avatar_image_storage_path) {
+      const p = profile.avatar_image_storage_path?.trim();
+      if (p && (p.startsWith("http://") || p.startsWith("https://"))) return p;
+      return `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`;
+    }
+    if (profile.avatar_id && profile.avatar_id > 0) {
+      const num = Math.min(Math.max(profile.avatar_id, 1), 25);
+      return `/assets/avatars/avatar_${num}.png`;
+    }
+    return null;
+  };
+
+  const activeAvatarSrc = getProfileAvatarSrc(effectiveActiveProfile);
+
   return (
-    <header className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] max-w-[96vw]">
-      <div className="flex items-center gap-1.5 sm:gap-3 px-3 py-1.5 rounded-full bg-[#12141c]/80 dark:bg-[#12141c]/90 light:bg-white/90 backdrop-blur-2xl border border-white/10 dark:border-white/12 shadow-[0_16px_40px_rgba(0,0,0,0.55)] transition-all">
+    <header className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] max-w-[96vw]">
+      <div className="flex items-center gap-2 sm:gap-4 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#12141c]/85 dark:bg-[#12141c]/90 light:bg-white/90 backdrop-blur-2xl border border-white/12 dark:border-white/14 shadow-[0_18px_45px_rgba(0,0,0,0.6)] transition-all">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 pl-1 pr-2 hover:opacity-90 transition-opacity">
-          <MegaTvMark size={24} />
+        <Link href="/" className="flex items-center gap-2.5 pl-1 pr-2 hover:opacity-90 transition-opacity">
+          <MegaTvMark size={28} />
           <span className="font-bold tracking-tight text-sm sm:text-base text-white">MegaTv</span>
         </Link>
 
         {/* Center Pill Nav Links */}
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1 sm:gap-1.5">
           <Link
             href="/"
             className={clsx(
-              "px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all",
+              "px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all",
               activeTab === "home"
-                ? "bg-white text-black shadow-sm"
+                ? "bg-white text-black shadow-sm font-bold"
                 : "text-white/70 hover:text-white hover:bg-white/5"
             )}
           >
@@ -148,9 +168,9 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/premium"
             className={clsx(
-              "px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all",
+              "px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all",
               activeTab === "premium"
-                ? "bg-white text-black shadow-sm"
+                ? "bg-white text-black shadow-sm font-bold"
                 : "text-white/70 hover:text-white hover:bg-white/5"
             )}
           >
@@ -159,9 +179,9 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/companion"
             className={clsx(
-              "px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all",
+              "px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all",
               activeTab === "companion"
-                ? "bg-white text-black shadow-sm"
+                ? "bg-white text-black shadow-sm font-bold"
                 : "text-white/70 hover:text-white hover:bg-white/5"
             )}
           >
@@ -170,14 +190,14 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
         </nav>
 
         {/* Right Section: Theme Toggle + Profile / Login */}
-        <div className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 border-l border-white/10">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 pl-1.5 sm:pl-3 border-l border-white/10">
           <button
             type="button"
             onClick={toggleTheme}
             aria-label="Changer de thème"
-            className="p-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/8 transition-colors"
+            className="p-2 rounded-full text-white/60 hover:text-white hover:bg-white/8 transition-colors"
           >
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           {/* User Profile or Login Button */}
@@ -186,17 +206,17 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
               <button
                 type="button"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 rounded-full hover:bg-white/8 transition-colors"
+                className="flex items-center gap-2 px-2.5 py-1 rounded-full hover:bg-white/8 transition-colors"
               >
-                {effectiveActiveProfile?.avatar_id && profileAvatarUrls[effectiveActiveProfile.profile_id] ? (
+                {activeAvatarSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={profileAvatarUrls[effectiveActiveProfile.profile_id]}
+                    src={activeAvatarSrc}
                     alt={displayName}
-                    className="w-6 h-6 rounded-full object-cover ring-1 ring-white/20"
+                    className="w-7 h-7 rounded-full object-cover ring-1.5 ring-white/25 shrink-0 shadow-sm"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-[10px] font-bold text-white uppercase ring-1 ring-white/20">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-[11px] font-bold text-white uppercase ring-1.5 ring-white/25 shrink-0">
                     {displayName[0] || "U"}
                   </div>
                 )}
@@ -222,6 +242,7 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
                       <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">Changer de profil</p>
                       {effectiveProfiles.map((p) => {
                         const isCurrent = p.profile_id === effectiveActiveProfile?.profile_id;
+                        const pAvatar = getProfileAvatarSrc(p);
                         return (
                           <button
                             key={p.profile_id}
@@ -242,8 +263,18 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
                               isCurrent ? "bg-white/10 text-white font-semibold" : "text-white/70 hover:bg-white/5 hover:text-white"
                             )}
                           >
-                            <span className="truncate">{p.name}</span>
-                            {isCurrent && <Check size={13} className="text-emerald-400" />}
+                            <div className="flex items-center gap-2 min-w-0">
+                              {pAvatar ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={pAvatar} alt="" className="w-5 h-5 rounded-full object-cover ring-1 ring-white/20 shrink-0" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+                                  {p.name?.[0] || "U"}
+                                </div>
+                              )}
+                              <span className="truncate">{p.name}</span>
+                            </div>
+                            {isCurrent && <Check size={13} className="text-emerald-400 shrink-0" />}
                           </button>
                         );
                       })}

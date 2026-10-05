@@ -101,29 +101,44 @@ function toggleLang(){ applyLang(currentLang === 'fr' ? 'en' : 'fr'); }
 window.toggleLang = toggleLang;
 
 /* ---------- THEME ---------- */
-// The Tweaks panel is the single source of truth for theme (it re-applies
-// data-theme on every render). The nav button just requests a flip; the
-// Tweaks app listens and updates its state. Fallback to direct toggle if
-// the Tweaks panel hasn't mounted.
 function setThemeIcon(theme){
   const icon = document.getElementById('theme-icon');
   if(!icon) return;
-  icon.innerHTML = theme === 'dark'
-    ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
-    : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2"/>';
-}
-function toggleTheme(){
-  if(window.__tweaksReady){
-    window.dispatchEvent(new Event('megatoggletheme'));
+  if(theme === 'dark'){
+    // Lucide Sun (15px) for dark mode
+    icon.innerHTML = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>';
   } else {
-    const html = document.documentElement;
-    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    document.body.setAttribute('data-theme', next);
-    setThemeIcon(next);
+    // Lucide Moon (15px) for light mode
+    icon.innerHTML = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
   }
 }
+function applyTheme(theme){
+  const html = document.documentElement;
+  html.setAttribute('data-theme', theme);
+  html.dataset.theme = theme;
+  html.style.colorScheme = theme;
+  document.body.setAttribute('data-theme', theme);
+  setThemeIcon(theme);
+}
+function toggleTheme(){
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try {
+    localStorage.setItem('megacompanion_theme', next);
+  } catch (_) {}
+}
 window.toggleTheme = toggleTheme;
+
+// Sync theme on start
+(function initTheme(){
+  let theme = 'dark';
+  try {
+    theme = localStorage.getItem('megacompanion_theme') || 'dark';
+  } catch (_) {}
+  applyTheme(theme);
+})();
 
 /* ---------- NAV scrolled state ---------- */
 const nav = document.querySelector('.nav');
@@ -273,32 +288,50 @@ if(track){ track.innerHTML += track.innerHTML; }
   } catch (_) { /* ignore */ }
 })();
 
-/* ---------- SCREEN PICKER TABS (ISO PJ 1) ---------- */
+/* ---------- SCREEN PICKER TABS (ISO NUVIO & MEGA PROMO) ---------- */
 const screenData = {
   mobile: {
-    title: "MegaTv pour Android et iPhone",
+    title: "MegaTv pour Smartphones et Tablettes Android",
     sub: "Parcourez, découvrez et lancez vos contenus en mobilité. Connectez votre compte cloud pour synchroniser votre bibliothèque et vos reprises entre tous vos écrans.",
     image: "assets/screen-home-mobile.jpg",
+    mockupType: "mode-phone",
     logos: `
-      <svg viewBox="0 0 24 24" fill="#3ddc84" style="width:28px;height:28px;"><path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/></svg>
-      <svg viewBox="0 0 24 24" fill="#fff" style="width:26px;height:26px;"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.79 1.06-1.88.94-2.97-1 .04-2.13.67-2.8 1.45-.58.67-1.09 1.76-.95 2.83 1.1.08 2.19-.57 2.81-1.31"/></svg>
+      <span class="platform-brand-badge" title="Android Mobile">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="#3DDC84"><path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/></svg>
+        <span>Android</span>
+      </span>
+      <span class="platform-brand-badge" title="Google Play Store">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg>
+        <span>Google Play</span>
+      </span>
     `,
     ctas: `
       <a href="/api/download/android" class="btn-spectrum">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 5 3.5z"/></svg>
-        <span>Android APK</span>
+        <span>Télécharger APK Mobile</span>
       </a>
-      <a href="#features" class="btn-ghost"><span>Google Play (Bientôt)</span></a>
+      <a href="#features" class="btn-ghost"><span>Google Play</span></a>
       <a href="/web" class="btn-ghost"><span>Web PWA</span></a>
     `
   },
   tv: {
-    title: "MegaTv pour Android TV & Fire TV",
-    sub: "Expérience grand écran pensée pour la télécommande. Hero immersif 4K, bascule ultra-fluide des flux IPTV, guide EPG direct et synchronisation des profils.",
+    title: "MegaTv pour Android TV, Google TV & Fire TV",
+    sub: "Expérience grand écran 100% pensée pour la télécommande. Hero immersif 4K HDR, zapping ultra-rapide des flux IPTV, guide EPG direct et synchronisation cloud instantanée.",
     image: "assets/tv-home-new.png",
+    mockupType: "mode-tv",
     logos: `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:28px;height:28px;"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 20h8"/><path d="M12 18v2"/></svg>
-      <svg viewBox="0 0 24 24" fill="#ff9900" style="width:26px;height:26px;"><path d="M17.9 2.318A5.006 5.006 0 0 0 12.9 0H5a5 5 0 0 0-5 5v14a5 5 0 0 0 5 5h7.9a5.006 5.006 0 0 0 5-4.318L19.2 12l-1.3-9.682zM17 12l-7 4V8l7 4z"/></svg>
+      <span class="platform-brand-badge" title="Android TV">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="3"/><path d="M8 21h8"/><path d="M12 18v3"/><circle cx="9" cy="11" r="1" fill="#3DDC84"/><circle cx="15" cy="11" r="1" fill="#3DDC84"/></svg>
+        <span>Android TV</span>
+      </span>
+      <span class="platform-brand-badge" title="Google TV">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
+        <span>Google TV</span>
+      </span>
+      <span class="platform-brand-badge" title="Amazon Fire TV">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#FF9900"><path d="M17.9 2.318A5.006 5.006 0 0 0 12.9 0H5a5 5 0 0 0-5 5v14a5 5 0 0 0 5 5h7.9a5.006 5.006 0 0 0 5-4.318L19.2 12l-1.3-9.682zM17 12l-7 4V8l7 4z"/></svg>
+        <span>Fire TV</span>
+      </span>
     `,
     ctas: `
       <a href="/api/download/android" class="btn-spectrum">
@@ -310,11 +343,18 @@ const screenData = {
   },
   web: {
     title: "MegaTv pour le Web & Ordinateur",
-    sub: "Accédez à l'ensemble de votre catalogue, vos flux TV en direct et votre progression directement depuis Google Chrome, Edge, Safari ou Firefox.",
+    sub: "Accédez à l'ensemble de votre catalogue, vos flux TV en direct et votre progression directement depuis Google Chrome, Edge, Safari, Firefox ou Internet Explorer.",
     image: "assets/web-screens/top10.png",
+    mockupType: "mode-web",
     logos: `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#3f9ae6" stroke-width="2" style="width:28px;height:28px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:26px;height:26px;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+      <span class="platform-brand-badge" title="Internet Explorer & Web Browsers">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.44 1.28 4.88-.17-.76-.28-1.57-.28-2.4 0-4.97 3.58-9 8-9 1.54 0 2.98.49 4.19 1.32C13.9 4.3 12.02 2 12 2zm9.72 5.12C20.61 4.7 17.5 3 13.5 3c-5.25 0-9.5 4.03-9.5 9 0 .61.08 1.2.2 1.77C2.88 12.87 2 11.02 2 9c0-3.31 4.03-6 9-6 4.13 0 7.6 1.87 8.68 4.45-.63-.44-1.3-.82-1.96-1.33zm-.72 4.88c0 4.97-4.03 9-9 9-2.02 0-3.87-.67-5.38-1.8 1.15.51 2.45.8 3.88.8 4.42 0 8-3.58 8-8 0-.34-.03-.67-.08-1 1.57.25 2.58.55 2.58 1zm-1.07-2c-.36-.48-.82-.9-1.35-1.25C17.65 9.4 16.14 10 14.5 10c-3.04 0-5.5-2.01-5.5-4.5 0-.4.07-.78.18-1.15-2.8 1.34-4.68 3.8-4.68 6.65 0 4.42 3.58 8 8 8 3.73 0 6.84-2.55 7.72-6H14v-2h5.93z" fill="#0078D7"/></svg>
+        <span>Internet Explorer</span>
+      </span>
+      <span class="platform-brand-badge" title="Navigateurs Web Modernes">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+        <span>Chrome / Safari / Edge</span>
+      </span>
     `,
     ctas: `
       <a href="/web" class="btn-spectrum">
@@ -337,10 +377,15 @@ function switchScreen(platform, btn) {
   const logosEl = document.getElementById('screen-card-logos');
   const ctasEl = document.getElementById('screen-card-ctas');
   const imgEl = document.getElementById('screen-card-img');
+  const frameEl = document.getElementById('screen-card-frame');
+
   if (titleEl) titleEl.textContent = d.title;
   if (subEl) subEl.textContent = d.sub;
   if (logosEl) logosEl.innerHTML = d.logos;
   if (ctasEl) ctasEl.innerHTML = d.ctas;
+  if (frameEl && d.mockupType) {
+    frameEl.className = 'screen-mockup-frame ' + d.mockupType;
+  }
   if (imgEl) {
     imgEl.style.opacity = '0';
     setTimeout(() => { imgEl.src = d.image; imgEl.style.opacity = '1'; }, 150);
@@ -351,14 +396,43 @@ window.switchScreen = switchScreen;
 /* ---------- AUTH USER SYNC FOR PROMO TOP BAR ---------- */
 (function checkUserAuth() {
   try {
-    sb.auth.getUser().then(({ data: { user } }) => {
+    sb.auth.getUser().then(async ({ data: { user } }) => {
       const authBtn = document.getElementById('promo-auth-btn');
       if (user && authBtn) {
-        const name = user.email ? user.email.split('@')[0] : 'Profil';
+        let avatarSrc = null;
+        let displayName = user.email ? user.email.split('@')[0] : 'Profil';
+
+        try {
+          const { data: profiles } = await sb
+            .from('user_profiles')
+            .select('id, name, avatar_id, avatar_image_version, avatar_image_storage_path')
+            .eq('user_id', user.id)
+            .order('last_used_at', { ascending: false, nullsFirst: false })
+            .limit(1);
+
+          if (profiles && profiles.length > 0) {
+            const p = profiles[0];
+            if (p.name) displayName = p.name;
+            const path = p.avatar_image_storage_path?.trim();
+            if (path && (path.startsWith('http://') || path.startsWith('https://'))) {
+              avatarSrc = path;
+            } else if (path || (p.avatar_image_version || 0) > 0) {
+              avatarSrc = `/api/profiles/${encodeURIComponent(p.id)}/avatar?v=${p.avatar_image_version || 1}`;
+            } else if (p.avatar_id && p.avatar_id > 0) {
+              const num = Math.min(Math.max(p.avatar_id, 1), 25);
+              avatarSrc = `/assets/avatars/avatar_${num}.png`;
+            }
+          }
+        } catch (_) {}
+
+        const avatarHtml = avatarSrc
+          ? `<img src="${avatarSrc}" alt="${displayName}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.35);box-shadow:0 2px 8px rgba(0,0,0,0.5);shrink:0;" />`
+          : `<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#3f9ae6,#d8497f);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">${displayName[0].toUpperCase()}</div>`;
+
         authBtn.innerHTML = `
-          <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#3f9ae6,#d8497f);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">${name[0].toUpperCase()}</div>
-          <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          ${avatarHtml}
+          <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;">${displayName}</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.6;"><polyline points="6 9 12 15 18 9"/></svg>
         `;
         authBtn.href = '/companion';
       }
@@ -366,8 +440,34 @@ window.switchScreen = switchScreen;
   } catch (_) {}
 })();
 
+/* ---------- COOKIE CONSENT BANNER (PJ 3) ---------- */
+function initCookieConsent() {
+  try {
+    const accepted = localStorage.getItem('megatv_cookie_consent');
+    const banner = document.getElementById('cookie-consent-banner');
+    if (!accepted && banner) {
+      banner.style.display = 'flex';
+      requestAnimationFrame(() => banner.classList.add('visible'));
+    }
+  } catch (_) {}
+}
+
+function acceptCookies() {
+  try {
+    localStorage.setItem('megatv_cookie_consent', 'true');
+  } catch (_) {}
+  const banner = document.getElementById('cookie-consent-banner');
+  if (banner) {
+    banner.classList.remove('visible');
+    setTimeout(() => { banner.style.display = 'none'; }, 300);
+  }
+}
+window.acceptCookies = acceptCookies;
+
 /* ---------- INIT ---------- */
 onNav();
 applyParallax();
 applyLang('fr');
+initCookieConsent();
+
 

@@ -7,7 +7,7 @@ import { getDashboardData } from "@/lib/dashboard/queries";
 export const dynamic = "force-dynamic";
 
 export default async function ManageProfilesPage() {
-  const { profiles } = await getDashboardData(null, { skipAvatarUrls: true });
+  const { profiles, profileAvatarUrlsById } = await getDashboardData(null);
 
   return (
     <GlassCard as="section">
@@ -18,11 +18,11 @@ export default async function ManageProfilesPage() {
         <div>
           <h2 className="mega-section-title">Profils cloud</h2>
           <p className="mega-section-sub">
-            Avatars MegaTv, photo personnalisée, Kids et PIN synchronisés avec l&apos;application.
+            Avatars MegaTv, photo personnalisée, couverture et Kids synchronisés avec l&apos;application.
           </p>
         </div>
       </div>
-      <ProfileManagementPanel profiles={profiles} />
+      <ProfileManagementPanel profiles={profiles} avatarUrls={profileAvatarUrlsById} />
     </GlassCard>
   );
 }

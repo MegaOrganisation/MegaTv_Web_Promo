@@ -10,6 +10,10 @@ export type ProfileRow = {
   is_locked: boolean | null;
   last_used_at: number | null;
   updated_at: string | null;
+  cover_type?: string | null;
+  cover_value?: string | null;
+  cover_version?: number | null;
+  cover_image_storage_path?: string | null;
 };
 
 export type DeviceRow = {

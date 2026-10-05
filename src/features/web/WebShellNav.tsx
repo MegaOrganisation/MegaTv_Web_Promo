@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
+import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
 import { ProfileAccentSync } from "@/features/web/ProfileAccentSync";
 import { RouteTransition, WebMotionProvider } from "@/features/web/RouteTransition";
 import { WebMobileHeader } from "@/features/web/WebMobileHeader";
@@ -56,7 +57,7 @@ function isActive(pathname: string, item: NavItem) {
 }
 
 function ProfileAvatarLink({ className, size = "sm" }: { className?: string; size?: "sm" | "md" | "lg" | "xl" }) {
-  const { activeProfile } = useWebProfile();
+  const { activeProfile, profileAvatarUrlsById } = useWebProfile();
   const dim =
     size === "xl" ? "h-24 w-24" : size === "lg" ? "h-16 w-16" : size === "md" ? "h-11 w-11" : "h-9 w-9";
 
@@ -67,7 +68,12 @@ function ProfileAvatarLink({ className, size = "sm" }: { className?: string; siz
       title="Changer de profil"
     >
       {activeProfile ? (
-        <PresetAvatarCircle avatarId={activeProfile.avatar_id || 1} size={size} label={activeProfile.name || "Profil"} />
+        <ProfileAvatar
+          profile={activeProfile}
+          avatarUrl={profileAvatarUrlsById[activeProfile.profile_id]}
+          size={size}
+          label={activeProfile.name || "Profil"}
+        />
       ) : (
         <span className={clsx("grid place-items-center rounded-full bg-[linear-gradient(135deg,#3f9ae6,#d8497f)] text-white", dim)}>
           <UsersRound className="h-4 w-4" />
