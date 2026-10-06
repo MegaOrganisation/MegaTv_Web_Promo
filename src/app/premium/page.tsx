@@ -11,7 +11,48 @@ export const metadata: Metadata = {
 
 export default function PremiumPage() {
   return (
-    <div className="min-h-screen bg-[#07080c] text-[#eef1f7] flex flex-col items-center">
+    <div className="relative min-h-screen overflow-hidden text-[#F1F0F4] flex flex-col items-center" style={{ background: "#10191C" }}>
+      <div className="pointer-events-none fixed inset-0" aria-hidden>
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: "60vw",
+            height: "60vw",
+            top: "-22vw",
+            left: "-12vw",
+            background: "radial-gradient(circle, rgba(63,154,230,0.55), transparent 65%)",
+            filter: "blur(90px)",
+            opacity: 0.22,
+            mixBlendMode: "screen"
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: "55vw",
+            height: "55vw",
+            top: "30vh",
+            right: "-18vw",
+            background: "radial-gradient(circle, rgba(216,73,127,0.45), transparent 65%)",
+            filter: "blur(90px)",
+            opacity: 0.22,
+            mixBlendMode: "screen"
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: "48vw",
+            height: "48vw",
+            top: "70vh",
+            left: "20vw",
+            background: "radial-gradient(circle, rgba(31,168,160,0.4), transparent 65%)",
+            filter: "blur(90px)",
+            opacity: 0.18,
+            mixBlendMode: "screen"
+          }}
+        />
+      </div>
       {/* Top Floating Pill Bar (ISO Nuvio) */}
       <MegaFloatingNav currentTab="premium" />
 

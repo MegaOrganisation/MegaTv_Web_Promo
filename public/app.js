@@ -11,94 +11,150 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ---------- MOTION (driven by Tweaks) ---------- */
 window.MegaMotion = { parallax: 0.7, tilt: 0.7 };
 
-/* ---------- I18N ---------- */
+/* ---------- I18N & MULTI-CURRENCY ---------- */
 const i18n = {
   fr: {
-    "nav.features":"Fonctionnalités","nav.pricing":"Tarifs","nav.access":"Accès","nav.login":"Se connecter","nav.pro":"Passer Pro",
-    "eco.eyebrow":"Écosystème MegaTv","eco.title":"Tous vos espaces, un seul univers.","eco.sub":"Découvrir MegaTv, connexion cloud, Companion, app web et Android — chaque porte mène au bon endroit.",
-    "eco.discover":"Découvrir MegaTv","eco.discover.sub":"Fonctionnalités, écrans TV & mobile, formules — l'univers produit.","eco.discover.cta":"Explorer →",
-    "eco.auth":"Connexion Cloud","eco.auth.sub":"ID MegaTv — login, inscription et pairing TV sécurisé.","eco.auth.cta":"Se connecter →",
-    "eco.companion":"MegaCompagnon","eco.companion.sub":"Dashboard cloud : stats, profils, appareils, calendrier.","eco.companion.cta":"Ouvrir Companion →",
-    "eco.web":"Application Web","eco.web.sub":"Films, séries et IPTV dans le navigateur — même compte cloud.","eco.web.cta":"Lancer l'app web →",
-    "eco.android":"App Android","eco.android.sub":"Android TV · Mobile · Fire TV — APK toujours à jour (dernière release).","eco.android.cta":"Télécharger l'APK →",
-    "hero.badge":"Disponible sur Android TV · Mobile · Fire TV",
-    "hero.sub":"Une application, toutes vos sources. Regardez ce que vous voulez, où que vous soyez, sur tous vos écrans.",
-    "hero.cta1":"Télécharger gratuitement","hero.cta2":"Découvrir","hero.ctaWeb":"Accéder à MegaTv",
-    "m.films":"Films & Séries","m.iptv":"TV en Direct IPTV","m.android":"Android TV","m.firetv":"Fire TV Stick","m.mobile":"Mobile","m.sync":"Sync Multi-Appareils","m.profiles":"Profils Familiaux","m.ai":"Sous-titres IA",
-    "platforms.label":"Disponible sur",
-    "feat.eyebrow":"Tout ce qu'il vous faut","feat.title":"Une app.\nUn univers complet.","feat.sub":"Du contenu à la demande jusqu'aux chaînes live, tout est centralisé dans une interface premium.",
-    "f1.title":"Lecteur Vidéo Premium","f1.desc":"ExoPlayer / Media3 haute performance. Sélecteur de sources intelligent, lecture automatique, framerate matching, pistes audio multiples et sous-titres IA en temps réel.",
-    "f2.title":"Accueil Personnalisé","f2.desc":"Hero avec bande-annonce, Top 10 du jour, rails thématiques par genre, service, décennie. Reprise là où vous vous êtes arrêté.",
-    "f3.title":"TV en Direct IPTV","f3.desc":"Playlists M3U et Xtream, guide des programmes (EPG), favoris, dizaines de milliers de chaînes, logos optimisés, VOD IPTV.",
-    "f4.title":"Vos Bibliothèques","f4.desc":"Connectez Plex, Jellyfin et Emby. Addons Stremio, catalogues Trakt & MDBList, URLs personnalisées.",
-    "f5.title":"Sync Cloud Temps Réel","f5.desc":"MegaTv Cloud synchronise vos profils, réglages, progressions et watchlists entre tous vos appareils.",
-    "f6.title":"Watchlist Avancée","f6.desc":"Ma liste avec filtres poussés : vu/non vu, genre, année, note. Anti-spoilers avec flou. Sync Trakt.",
-    "sc.eyebrow":"Interface Premium","sc.title":"Conçu pour\nchaque écran","sc.detail":"Fiche Détail","sc.search":"Recherche","sc.live":"TV en Direct","sc.watchlist":"Watchlist","sc.player":"Lecteur",
-    "tv.eyebrow":"Optimisé pour Android TV","tv.title":"Grand écran,\ngrande expérience.","tv.sub":"Interface navigable à la télécommande, Hero immersif, guide des programmes en temps réel.",
-    "sc.home":"Accueil","tv.episodes":"Acteurs",
-    "prof.eyebrow":"Pour toute la famille","prof.title":"Un profil pour chacun.","prof.sub":"Profils multiples avec avatar, couleur personnalisée et PIN. Profil enfants avec filtre contenu mature.",
-    "prof.f1":"Jusqu'à 5 profils par compte","prof.f2":"PIN de protection + filtre contenu adulte","prof.f3":"Avatar personnalisé synchronisé dans le cloud","prof.f4":"Historique et watchlist isolés par profil","prof.who":"Qui regarde ?","prof.add":"Ajouter","prof.manage":"Gérer les profils",
-    "price.eyebrow":"Simple & Transparent","price.title":"Choisissez votre formule","price.sub":"Commencez gratuitement. Passez Pro quand vous le souhaitez.","price.note":"L'application est disponible gratuitement. Les fonctionnalités Pro sont optionnelles.",
-    "plan.free.name":"Gratuit","plan.free.per":" €","plan.free.sub":"Pour toujours","plan.free.f1":"Accès à toutes vos sources","plan.free.f2":"IPTV M3U & Xtream","plan.free.f3":"Plex, Jellyfin, Emby","plan.free.f4":"1 profil","plan.free.cta":"Télécharger gratuitement",
-    "plan.monthly.name":"Pro Mensuel","plan.monthly.per":",99 / mois","plan.monthly.sub":"Sans engagement","plan.monthly.cta":"Commencer",
-    "plan.annual.name":"Pro Annuel","plan.annual.per":",99 / an","plan.annual.sub":"≈ 1 € / mois · 6 mois offerts","plan.annual.badge":"Meilleure valeur","plan.annual.cta":"Économiser maintenant","plan.annual.f6":"Priorité support",
-    "plan.pro.f1":"Tout le plan Gratuit","plan.pro.f2":"Jusqu'à 5 profils","plan.pro.f3":"Sous-titres IA (Groq / Gemini)","plan.pro.f4":"Sync Cloud multi-appareils","plan.pro.f5":"Lecture à distance","plan.pro.f6":"Filtres & tri avancés",
-    "plan.lifetime.name":"Pro À Vie","plan.lifetime.per":",99 une fois","plan.lifetime.sub":"Payez une fois, profitez à vie","plan.lifetime.badge":"Meilleure offre","plan.lifetime.f5":"Toutes les futures fonctionnalités","plan.lifetime.f6":"Support prioritaire à vie","plan.lifetime.cta":"Posséder à vie","plan.lifetime.note":"Paiement unique · Pas d'abonnement",
-    "acc.eyebrow":"MegaCompagnon","acc.title":"Connexion MegaCompagnon","acc.sub":"Connectez-vous avec votre ID MegaTv Cloud pour ouvrir le tableau de bord Companion. Si vous n'avez pas encore de compte MegaCloud, créez-le en quelques secondes.",
-    "acc.login.title":"Accéder à MegaCompagnon","acc.login.sub":"Depuis Accès, ouvrez Companion ou créez votre ID MegaTv Cloud — la session reste active entre les surfaces.","acc.email":"Adresse email","acc.password":"Mot de passe","acc.login.btn":"Se connecter","acc.devices":"Appareils jumelés","acc.loading":"Chargement...","acc.logout":"Se déconnecter","acc.profiles.title":"App web Companion","acc.profiles.sub":"Retrouvez vos statistiques, profils, appareils liés, progression et vues admin selon vos droits MegaTv Cloud.","acc.profiles.empty":"Connectez-vous pour voir vos profils","acc.companion.cta":"Voir l'écosystème","acc.signup.cta":"Créer un compte MegaCloud","acc.login.note":"La connexion et l'inscription passent par ID MegaTv (portail Cloud). Companion et l'app web utilisent le même compte.","acc.card.stats":"Dashboard personnel","acc.card.stats.sub":"Stats, continuité de lecture et contenus favoris","acc.card.cloud":"MegaTv Cloud","acc.card.cloud.sub":"Session sécurisée et données isolées par RLS",
-    "legal.text":"MegaTv est un lecteur et navigateur média. Aucun film, série, chaîne ou flux n'est fourni par l'application. L'utilisateur configure ses propres services et playlists et reste responsable de leur utilisation conformément à la loi en vigueur dans son pays.",
-    "footer.desc":"Films, séries et TV en direct. Une seule app, toutes vos sources.","footer.app":"Application","footer.download":"Télécharger","footer.legal":"Légal","footer.privacy":"Politique de confidentialité","footer.terms":"CGU","footer.contact":"Contact","footer.copy":"© 2026 MegaTv. Tous droits réservés.",
+    "hero.title": "La Liberté De Streamer",
+    "hero.sub": "Découvrez tout le divertissement avec MegaTv",
+    "hero.btnDownload": "Télécharger MegaTv",
+    "hero.btnMore": "Autres téléchargements",
+    "price.eyebrow": "Formules & Tarifs",
+    "price.title": "Choisissez votre formule",
+    "price.sub": "Le lecteur de base reste 100% gratuit. Passez Pro quand vous le souhaitez pour synchroniser tous vos appareils et débloquer les bonus.",
+    "plan.free.name": "Gratuit",
+    "plan.free.sub": "Pour toujours",
+    "plan.free.cta": "Télécharger gratuitement",
+    "plan.free.f1": "Accès à toutes vos sources",
+    "plan.free.f2": "IPTV M3U & Xtream",
+    "plan.free.f3": "Plex, Jellyfin, Emby",
+    "plan.free.f4": "1 profil utilisateur",
+    "plan.monthly.sub": "Sans engagement",
+    "plan.monthly.cta": "Commencer",
+    "plan.annual.badge": "Plus Populaire",
+    "plan.annual.sub": "≈ 1 € / mois · 6 mois offerts",
+    "plan.annual.cta": "Économiser maintenant",
+    "plan.annual.f6": "Accès anticipé aux fonctionnalités",
+    "plan.lifetime.name": "Pro À Vie",
+    "plan.lifetime.sub": "Payez une fois, profitez à vie",
+    "plan.lifetime.cta": "Posséder à vie",
+    "plan.lifetime.f5": "Toutes les futures fonctionnalités",
+    "plan.lifetime.f6": "Support prioritaire à vie",
+    "plan.pro.f1": "Tout le plan Gratuit",
+    "plan.pro.f2": "Jusqu'à 5 profils familiaux",
+    "plan.pro.f3": "Sous-titres IA en direct",
+    "plan.pro.f4": "Sync Cloud multi-appareils",
+    "plan.pro.f6": "Support prioritaire Discord",
+    "legal.text": "MegaTv est un lecteur et navigateur média. Aucun film, série, chaîne ou flux n'est fourni par l'application. L'utilisateur configure ses propres services et playlists et reste responsable de leur utilisation conformément à la loi en vigueur dans son pays."
   },
   en: {
-    "nav.features":"Features","nav.pricing":"Pricing","nav.access":"Access","nav.login":"Log in","nav.pro":"Go Pro",
-    "eco.eyebrow":"MegaTv ecosystem","eco.title":"All your spaces, one universe.","eco.sub":"Discover MegaTv, cloud login, Companion, web app and Android — each door leads to the right place.",
-    "eco.discover":"Discover MegaTv","eco.discover.sub":"Features, TV & mobile screens, plans — the product universe.","eco.discover.cta":"Explore →",
-    "eco.auth":"Cloud login","eco.auth.sub":"MegaTv ID — sign in, sign up and secure TV pairing.","eco.auth.cta":"Sign in →",
-    "eco.companion":"MegaCompanion","eco.companion.sub":"Cloud dashboard: stats, profiles, devices, calendar.","eco.companion.cta":"Open Companion →",
-    "eco.web":"Web app","eco.web.sub":"Movies, shows and IPTV in the browser — same cloud account.","eco.web.cta":"Launch web app →",
-    "eco.android":"Android app","eco.android.sub":"Android TV · Mobile · Fire TV — always the latest APK release.","eco.android.cta":"Download APK →",
-    "hero.badge":"Available on Android TV · Mobile · Fire TV",
-    "hero.sub":"One app, all your sources. Watch what you want, wherever you are, on all your screens.",
-    "hero.cta1":"Download free","hero.cta2":"Explore","hero.ctaWeb":"Access MegaTv",
-    "m.films":"Movies & TV Shows","m.iptv":"Live TV / IPTV","m.android":"Android TV","m.firetv":"Fire TV Stick","m.mobile":"Mobile","m.sync":"Multi-Device Sync","m.profiles":"Family Profiles","m.ai":"AI Subtitles",
-    "platforms.label":"Available on",
-    "feat.eyebrow":"Everything you need","feat.title":"One app.\nA complete universe.","feat.sub":"From on-demand content to live channels, everything is centralized in a premium interface.",
-    "f1.title":"Premium Video Player","f1.desc":"High-performance ExoPlayer / Media3. Smart source selector, auto-play next episode, framerate matching, multiple audio tracks, real-time AI subtitles.",
-    "f2.title":"Personalized Home","f2.desc":"Hero with trailer, Top 10 of the day, themed rails by genre, service, decade. Resume where you left off.",
-    "f3.title":"Live TV / IPTV","f3.desc":"M3U & Xtream playlists, EPG guide, favorites, tens of thousands of channels, optimized logos, IPTV VOD.",
-    "f4.title":"Your Libraries","f4.desc":"Connect Plex, Jellyfin & Emby. Stremio addons, Trakt & MDBList catalogs, custom URLs.",
-    "f5.title":"Real-Time Cloud Sync","f5.desc":"MegaTv Cloud syncs your profiles, settings, progress and watchlists across all devices.",
-    "f6.title":"Advanced Watchlist","f6.desc":"My list with advanced filters: seen/unseen, genre, year, rating. Anti-spoilers with blur. Trakt sync.",
-    "sc.eyebrow":"Premium Interface","sc.title":"Designed for\nevery screen","sc.detail":"Detail Page","sc.search":"Search","sc.live":"Live TV","sc.watchlist":"Watchlist","sc.player":"Player",
-    "tv.eyebrow":"Optimized for Android TV","tv.title":"Big screen,\nbig experience.","tv.sub":"Remote-navigable interface, immersive hero, real-time program guide.",
-    "sc.home":"Home","tv.episodes":"Cast",
-    "prof.eyebrow":"For the whole family","prof.title":"A profile for everyone.","prof.sub":"Multiple profiles with avatar, custom color and PIN. Kids profile with mature content filter.",
-    "prof.f1":"Up to 5 profiles per account","prof.f2":"PIN protection + adult content filter","prof.f3":"Custom avatar synced to the cloud","prof.f4":"Isolated history & watchlist per profile","prof.who":"Who's watching?","prof.add":"Add profile","prof.manage":"Manage profiles",
-    "price.eyebrow":"Simple & Transparent","price.title":"Choose your plan","price.sub":"Start for free. Go Pro whenever you want.","price.note":"The app is free. Pro features are optional.",
-    "plan.free.name":"Free","plan.free.per":" €","plan.free.sub":"Forever","plan.free.f1":"Access to all your sources","plan.free.f2":"IPTV M3U & Xtream","plan.free.f3":"Plex, Jellyfin, Emby","plan.free.f4":"1 profile","plan.free.cta":"Download free",
-    "plan.monthly.name":"Pro Monthly","plan.monthly.per":".99 / month","plan.monthly.sub":"No commitment","plan.monthly.cta":"Get started",
-    "plan.annual.name":"Pro Annual","plan.annual.per":".99 / year","plan.annual.sub":"≈ €1 / month · 6 months free","plan.annual.badge":"Best value","plan.annual.cta":"Save now","plan.annual.f6":"Priority support",
-    "plan.pro.f1":"Everything in Free","plan.pro.f2":"Up to 5 profiles","plan.pro.f3":"AI Subtitles (Groq / Gemini)","plan.pro.f4":"Multi-device cloud sync","plan.pro.f5":"Remote playback","plan.pro.f6":"Advanced filters & sorting",
-    "plan.lifetime.name":"Pro Lifetime","plan.lifetime.per":".99 once","plan.lifetime.sub":"Pay once, enjoy forever","plan.lifetime.badge":"Best deal","plan.lifetime.f5":"All future features","plan.lifetime.f6":"Lifetime priority support","plan.lifetime.cta":"Own it forever","plan.lifetime.note":"One-time payment · No subscription",
-    "acc.eyebrow":"MegaCompanion","acc.title":"MegaCompanion Login","acc.sub":"Sign in with your MegaTv Cloud ID to open the Companion dashboard. If you do not have a MegaCloud account yet, create one in seconds.",
-    "acc.login.title":"Open MegaCompanion","acc.login.sub":"From Access, open Companion or create your MegaTv Cloud ID — the session stays active across surfaces.","acc.email":"Email address","acc.password":"Password","acc.login.btn":"Log in","acc.devices":"Paired devices","acc.loading":"Loading...","acc.logout":"Log out","acc.profiles.title":"Companion web app","acc.profiles.sub":"Find your stats, profiles, linked devices, progress and admin views according to your MegaTv Cloud permissions.","acc.profiles.empty":"Log in to see your profiles","acc.companion.cta":"See the ecosystem","acc.signup.cta":"Create a MegaCloud account","acc.login.note":"Sign-in and sign-up go through MegaTv ID (Cloud portal). Companion and the web app share the same account.","acc.card.stats":"Personal dashboard","acc.card.stats.sub":"Stats, continue watching and favorite content","acc.card.cloud":"MegaTv Cloud","acc.card.cloud.sub":"Secure session and RLS-isolated data",
-    "legal.text":"MegaTv is a media player and browser. No movie, show, channel or stream is provided by the app. The user configures their own services and playlists and is responsible for their use in accordance with local law.",
-    "footer.desc":"Movies, shows and live TV. One app, all your sources.","footer.app":"App","footer.download":"Download","footer.legal":"Legal","footer.privacy":"Privacy Policy","footer.terms":"Terms of Use","footer.contact":"Contact","footer.copy":"© 2026 MegaTv. All rights reserved.",
+    "hero.title": "Freedom to Stream",
+    "hero.sub": "Discover all your entertainment with MegaTv",
+    "hero.btnDownload": "Download MegaTv",
+    "hero.btnMore": "Other downloads",
+    "price.eyebrow": "Plans & Pricing",
+    "price.title": "Choose your plan",
+    "price.sub": "The core player is 100% free. Upgrade to Pro anytime to sync all devices and unlock perks.",
+    "plan.free.name": "Free",
+    "plan.free.sub": "Forever",
+    "plan.free.cta": "Download for free",
+    "plan.free.f1": "Access all your media sources",
+    "plan.free.f2": "IPTV M3U & Xtream playlists",
+    "plan.free.f3": "Plex, Jellyfin, Emby libraries",
+    "plan.free.f4": "1 user profile",
+    "plan.monthly.sub": "Cancel anytime",
+    "plan.monthly.cta": "Get started",
+    "plan.annual.badge": "Most Popular",
+    "plan.annual.sub": "≈ $1 / mo · 6 months free",
+    "plan.annual.cta": "Save now",
+    "plan.annual.f6": "Early access to upcoming features",
+    "plan.lifetime.name": "Pro Lifetime",
+    "plan.lifetime.sub": "Pay once, enjoy forever",
+    "plan.lifetime.cta": "Own it forever",
+    "plan.lifetime.f5": "All future features included",
+    "plan.lifetime.f6": "Lifetime priority support",
+    "plan.pro.f1": "Everything in Free",
+    "plan.pro.f2": "Up to 5 family profiles",
+    "plan.pro.f3": "Real-time AI Subtitles",
+    "plan.pro.f4": "Multi-device cloud sync",
+    "plan.pro.f6": "Priority Discord support",
+    "legal.text": "MegaTv is a media player and browser. No movie, show, channel or stream is provided by the application. The user configures their own services and playlists and remains responsible for their use in accordance with applicable laws."
+  },
+  es: {
+    "hero.title": "La Libertad de Transmitir",
+    "hero.sub": "Descubre todo el entretenimiento con MegaTv",
+    "hero.btnDownload": "Descargar MegaTv",
+    "hero.btnMore": "Otras descargas",
+    "price.eyebrow": "Planes y Tarifas",
+    "price.title": "Elige tu plan",
+    "price.sub": "El reproductor base es 100% gratis. Pasa a Pro cuando quieras para sincronizar todos tus dispositivos.",
+    "plan.free.name": "Gratis",
+    "plan.free.sub": "Para siempre",
+    "plan.free.cta": "Descargar gratis",
+    "plan.free.f1": "Acceso a todas tus fuentes",
+    "plan.free.f2": "IPTV M3U y Xtream",
+    "plan.free.f3": "Plex, Jellyfin, Emby",
+    "plan.free.f4": "1 perfil de usuario",
+    "plan.monthly.sub": "Sin compromiso",
+    "plan.monthly.cta": "Empezar",
+    "plan.annual.badge": "Más Popular",
+    "plan.annual.sub": "≈ 1 € / mes · 6 meses gratis",
+    "plan.annual.cta": "Ahorrar ahora",
+    "plan.annual.f6": "Acceso anticipado a funciones",
+    "plan.lifetime.name": "Pro Para Siempre",
+    "plan.lifetime.sub": "Paga una vez, disfruta para siempre",
+    "plan.lifetime.cta": "Tener de por vida",
+    "plan.lifetime.f5": "Todas las funciones futuras",
+    "plan.lifetime.f6": "Soporte prioritario de por vida",
+    "plan.pro.f1": "Todo el plan Gratis",
+    "plan.pro.f2": "Hasta 5 perfiles familiares",
+    "plan.pro.f3": "Subtítulos con IA en directo",
+    "plan.pro.f4": "Sincronización multi-dispositivo",
+    "plan.pro.f6": "Soporte prioritario en Discord",
+    "legal.text": "MegaTv es un reproductor y navegador multimedia. La aplicación no suministra películas, series ni canales. El usuario configura sus propios servicios."
   }
 };
 
 let currentLang = 'fr';
-function applyLang(lang){
+
+function updatePricingDisplay(lang) {
+  const isUSD = (lang === 'en');
+  const sym = isUSD ? '$' : '€';
+  
+  const freeEl = document.getElementById('price-free');
+  const monthlyEl = document.getElementById('price-monthly');
+  const annualEl = document.getElementById('price-annual');
+  const lifetimeEl = document.getElementById('price-lifetime');
+
+  if (isUSD) {
+    if (freeEl) freeEl.innerHTML = `0<sup class="currency-symbol">$</sup>`;
+    if (monthlyEl) monthlyEl.innerHTML = `1.99<sup class="currency-symbol">$</sup><span> / mo</span>`;
+    if (annualEl) annualEl.innerHTML = `11.99<sup class="currency-symbol">$</sup><span> / yr</span>`;
+    if (lifetimeEl) lifetimeEl.innerHTML = `29.99<sup class="currency-symbol">$</sup><span> one-time</span>`;
+  } else {
+    if (freeEl) freeEl.innerHTML = `0<sup class="currency-symbol">€</sup>`;
+    if (monthlyEl) monthlyEl.innerHTML = `1,99<sup class="currency-symbol">€</sup><span> / mois</span>`;
+    if (annualEl) annualEl.innerHTML = `11,99<sup class="currency-symbol">€</sup><span> / an</span>`;
+    if (lifetimeEl) lifetimeEl.innerHTML = `29,99<sup class="currency-symbol">€</sup><span> unique</span>`;
+  }
+}
+
+function changeLanguage(lang) {
   currentLang = lang;
   document.documentElement.setAttribute('data-lang', lang);
-  document.getElementById('lang-toggle').textContent = lang === 'fr' ? 'EN' : 'FR';
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
+  const select = document.getElementById('promo-lang-select');
+  if (select && select.value !== lang) select.value = lang;
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if(i18n[lang][key]) el.textContent = i18n[lang][key];
+    if (i18n[lang] && i18n[lang][key]) {
+      el.textContent = i18n[lang][key];
+    }
   });
+
+  updatePricingDisplay(lang);
 }
-function toggleLang(){ applyLang(currentLang === 'fr' ? 'en' : 'fr'); }
-window.toggleLang = toggleLang;
+window.changeLanguage = changeLanguage;
+window.applyLang = changeLanguage;
 
 /* ---------- THEME ---------- */
 function setThemeIcon(theme){
@@ -288,112 +344,106 @@ if(track){ track.innerHTML += track.innerHTML; }
   } catch (_) { /* ignore */ }
 })();
 
-/* ---------- SCREEN PICKER TABS (ISO NUVIO & MEGA PROMO) ---------- */
+/* ---------- SCREEN PICKER TABS (NUVIO PILL, ADAPTED) ---------- */
+const PLAY = `<span class="btn-play-soon"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg><span><small>Bientôt sur</small><strong>Google Play</strong></span></span>`;
+const ANDROID = `<svg viewBox="0 0 24 24" fill="#3DDC84"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></svg>`;
+const APPLE = `<svg viewBox="0 0 24 24" fill="#F1F0F4"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.76 1.05-1.82.93-2.88-.91.04-2.01.61-2.65 1.37-.57.65-1.07 1.73-.93 2.76 1.01.08 2.02-.51 2.65-1.25z"/></svg>`;
 const screenData = {
   mobile: {
-    title: "MegaTv pour Smartphones et Tablettes Android",
-    sub: "Parcourez, découvrez et lancez vos contenus en mobilité. Connectez votre compte cloud pour synchroniser votre bibliothèque et vos reprises entre tous vos écrans.",
-    image: "assets/screen-home-mobile.jpg",
-    mockupType: "mode-phone",
-    logos: `
-      <span class="platform-brand-badge" title="Android Mobile">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="#3DDC84"><path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/></svg>
-        <span>Android</span>
-      </span>
-      <span class="platform-brand-badge" title="Google Play Store">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg>
-        <span>Google Play</span>
-      </span>
-    `,
-    ctas: `
-      <a href="/api/download/android" class="btn-spectrum">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 5 3.5z"/></svg>
-        <span>Télécharger APK Mobile</span>
-      </a>
-      <a href="#features" class="btn-ghost"><span>Google Play</span></a>
-      <a href="/web" class="btn-ghost"><span>Web PWA</span></a>
-    `
+    title: "MegaTv pour Android et iPhone",
+    sub: "Parcourez, cherchez et lancez vos contenus. Connectez votre compte pour synchroniser la bibliothèque et les reprises entre tous vos écrans.",
+    logos: `<div class="nuvio-marks">${ANDROID}${APPLE}</div>`,
+    ctas: `${PLAY}<a class="btn-apk" href="/api/download/android"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Android APK</a><span class="btn-soon-pill">iOS bientôt</span>`
   },
   tv: {
-    title: "MegaTv pour Android TV, Google TV & Fire TV",
-    sub: "Expérience grand écran 100% pensée pour la télécommande. Hero immersif 4K HDR, zapping ultra-rapide des flux IPTV, guide EPG direct et synchronisation cloud instantanée.",
-    image: "assets/tv-home-new.png",
-    mockupType: "mode-tv",
-    logos: `
-      <span class="platform-brand-badge" title="Android TV">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3DDC84" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="3"/><path d="M8 21h8"/><path d="M12 18v3"/><circle cx="9" cy="11" r="1" fill="#3DDC84"/><circle cx="15" cy="11" r="1" fill="#3DDC84"/></svg>
-        <span>Android TV</span>
-      </span>
-      <span class="platform-brand-badge" title="Google TV">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
-        <span>Google TV</span>
-      </span>
-      <span class="platform-brand-badge" title="Amazon Fire TV">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="#FF9900"><path d="M17.9 2.318A5.006 5.006 0 0 0 12.9 0H5a5 5 0 0 0-5 5v14a5 5 0 0 0 5 5h7.9a5.006 5.006 0 0 0 5-4.318L19.2 12l-1.3-9.682zM17 12l-7 4V8l7 4z"/></svg>
-        <span>Fire TV</span>
-      </span>
-    `,
-    ctas: `
-      <a href="/api/download/android" class="btn-spectrum">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 5 3.5z"/></svg>
-        <span>Télécharger APK TV</span>
-      </a>
-      <a href="#ecosysteme" class="btn-ghost"><span>Guide Downloader / Sideload</span></a>
-    `
+    title: "MegaTv pour Android TV et Google TV",
+    sub: "Parcourez et lancez vos contenus avec une interface pensée pour la télécommande et le grand écran.",
+    logos: `<div class="nuvio-wordmarks"><span class="word-androidtv">Android <b>TV</b></span><span class="word-googletv"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>Google TV</span></div>`,
+    ctas: `${PLAY}<a class="btn-apk" href="/api/download/android"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Android TV APK</a>`
   },
   web: {
-    title: "MegaTv pour le Web & Ordinateur",
-    sub: "Accédez à l'ensemble de votre catalogue, vos flux TV en direct et votre progression directement depuis Google Chrome, Edge, Safari, Firefox ou Internet Explorer.",
-    image: "assets/screen-web-zootopie.png",
-    mockupType: "mode-web",
-    logos: `
-      <span class="platform-brand-badge" title="Internet Explorer & Web Browsers">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.44 1.28 4.88-.17-.76-.28-1.57-.28-2.4 0-4.97 3.58-9 8-9 1.54 0 2.98.49 4.19 1.32C13.9 4.3 12.02 2 12 2zm9.72 5.12C20.61 4.7 17.5 3 13.5 3c-5.25 0-9.5 4.03-9.5 9 0 .61.08 1.2.2 1.77C2.88 12.87 2 11.02 2 9c0-3.31 4.03-6 9-6 4.13 0 7.6 1.87 8.68 4.45-.63-.44-1.3-.82-1.96-1.33zm-.72 4.88c0 4.97-4.03 9-9 9-2.02 0-3.87-.67-5.38-1.8 1.15.51 2.45.8 3.88.8 4.42 0 8-3.58 8-8 0-.34-.03-.67-.08-1 1.57.25 2.58.55 2.58 1zm-1.07-2c-.36-.48-.82-.9-1.35-1.25C17.65 9.4 16.14 10 14.5 10c-3.04 0-5.5-2.01-5.5-4.5 0-.4.07-.78.18-1.15-2.8 1.34-4.68 3.8-4.68 6.65 0 4.42 3.58 8 8 8 3.73 0 6.84-2.55 7.72-6H14v-2h5.93z" fill="#0078D7"/></svg>
-        <span>Internet Explorer</span>
-      </span>
-      <span class="platform-brand-badge" title="Navigateurs Web Modernes">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
-        <span>Chrome / Safari / Edge</span>
-      </span>
-    `,
-    ctas: `
-      <a href="/web" class="btn-spectrum">
-        <span>Lancer l'App Web</span>
-      </a>
-      <a href="/companion" class="btn-ghost">
-        <span>Ouvrir Compagnon</span>
-      </a>
-    `
+    title: "MegaTv pour le Web",
+    sub: "Ouvrez le catalogue, la TV en direct et vos reprises dans le navigateur. La même bibliothèque, sans installation.",
+    logos: `<div class="nuvio-marks"><svg viewBox="0 0 24 24" fill="none" stroke="#F1F0F4" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg></div>`,
+    ctas: `<a class="btn-apk" href="/web">Lancer l'app Web</a><a class="btn-apk" href="/companion">Ouvrir Compagnon</a>`
+  },
+  smart: {
+    title: "MegaTv pour Smart TV",
+    sub: "L'expérience grand écran pour les téléviseurs connectés est en préparation.",
+    logos: `<div class="nuvio-marks"><svg viewBox="0 0 24 24" fill="none" stroke="#F1F0F4" stroke-width="1.6"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>`,
+    ctas: `<span class="btn-soon-pill">Bientôt</span>`
   }
 };
 
 function switchScreen(platform, btn) {
-  document.querySelectorAll('.screen-tab-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  document.querySelectorAll(".nuvio-tab").forEach((b) => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
   const d = screenData[platform];
   if (!d) return;
-  const titleEl = document.getElementById('screen-card-title');
-  const subEl = document.getElementById('screen-card-sub');
-  const logosEl = document.getElementById('screen-card-logos');
-  const ctasEl = document.getElementById('screen-card-ctas');
-  const imgEl = document.getElementById('screen-card-img');
-  const frameEl = document.getElementById('screen-card-frame');
-
+  const titleEl = document.getElementById("screen-card-title");
+  const subEl = document.getElementById("screen-card-sub");
+  const logosEl = document.getElementById("screen-card-logos");
+  const ctasEl = document.getElementById("screen-card-ctas");
   if (titleEl) titleEl.textContent = d.title;
   if (subEl) subEl.textContent = d.sub;
   if (logosEl) logosEl.innerHTML = d.logos;
   if (ctasEl) ctasEl.innerHTML = d.ctas;
-  if (frameEl && d.mockupType) {
-    frameEl.className = 'screen-mockup-frame ' + d.mockupType;
-  }
-  if (imgEl) {
-    imgEl.style.opacity = '0';
-    setTimeout(() => { imgEl.src = d.image; imgEl.style.opacity = '1'; }, 150);
-  }
 }
 window.switchScreen = switchScreen;
+switchScreen("mobile", document.querySelector(".nuvio-tab"));
+switchScreen("mobile", document.querySelector(".nuvio-tab"));
 
-/* ---------- AUTH USER SYNC FOR PROMO TOP BAR ---------- */
+const pageShots = {
+  accueil: { mobile: "assets/captures/accueil-mobile.webp", tv: "assets/captures/accueil-tv.webp" },
+  detail: { mobile: "assets/captures/detail-mobile.webp", tv: "assets/captures/detail-tv.webp" },
+  recherche: { mobile: "assets/captures/recherche-mobile.webp", tv: "assets/captures/recherche-tv.webp" },
+  iptv: { mobile: "assets/captures/livetv-mobile.webp", tv: "assets/captures/livetv-tv.webp" }
+};
+function switchPage(page, btn) {
+  document.querySelectorAll(".page-chip").forEach((b) => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  const shot = document.getElementById("device-shot");
+  if (shot && pageShots[page]) shot.src = "assets/devices/quad-" + page + ".webp";
+}
+window.switchPage = switchPage;
+
+/* ---------- AUTH USER SYNC & PROFILE DROPDOWN (ISO REQUIREMENT 1) ---------- */
+let isUserAuthenticated = false;
+
+function handleProfileClick(event) {
+  if (isUserAuthenticated) {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropdown = document.getElementById('promo-profile-dropdown');
+    if (dropdown) {
+      dropdown.classList.toggle('open');
+      dropdown.setAttribute('aria-hidden', !dropdown.classList.contains('open'));
+    }
+  }
+}
+window.handleProfileClick = handleProfileClick;
+
+// Close profile dropdown when clicking outside
+document.addEventListener('click', (event) => {
+  const dropdown = document.getElementById('promo-profile-dropdown');
+  const authBtn = document.getElementById('promo-auth-btn');
+  if (dropdown && dropdown.classList.contains('open')) {
+    if (!dropdown.contains(event.target) && !authBtn.contains(event.target)) {
+      dropdown.classList.remove('open');
+      dropdown.setAttribute('aria-hidden', 'true');
+    }
+  }
+});
+
+async function logoutUser() {
+  try {
+    await sb.auth.signOut();
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (_) {}
+  window.location.reload();
+}
+window.logoutUser = logoutUser;
+
 async function checkUserAuth() {
   const authBtn = document.getElementById('promo-auth-btn');
   if (authBtn) {
@@ -404,8 +454,10 @@ async function checkUserAuth() {
     if (!res.ok) return;
     const data = await res.json();
     if (data.authenticated && data.user && authBtn) {
+      isUserAuthenticated = true;
       const displayName = data.profile?.name || (data.user.email ? data.user.email.split('@')[0] : 'Profil');
       const avatarSrc = data.profile?.avatar_url;
+      const userEmail = data.user.email || 'user@megatv.app';
 
       const avatarHtml = avatarSrc
         ? `<img src="${avatarSrc}" alt="${displayName}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.4);box-shadow:0 2px 8px rgba(0,0,0,0.5);shrink:0;" />`
@@ -416,7 +468,18 @@ async function checkUserAuth() {
         <span class="profile-name-text" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;">${displayName}</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.6;"><polyline points="6 9 12 15 18 9"/></svg>
       `;
-      authBtn.href = '/companion';
+
+      // Populate rich dropdown elements
+      const nameEl = document.getElementById('dropdown-user-name');
+      const emailEl = document.getElementById('dropdown-user-email');
+      const avatarWrap = document.getElementById('dropdown-avatar-wrap');
+      if (nameEl) nameEl.textContent = displayName;
+      if (emailEl) emailEl.textContent = userEmail;
+      if (avatarWrap) {
+        avatarWrap.innerHTML = avatarSrc
+          ? `<img src="${avatarSrc}" alt="${displayName}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />`
+          : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#3f9ae6,#d8497f);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;">${displayName[0].toUpperCase()}</div>`;
+      }
     }
   } catch (e) {
     console.error('Auth sync check error:', e);
