@@ -438,13 +438,26 @@ document.getElementById("nav-burger")?.addEventListener("click", () => toggleNav
 
 function syncStickyBar() {
   const bar = document.querySelector(".sticky-download-bar");
-  const hero = document.querySelector(".stremio-hero");
-  if (!bar || !hero) return;
-  const pastHero = hero.getBoundingClientRect().bottom < 72;
-  bar.classList.toggle("is-away", !pastHero);
+  if (!bar) return;
+  bar.classList.toggle("is-away", window.scrollY < 12);
 }
-window.addEventListener("scroll", syncStickyBar, { passive: true });
-syncStickyBar();
+function bindStickyBar() {
+  const bar = document.querySelector(".sticky-download-bar");
+  if (!bar) return;
+  const sentinel = document.createElement("div");
+  sentinel.className = "sticky-scroll-sentinel";
+  sentinel.setAttribute("aria-hidden", "true");
+  document.body.prepend(sentinel);
+  if ("IntersectionObserver" in window) {
+    const watcher = new IntersectionObserver(([entry]) => {
+      bar.classList.toggle("is-away", entry.isIntersecting);
+    }, { threshold: 0 });
+    watcher.observe(sentinel);
+  }
+  window.addEventListener("scroll", syncStickyBar, { passive: true });
+  syncStickyBar();
+}
+bindStickyBar();
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") toggleNavSheet(false);
 });
