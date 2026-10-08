@@ -12,10 +12,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.MegaMotion = { parallax: 0.7, tilt: 0.7 };
 
 /* ---------- I18N & MULTI-CURRENCY ---------- */
-const i18n = {
+const i18n = window.PROMO_I18N || {
   fr: {
-    "hero.title": "La Liberté De Streamer",
-    "hero.sub": "Découvrez tout le divertissement avec MegaTv",
+    "hero.title": "La liberté de regarder.",
+    "hero.sub": "Films, séries et TV en direct. Une app pour chaque écran, avec vos propres sources.",
     "hero.btnDownload": "Télécharger MegaTv",
     "hero.btnMore": "Autres téléchargements",
     "price.eyebrow": "Formules & Tarifs",
@@ -118,40 +118,53 @@ let currentLang = 'fr';
 
 function updatePricingDisplay(lang) {
   const isUSD = (lang === 'en');
-  const sym = isUSD ? '$' : '€';
-  
   const freeEl = document.getElementById('price-free');
   const monthlyEl = document.getElementById('price-monthly');
   const annualEl = document.getElementById('price-annual');
   const lifetimeEl = document.getElementById('price-lifetime');
+  const sym = isUSD ? "$" : "€";
+  const dec = isUSD ? "." : ",";
+  const mo = t(lang, "price.perMonth") || (isUSD ? "/ mo" : "/ mois");
+  const yr = t(lang, "price.perYear") || (isUSD ? "/ yr" : "/ an");
+  const once = t(lang, "price.once") || (isUSD ? "one-time" : "unique");
+  if (freeEl) freeEl.innerHTML = `0<sup class="currency-symbol">${sym}</sup>`;
+  if (monthlyEl) monthlyEl.innerHTML = `1${dec}99<sup class="currency-symbol">${sym}</sup><span> ${mo}</span>`;
+  if (annualEl) annualEl.innerHTML = `11${dec}99<sup class="currency-symbol">${sym}</sup><span> ${yr}</span>`;
+  if (lifetimeEl) lifetimeEl.innerHTML = `29${dec}99<sup class="currency-symbol">${sym}</sup><span> ${once}</span>`;
+}
 
-  if (isUSD) {
-    if (freeEl) freeEl.innerHTML = `0<sup class="currency-symbol">$</sup>`;
-    if (monthlyEl) monthlyEl.innerHTML = `1.99<sup class="currency-symbol">$</sup><span> / mo</span>`;
-    if (annualEl) annualEl.innerHTML = `11.99<sup class="currency-symbol">$</sup><span> / yr</span>`;
-    if (lifetimeEl) lifetimeEl.innerHTML = `29.99<sup class="currency-symbol">$</sup><span> one-time</span>`;
-  } else {
-    if (freeEl) freeEl.innerHTML = `0<sup class="currency-symbol">€</sup>`;
-    if (monthlyEl) monthlyEl.innerHTML = `1,99<sup class="currency-symbol">€</sup><span> / mois</span>`;
-    if (annualEl) annualEl.innerHTML = `11,99<sup class="currency-symbol">€</sup><span> / an</span>`;
-    if (lifetimeEl) lifetimeEl.innerHTML = `29,99<sup class="currency-symbol">€</sup><span> unique</span>`;
-  }
+const RTL_LANGS = new Set(["ar", "ur"]);
+
+function t(lang, key) {
+  return (i18n[lang] && i18n[lang][key]) || (i18n.fr && i18n.fr[key]) || "";
 }
 
 function changeLanguage(lang) {
+  if (!i18n[lang]) lang = "fr";
   currentLang = lang;
-  document.documentElement.setAttribute('data-lang', lang);
-  const select = document.getElementById('promo-lang-select');
-  if (select && select.value !== lang) select.value = lang;
+  const html = document.documentElement;
+  html.setAttribute("data-lang", lang);
+  html.lang = lang;
+  html.dir = RTL_LANGS.has(lang) ? "rtl" : "ltr";
+  try { localStorage.setItem("megatv_lang", lang); } catch (_) {}
 
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (i18n[lang] && i18n[lang][key]) {
-      el.textContent = i18n[lang][key];
-    }
+  document.querySelectorAll("[data-lang-label]").forEach((el) => {
+    const meta = (window.PROMO_LANGS || []).find((item) => item.id === lang);
+    el.textContent = meta ? meta.label : lang.toUpperCase();
+  });
+  document.querySelectorAll(".lang-option").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.lang === lang);
   });
 
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    const value = t(lang, key);
+    if (value) el.textContent = value;
+  });
+
+  html.style.setProperty("--platforms-label", `"${t(lang, "platforms.label") || "Disponible sur"}"`);
   updatePricingDisplay(lang);
+  if (typeof refreshActiveScreen === "function") refreshActiveScreen();
 }
 window.changeLanguage = changeLanguage;
 window.applyLang = changeLanguage;
@@ -168,37 +181,20 @@ function setThemeIcon(theme){
     icon.innerHTML = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
   }
 }
-function applyTheme(theme){
+function applyTheme(){
   const html = document.documentElement;
-  html.setAttribute('data-theme', theme);
-  html.dataset.theme = theme;
-  html.style.colorScheme = theme;
-  document.body.setAttribute('data-theme', theme);
-  setThemeIcon(theme);
+  html.setAttribute('data-theme', 'dark');
+  html.dataset.theme = 'dark';
+  html.style.colorScheme = 'dark';
+  document.body.setAttribute('data-theme', 'dark');
 }
-function toggleTheme(){
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'dark';
-  const next = current === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try {
-    localStorage.setItem('megacompanion_theme', next);
-  } catch (_) {}
-}
+function toggleTheme(){}
 window.toggleTheme = toggleTheme;
-
-// Sync theme on start
-(function initTheme(){
-  let theme = 'dark';
-  try {
-    theme = localStorage.getItem('megacompanion_theme') || 'dark';
-  } catch (_) {}
-  applyTheme(theme);
-})();
+applyTheme();
 
 /* ---------- NAV scrolled state ---------- */
 const nav = document.querySelector('.nav');
-function onNav(){ nav.classList.toggle('scrolled', window.scrollY > 24); }
+function onNav(){ if (nav) nav.classList.toggle('scrolled', window.scrollY > 24); }
 
 /* ---------- SCROLL REVEAL (cinematic, once) ---------- */
 const revealObserver = new IntersectionObserver((entries)=>{
@@ -345,51 +341,118 @@ if(track){ track.innerHTML += track.innerHTML; }
 })();
 
 /* ---------- SCREEN PICKER TABS (NUVIO PILL, ADAPTED) ---------- */
-const PLAY = `<span class="btn-play-soon"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg><span><small>Bientôt sur</small><strong>Google Play</strong></span></span>`;
+const PLAY_ICON = `<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg>`;
+const APK_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>`;
+const GOOGLE = `<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>`;
+const FIRE_MARK = `<span class="word-firetv"><img class="firetv-wordmark" src="assets/firetv-wordmark.png" alt="Fire TV"></span>`;
+function playSoon(lang) {
+  return `<span class="btn-play-soon">${PLAY_ICON}<span><small>${t(lang, "soon.play")}</small><strong>Google Play</strong></span></span>`;
+}
+function apkLink(label) {
+  return `<a class="btn-apk" href="/api/download/android">${APK_ICON}${label}</a>`;
+}
 const ANDROID = `<svg viewBox="0 0 24 24" fill="#3DDC84"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></svg>`;
 const APPLE = `<svg viewBox="0 0 24 24" fill="#F1F0F4"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.76 1.05-1.82.93-2.88-.91.04-2.01.61-2.65 1.37-.57.65-1.07 1.73-.93 2.76 1.01.08 2.02-.51 2.65-1.25z"/></svg>`;
-const screenData = {
-  mobile: {
-    title: "MegaTv pour Android et iPhone",
-    sub: "Parcourez, cherchez et lancez vos contenus. Connectez votre compte pour synchroniser la bibliothèque et les reprises entre tous vos écrans.",
-    logos: `<div class="nuvio-marks">${ANDROID}${APPLE}</div>`,
-    ctas: `${PLAY}<a class="btn-apk" href="/api/download/android"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Android APK</a><span class="btn-soon-pill">iOS bientôt</span>`
-  },
-  tv: {
-    title: "MegaTv pour Android TV et Google TV",
-    sub: "Parcourez et lancez vos contenus avec une interface pensée pour la télécommande et le grand écran.",
-    logos: `<div class="nuvio-wordmarks"><span class="word-androidtv">Android <b>TV</b></span><span class="word-googletv"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>Google TV</span></div>`,
-    ctas: `${PLAY}<a class="btn-apk" href="/api/download/android"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Android TV APK</a>`
-  },
-  web: {
-    title: "MegaTv pour le Web",
-    sub: "Ouvrez le catalogue, la TV en direct et vos reprises dans le navigateur. La même bibliothèque, sans installation.",
-    logos: `<div class="nuvio-marks"><svg viewBox="0 0 24 24" fill="none" stroke="#F1F0F4" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg></div>`,
-    ctas: `<a class="btn-apk" href="/web">Lancer l'app Web</a><a class="btn-apk" href="/companion">Ouvrir Compagnon</a>`
-  },
-  smart: {
-    title: "MegaTv pour Smart TV",
-    sub: "L'expérience grand écran pour les téléviseurs connectés est en préparation.",
-    logos: `<div class="nuvio-marks"><svg viewBox="0 0 24 24" fill="none" stroke="#F1F0F4" stroke-width="1.6"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>`,
-    ctas: `<span class="btn-soon-pill">Bientôt</span>`
-  }
-};
-
+let activeScreen = "mobile";
+function screenPack(lang) {
+  const play = playSoon(lang);
+  const webIcon = `<div class="nuvio-marks"><svg viewBox="0 0 24 24" fill="none" stroke="#F1F0F4" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg></div>`;
+  const smartIcon = `<div class="nuvio-marks"><svg viewBox="0 0 24 24" fill="none" stroke="#F1F0F4" stroke-width="1.6"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>`;
+  return {
+    mobile: {
+      title: t(lang, "screen.mobile.title"),
+      sub: t(lang, "screen.mobile.sub"),
+      logos: `<div class="nuvio-marks">${ANDROID}${APPLE}</div>`,
+      ctas: `${play}${apkLink(t(lang, "apk.android"))}<span class="btn-soon-pill">${t(lang, "soon.ios")}</span>`
+    },
+    tv: {
+      title: t(lang, "screen.tv.title"),
+      sub: t(lang, "screen.tv.sub"),
+      logos: `<div class="nuvio-wordmarks"><span class="word-androidtv">Android <b>TV</b></span><span class="word-googletv">${GOOGLE}Google TV</span>${FIRE_MARK}</div>`,
+      ctas: `${play}${apkLink(t(lang, "apk.tv"))}${apkLink(t(lang, "apk.fire"))}`
+    },
+    web: {
+      title: t(lang, "screen.web.title"),
+      sub: t(lang, "screen.web.sub"),
+      logos: webIcon,
+      ctas: `<a class="btn-apk" href="/web">${t(lang, "web.launch")}</a><a class="btn-apk" href="/companion">${t(lang, "web.companion")}</a>`
+    },
+    smart: {
+      title: t(lang, "screen.smart.title"),
+      sub: t(lang, "screen.smart.sub"),
+      logos: smartIcon,
+      ctas: `<span class="btn-soon-pill">${t(lang, "soon.smart")}</span>`
+    }
+  };
+}
+function refreshActiveScreen() {
+  switchScreen(activeScreen, document.querySelector(".nuvio-tab.active"));
+}
 function switchScreen(platform, btn) {
+  activeScreen = platform || activeScreen;
   document.querySelectorAll(".nuvio-tab").forEach((b) => b.classList.remove("active"));
   if (btn) btn.classList.add("active");
-  const d = screenData[platform];
+  const d = screenPack(currentLang)[activeScreen];
   if (!d) return;
   const titleEl = document.getElementById("screen-card-title");
   const subEl = document.getElementById("screen-card-sub");
   const logosEl = document.getElementById("screen-card-logos");
   const ctasEl = document.getElementById("screen-card-ctas");
+  const markEl = document.getElementById("screen-card-mark");
   if (titleEl) titleEl.textContent = d.title;
   if (subEl) subEl.textContent = d.sub;
   if (logosEl) logosEl.innerHTML = d.logos;
   if (ctasEl) ctasEl.innerHTML = d.ctas;
+  if (markEl) {
+    if (d.mark) {
+      markEl.hidden = false;
+      markEl.innerHTML = d.mark;
+    } else {
+      markEl.hidden = true;
+      markEl.innerHTML = "";
+    }
+  }
 }
 window.switchScreen = switchScreen;
+
+function toggleNavSheet(force) {
+  const sheet = document.getElementById("nav-sheet");
+  const btn = document.getElementById("nav-burger");
+  const wrap = document.querySelector(".floating-nav-wrap");
+  if (!sheet || !btn || !wrap) return;
+  const open = typeof force === "boolean" ? force : sheet.hasAttribute("hidden");
+  if (open) {
+    sheet.removeAttribute("hidden");
+    btn.setAttribute("aria-expanded", "true");
+    btn.setAttribute("aria-label", "Fermer le menu");
+    wrap.classList.add("is-open");
+  } else {
+    sheet.setAttribute("hidden", "");
+    btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-label", "Ouvrir le menu");
+    wrap.classList.remove("is-open");
+  }
+}
+window.toggleNavSheet = toggleNavSheet;
+document.getElementById("nav-burger")?.addEventListener("click", () => toggleNavSheet());
+
+function syncStickyBar() {
+  const bar = document.querySelector(".sticky-download-bar");
+  const hero = document.querySelector(".stremio-hero");
+  if (!bar || !hero) return;
+  const pastHero = hero.getBoundingClientRect().bottom < 72;
+  bar.classList.toggle("is-away", !pastHero);
+}
+window.addEventListener("scroll", syncStickyBar, { passive: true });
+syncStickyBar();
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") toggleNavSheet(false);
+});
+document.addEventListener("click", (event) => {
+  const wrap = document.querySelector(".floating-nav-wrap");
+  if (!wrap || !wrap.classList.contains("is-open")) return;
+  if (!wrap.contains(event.target)) toggleNavSheet(false);
+});
 switchScreen("mobile", document.querySelector(".nuvio-tab"));
 switchScreen("mobile", document.querySelector(".nuvio-tab"));
 
@@ -469,6 +532,22 @@ async function checkUserAuth() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.6;"><polyline points="6 9 12 15 18 9"/></svg>
       `;
 
+      const sheetLogin = document.getElementById("nav-sheet-login");
+      const sheetAccount = document.getElementById("nav-sheet-account");
+      if (sheetLogin) sheetLogin.hidden = true;
+      if (sheetAccount) {
+        sheetAccount.hidden = false;
+        const face = avatarSrc
+          ? `<img src="${avatarSrc}" alt="">`
+          : `<div class="nav-sheet-avatar">${displayName[0].toUpperCase()}</div>`;
+        sheetAccount.innerHTML = `
+          <div class="nav-sheet-profile">${face}<div><strong>${displayName}</strong><span data-i18n="nav.active">${t(currentLang, "nav.active")}</span></div></div>
+          <a class="nav-sheet-link" href="/companion"><span data-i18n="nav.companion">${t(currentLang, "nav.companion")}</span></a>
+          <a class="nav-sheet-link" href="/companion#profils"><span data-i18n="nav.profile">${t(currentLang, "nav.profile")}</span></a>
+          <button type="button" class="nav-sheet-link nav-sheet-logout" onclick="logoutUser()"><span data-i18n="nav.logout">${t(currentLang, "nav.logout")}</span></button>
+        `;
+      }
+
       // Populate rich dropdown elements
       const nameEl = document.getElementById('dropdown-user-name');
       const emailEl = document.getElementById('dropdown-user-email');
@@ -511,10 +590,83 @@ function acceptCookies() {
 }
 window.acceptCookies = acceptCookies;
 
+function initLangMenus() {
+  const langs = window.PROMO_LANGS || [];
+  document.querySelectorAll("[data-lang-menu]").forEach((menu) => {
+    const panel = menu.querySelector(".lang-menu-panel");
+    const btn = menu.querySelector(".lang-menu-btn");
+    if (!panel || panel.dataset.ready) return;
+    panel.dataset.ready = "1";
+    panel.innerHTML = langs.map((item) =>
+      `<button type="button" class="lang-option" data-lang="${item.id}" role="option"><span>${item.label}</span><small>${item.id.toUpperCase()}</small></button>`
+    ).join("");
+    btn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = !menu.classList.contains("is-open");
+      document.querySelectorAll("[data-lang-menu].is-open").forEach((other) => other.classList.remove("is-open"));
+      menu.classList.toggle("is-open", willOpen);
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
+    panel.addEventListener("click", (event) => {
+      const opt = event.target.closest(".lang-option");
+      if (!opt) return;
+      changeLanguage(opt.dataset.lang);
+      menu.classList.remove("is-open");
+      btn?.setAttribute("aria-expanded", "false");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll("[data-lang-menu].is-open").forEach((menu) => {
+      menu.classList.remove("is-open");
+      menu.querySelector(".lang-menu-btn")?.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+
+function initSoonPops() {
+  document.querySelectorAll(".social-soon").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const pop = btn.querySelector(".soon-pop");
+      if (!pop) return;
+      document.querySelectorAll(".soon-pop").forEach((other) => { other.hidden = true; });
+      pop.hidden = false;
+      clearTimeout(btn._soonTimer);
+      btn._soonTimer = setTimeout(() => { pop.hidden = true; }, 1800);
+    });
+  });
+}
+
+function initFeatStudio() {
+  const root = document.getElementById("feat-studio");
+  if (!root) return;
+  const buttons = root.querySelectorAll("[data-feat-btn]");
+  const panels = root.querySelectorAll("[data-feat-panel]");
+  function show(id) {
+    buttons.forEach((btn) => {
+      const on = btn.getAttribute("data-feat-btn") === id;
+      btn.classList.toggle("is-on", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    panels.forEach((panel) => {
+      panel.classList.toggle("is-on", panel.getAttribute("data-feat-panel") === id);
+    });
+  }
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => show(btn.getAttribute("data-feat-btn")));
+  });
+}
+
 /* ---------- INIT ---------- */
 onNav();
 applyParallax();
-applyLang('fr');
+initLangMenus();
+initSoonPops();
+initFeatStudio();
+let savedLang = "fr";
+try { savedLang = localStorage.getItem("megatv_lang") || "fr"; } catch (_) {}
+applyLang(savedLang);
 initCookieConsent();
 
 

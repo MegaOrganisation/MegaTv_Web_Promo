@@ -4,8 +4,6 @@ import { Bolt, ImageIcon } from "lucide-react";
 
 import { CompanionBackgroundPicker, QuickAccessSelector } from "@/features/companion/ui/CompanionBackgroundPicker";
 import { MegaSurface } from "@/features/companion/ui/MegaSurface";
-import { ThemeSelector } from "@/features/theme/ThemeSelector";
-
 export function SettingsAppearanceSection({ isAdmin }: { isAdmin: boolean }) {
   return (
     <>
@@ -35,12 +33,6 @@ export function SettingsAppearanceSection({ isAdmin }: { isAdmin: boolean }) {
         <QuickAccessSelector isAdmin={isAdmin} />
       </MegaSurface>
 
-      <MegaSurface as="section" elevated>
-        <div className="mb-3">
-          <h2 className="mega-cinema-display text-lg">Thème clair / sombre</h2>
-        </div>
-        <ThemeSelector />
-      </MegaSurface>
     </>
   );
 }

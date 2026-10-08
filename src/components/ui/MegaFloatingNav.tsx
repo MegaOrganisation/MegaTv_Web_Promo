@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Moon, Sun, User as UserIcon, LogOut, Settings, Users, BarChart3, Check } from "lucide-react";
+import { ChevronDown, User as UserIcon, LogOut, Settings, Users, BarChart3, Check, Menu, X } from "lucide-react";
 import { clsx } from "clsx";
 
 import { MegaTvMark } from "@/components/ui/MegaTvMark";
@@ -27,7 +27,7 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
     profileContext = null;
   }
 
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -36,10 +36,13 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
   // Determine active tab if not passed explicitly
   const activeTab = currentTab || (pathname === "/" ? "home" : pathname.startsWith("/premium") ? "premium" : pathname.startsWith("/companion") ? "companion" : "home");
 
-  // Sync theme with document element
   useEffect(() => {
-    const current = document.documentElement.dataset.theme || "dark";
-    setTheme(current === "light" ? "light" : "dark");
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = "dark";
+    document.documentElement.style.colorScheme = "dark";
   }, []);
 
   const [fallbackProfiles, setFallbackProfiles] = useState<any[]>([]);
@@ -119,16 +122,6 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    document.documentElement.style.colorScheme = next;
-    try {
-      localStorage.setItem("megacompanion_theme", next);
-    } catch (_) {}
-  };
-
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -163,21 +156,24 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
 
   const activeAvatarSrc = getProfileAvatarSrc(effectiveActiveProfile);
 
+  const sheetLink = "flex items-center min-h-12 px-4 rounded-2xl text-base font-bold text-white/85 hover:bg-white/6";
+
   return (
-    <header className="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-[100] max-w-[calc(100vw-16px)] w-max">
-      <div className="flex items-center gap-1 sm:gap-3 px-2.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full bg-[#12141c]/90 light:bg-white/95 backdrop-blur-2xl border border-white/14 shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all">
+    <header className="fixed top-3 left-0 right-0 z-[100] flex justify-center px-3 pointer-events-none">
+      <div className="pointer-events-auto w-full max-w-[440px] min-[920px]:w-max min-[920px]:max-w-[calc(100%-8px)]">
+      <div className="flex items-center gap-1 min-[920px]:gap-3 px-2.5 py-1.5 min-[920px]:px-5 min-[920px]:py-2.5 rounded-[22px] min-[920px]:rounded-full bg-[#12141c]/90 light:bg-white/95 backdrop-blur-2xl border border-white/14 shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 pl-1 pr-1 sm:pr-2 hover:opacity-90 transition-opacity">
+        <Link href="/" className="flex items-center gap-2 pl-1 pr-1 min-[920px]:pr-2 hover:opacity-90 transition-opacity">
           <MegaTvMark size={28} />
-          <span className="hidden sm:inline font-extrabold tracking-tight text-base sm:text-lg text-white">MegaTv</span>
+          <span className="font-extrabold tracking-tight text-lg text-white min-[920px]:text-lg">MegaTv</span>
         </Link>
 
         {/* Center Pill Nav Links */}
-        <nav className="flex items-center gap-1 sm:gap-1.5">
+        <nav className="hidden min-[920px]:flex items-center gap-1.5">
           <Link
             href="/"
             className={clsx(
-              "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14.5px] transition-all",
+              "px-5 py-2 rounded-full text-[14.5px] transition-all",
               activeTab === "home"
                 ? "bg-white text-black shadow-md font-extrabold"
                 : "text-white/75 hover:text-white font-bold hover:bg-white/6"
@@ -188,7 +184,7 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/premium"
             className={clsx(
-              "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14.5px] transition-all font-extrabold",
+              "px-5 py-2 rounded-full text-[14.5px] transition-all font-extrabold",
               activeTab === "premium"
                 ? "bg-white text-black shadow-md font-extrabold"
                 : "bg-gradient-to-r from-[#3f9ae6] via-[#1fa8a0] via-[#5fbf5a] via-[#f2b43c] via-[#ee6a54] to-[#d8497f] bg-clip-text text-transparent hover:opacity-90"
@@ -199,7 +195,7 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           <Link
             href="/companion"
             className={clsx(
-              "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14.5px] transition-all",
+              "px-5 py-2 rounded-full text-[14.5px] transition-all",
               activeTab === "companion"
                 ? "bg-white text-black shadow-md font-extrabold"
                 : "text-white/75 hover:text-white font-bold hover:bg-white/6"
@@ -209,18 +205,7 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           </Link>
         </nav>
 
-        {/* Right Section: Theme Toggle + Profile / Login */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 pl-1.5 sm:pl-3 border-l border-white/10">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label="Changer de thème"
-            className="p-2 rounded-full text-white/60 hover:text-white hover:bg-white/8 transition-colors"
-          >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-
-          {/* User Profile or Login Button */}
+        <div className="hidden min-[920px]:flex items-center gap-2.5 pl-3 border-l border-white/10">
           {isLoggedIn ? (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -341,13 +326,60 @@ export function MegaFloatingNav({ currentTab }: MegaFloatingNavProps) {
           ) : (
             <Link
               href={`/login?next=${encodeURIComponent(pathname || "/")}`}
-              className="flex items-center gap-1.5 px-3 sm:px-4.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-[14px] font-bold bg-white/12 hover:bg-white/20 text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[14px] font-bold bg-white/12 hover:bg-white/20 text-white transition-all shadow-sm"
             >
               <UserIcon size={14} />
-              <span className="hidden xs:inline sm:inline">Connexion</span>
+              <span>Connexion</span>
             </Link>
           )}
         </div>
+        <button
+          type="button"
+          className="min-[920px]:hidden inline-flex items-center justify-center w-11 h-11 rounded-full text-white"
+          aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+      {menuOpen && (
+        <div className="min-[920px]:hidden mt-2 p-2 rounded-[22px] bg-[#12141c]/95 backdrop-blur-2xl border border-white/12 shadow-[0_24px_60px_rgba(0,0,0,0.55)] flex flex-col gap-1 max-h-[min(70dvh,560px)] overflow-auto">
+          <Link href="/" className={clsx(sheetLink, activeTab === "home" && "bg-white text-black")} onClick={() => setMenuOpen(false)}>Home</Link>
+          <Link href="/premium" className={clsx("flex items-center min-h-12 px-4 rounded-2xl text-base font-extrabold", activeTab === "premium" ? "bg-white text-black" : "bg-gradient-to-r from-[#3f9ae6] via-[#1fa8a0] via-[#5fbf5a] via-[#f2b43c] via-[#ee6a54] to-[#d8497f] bg-clip-text text-transparent")} onClick={() => setMenuOpen(false)}>Premium</Link>
+          <Link href="/companion" className={clsx(sheetLink, activeTab === "companion" && "bg-white text-black")} onClick={() => setMenuOpen(false)}>Compagnon</Link>
+          <div className="h-px bg-white/10 my-1" />
+          {isLoggedIn ? (
+            <>
+              <div className="flex items-center gap-3 px-3 py-2">
+                {activeAvatarSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={activeAvatarSrc} alt="" className="w-11 h-11 rounded-full object-cover" />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-sm font-bold text-white">
+                    {displayName[0] || "U"}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="font-bold text-white truncate">{displayName}</p>
+                  <p className="text-xs text-white/55 truncate">{userEmail}</p>
+                </div>
+              </div>
+              <Link href="/companion" className={sheetLink} onClick={() => setMenuOpen(false)}>Tableau de bord</Link>
+              <Link href="/companion/profiles" className={sheetLink} onClick={() => setMenuOpen(false)}>Changer de profil</Link>
+              <button type="button" className={clsx(sheetLink, "text-red-400")} onClick={handleSignOut}>
+                <LogOut size={16} className="mr-2" />
+                Se déconnecter
+              </button>
+            </>
+          ) : (
+            <Link href={`/login?next=${encodeURIComponent(pathname || "/")}`} className={sheetLink} onClick={() => setMenuOpen(false)}>
+              <UserIcon size={16} className="mr-2" />
+              Connexion
+            </Link>
+          )}
+        </div>
+      )}
       </div>
     </header>
   );

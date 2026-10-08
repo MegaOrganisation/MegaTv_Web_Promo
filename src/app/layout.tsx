@@ -76,7 +76,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         style={{ ["--font-nunito" as string]: "'Nunito Variable', Nunito, system-ui, sans-serif" }}
       >
         <Script id="mega-theme-boot" strategy="beforeInteractive">
-          {`(function(){try{var m=localStorage.getItem('megacompanion_theme');var t=m==='light'?'light':m==='system'&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`}
+          {`(function(){document.documentElement.dataset.theme='dark';document.documentElement.style.colorScheme='dark';})();`}
         </Script>
         <ThemeProvider>
           <CompanionPwaSplash />

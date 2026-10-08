@@ -25,18 +25,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [resolved, setResolved] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-    if (stored === "dark" || stored === "light" || stored === "system") {
-      setModeState(stored);
-    }
+    setModeState("dark");
+    setResolved("dark");
+    document.documentElement.dataset.theme = "dark";
+    document.documentElement.style.colorScheme = "dark";
   }, []);
-
-  useEffect(() => {
-    const next = resolveTheme(mode);
-    setResolved(next);
-    document.documentElement.dataset.theme = next;
-    document.documentElement.style.colorScheme = next;
-  }, [mode]);
 
   useEffect(() => {
     if (mode !== "system") return;
