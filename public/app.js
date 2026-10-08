@@ -165,6 +165,7 @@ function changeLanguage(lang) {
   html.style.setProperty("--platforms-label", `"${t(lang, "platforms.label") || "Disponible sur"}"`);
   updatePricingDisplay(lang);
   if (typeof refreshActiveScreen === "function") refreshActiveScreen();
+  if (typeof window.syncFeatBlurbs === "function") window.syncFeatBlurbs();
 }
 window.changeLanguage = changeLanguage;
 window.applyLang = changeLanguage;
@@ -243,6 +244,7 @@ if(hero3d){
 /* ---------- CARD TILT ---------- */
 document.querySelectorAll('.price-card, .feat-card').forEach(card=>{
   card.addEventListener('mousemove',(e)=>{
+    if (card.classList.contains("price-card") && window.matchMedia("(max-width: 720px)").matches) return;
     const t = window.MegaMotion.tilt;
     const rect = card.getBoundingClientRect();
     const rx = ((e.clientY-rect.top)/rect.height - 0.5) * -7 * t;
@@ -351,6 +353,9 @@ function playSoon(lang) {
 function apkLink(label) {
   return `<a class="btn-apk" href="/api/download/android">${APK_ICON}${label}</a>`;
 }
+function downloaderCode(lang) {
+  return `<span class="downloader-code" title="Downloader"><small>${t(lang, "apk.downloader")}</small><strong>6854369</strong></span>`;
+}
 const ANDROID = `<svg viewBox="0 0 24 24" fill="#3DDC84"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></svg>`;
 const APPLE = `<svg viewBox="0 0 24 24" fill="#F1F0F4"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.76 1.05-1.82.93-2.88-.91.04-2.01.61-2.65 1.37-.57.65-1.07 1.73-.93 2.76 1.01.08 2.02-.51 2.65-1.25z"/></svg>`;
 let activeScreen = "mobile";
@@ -369,7 +374,7 @@ function screenPack(lang) {
       title: t(lang, "screen.tv.title"),
       sub: t(lang, "screen.tv.sub"),
       logos: `<div class="nuvio-wordmarks"><span class="word-androidtv">Android <b>TV</b></span><span class="word-googletv">${GOOGLE}Google TV</span>${FIRE_MARK}</div>`,
-      ctas: `${play}${apkLink(t(lang, "apk.tv"))}${apkLink(t(lang, "apk.fire"))}`
+      ctas: `${play}${apkLink(t(lang, "apk.tv"))}<span class="fire-apk-row">${apkLink(t(lang, "apk.fire"))}${downloaderCode(lang)}</span>`
     },
     web: {
       title: t(lang, "screen.web.title"),
@@ -651,16 +656,65 @@ function initSoonPops() {
   });
 }
 
+function syncFeatBlurbs() {
+  const root = document.getElementById("feat-studio");
+  if (!root) return;
+  root.querySelectorAll("[data-feat-btn]").forEach((btn) => {
+    const id = btn.getAttribute("data-feat-btn");
+    const copy = root.querySelector(`[data-feat-panel="${id}"] .feat-copy p:not(.feat-kicker)`);
+    if (!copy) return;
+    let desc = btn.querySelector(".feat-rail-desc");
+    if (!desc) {
+      desc = document.createElement("span");
+      desc.className = "feat-rail-desc";
+      btn.appendChild(desc);
+    }
+    desc.textContent = copy.textContent.trim();
+  });
+}
+window.syncFeatBlurbs = syncFeatBlurbs;
+
+function initPricingFan() {
+  const grid = document.querySelector("#pricing .pricing-grid");
+  if (!grid) return;
+  const cards = [...grid.querySelectorAll(".price-card")];
+  const mq = window.matchMedia("(max-width: 720px)");
+  const bringFront = (card) => {
+    cards.forEach((item) => item.classList.toggle("is-front", item === card));
+  };
+  const featured = grid.querySelector(".price-card.featured") || cards[0];
+  if (featured) bringFront(featured);
+  grid.addEventListener("click", (event) => {
+    if (!mq.matches) return;
+    const card = event.target.closest(".price-card");
+    if (!card || !grid.contains(card)) return;
+    if (!card.classList.contains("is-front")) {
+      event.preventDefault();
+      bringFront(card);
+      return;
+    }
+    const link = card.querySelector("a.btn-price");
+    if (!link || event.target.closest("a.btn-price")) return;
+    event.preventDefault();
+    window.location.href = link.getAttribute("href");
+  });
+}
+
 function initFeatStudio() {
   const root = document.getElementById("feat-studio");
   if (!root) return;
   const buttons = root.querySelectorAll("[data-feat-btn]");
   const panels = root.querySelectorAll("[data-feat-panel]");
+  const rail = root.querySelector(".feat-rail");
   function show(id) {
     buttons.forEach((btn) => {
       const on = btn.getAttribute("data-feat-btn") === id;
       btn.classList.toggle("is-on", on);
       btn.setAttribute("aria-selected", on ? "true" : "false");
+      if (on && rail && window.matchMedia("(max-width: 860px)").matches) {
+        const left = btn.offsetLeft - (rail.clientWidth - btn.offsetWidth) / 2;
+        rail.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+      }
     });
     panels.forEach((panel) => {
       panel.classList.toggle("is-on", panel.getAttribute("data-feat-panel") === id);
@@ -669,6 +723,7 @@ function initFeatStudio() {
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => show(btn.getAttribute("data-feat-btn")));
   });
+  syncFeatBlurbs();
 }
 
 /* ---------- INIT ---------- */
@@ -677,6 +732,7 @@ applyParallax();
 initLangMenus();
 initSoonPops();
 initFeatStudio();
+initPricingFan();
 let savedLang = "fr";
 try { savedLang = localStorage.getItem("megatv_lang") || "fr"; } catch (_) {}
 applyLang(savedLang);
