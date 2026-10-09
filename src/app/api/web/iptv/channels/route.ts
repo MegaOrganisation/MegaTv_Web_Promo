@@ -23,7 +23,11 @@ export async function GET(request: Request) {
 
   const { playlists, favoriteChannels, hiddenCategories, hiddenChannels, error, scope } = await getIptvPlaylistsForProfile(profileId);
 
-  if (playlists.length === 0) {
+  const validPlaylists = playlists.filter(
+    (p) => p.enabled !== false && Boolean(p.m3uUrl && p.m3uUrl.trim() && p.m3uUrl !== "null" && p.m3uUrl !== "undefined")
+  );
+
+  if (validPlaylists.length === 0) {
     return NextResponse.json({
       configured: false,
       channels: [],
@@ -40,7 +44,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const result = await loadIptvChannels(playlists);
+  const result = await loadIptvChannels(validPlaylists);
   return NextResponse.json({
     configured: true,
     favoriteChannels,

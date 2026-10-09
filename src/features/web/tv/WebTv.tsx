@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ArrowUpRight, ChevronDown, ChevronUp, ImageOff, LayoutGrid, ListVideo, Search, SquarePen, Star, Tv, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronUp, ImageOff, LayoutGrid, ListVideo, RefreshCw, Search, SquarePen, Star, Tv, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -41,16 +41,22 @@ const CHANNELS_CACHE_TTL = 10 * 60 * 1000;
 const EPG_CACHE_TTL = 15 * 60 * 1000;
 const FAV_DEBOUNCE_MS = 2500;
 
-const channelsCacheKey = (p: string) => `megatv_web_iptv_cache_v2_${p}`;
+const channelsCacheKey = (p: string) => `megatv_web_iptv_cache_v3_${p}`;
 const epgCacheKey = (p: string) => `megatv_web_iptv_epg_${p}`;
 
-function readCache<T>(key: string, ttl: number): T | null {
+function readCache<T extends { errors?: unknown[]; channels?: unknown[] } | unknown>(key: string, ttl: number): T | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { at: number; value: T };
     if (Date.now() - parsed.at > ttl) return null;
+    // Discard cache if it contains any errors
+    const val = parsed.value as { errors?: unknown[]; channels?: unknown[] } | null;
+    if (val && Array.isArray(val.errors) && val.errors.length > 0) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
     return parsed.value;
   } catch {
     return null;
@@ -83,6 +89,7 @@ export function WebTv({ profileId }: { profileId: string }) {
 
   const [payload, setPayload] = useState<ChannelsPayload | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "empty">("loading");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -203,8 +210,22 @@ export function WebTv({ profileId }: { profileId: string }) {
       setPayload(data);
       setStatus(data.configured ? "ready" : "empty");
       seedFavoritesIfEmpty(profileId, data.favoriteChannels);
-      // Land on Favorites when the profile already has some.
-      if (data.configured && favoritesRef.current.length > 0) setActiveCat("fav");
+      // Auto-land on Favorites if matching favorites exist, else on "all"
+      const favIds = new Set(favoritesRef.current);
+      const hasMatchingFav = (data.channels || []).some((c) => {
+        if (favIds.has(c.id) || (c.legacyId && favIds.has(c.legacyId))) return true;
+        const colon = c.id.indexOf(":");
+        if (colon > 0) {
+          const bare = c.id.slice(colon + 1);
+          return Array.from(favIds).some((f) => f.endsWith(bare));
+        }
+        return false;
+      });
+      if (data.configured && hasMatchingFav) {
+        setActiveCat("fav");
+      } else if (data.configured && (data.channels || []).length > 0) {
+        setActiveCat("all");
+      }
     },
     [profileId]
   );
@@ -268,32 +289,43 @@ export function WebTv({ profileId }: { profileId: string }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // ---- Channel load (localStorage-first, then network) -----------------------
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const cached = readCache<ChannelsPayload>(channelsCacheKey(profileId), CHANNELS_CACHE_TTL);
-      if (cached) {
-        if (!cancelled) applyPayload(cached);
-        return; // fresh cache → no network
+  // ---- Channel load (localStorage-first, then network, with force reload) ---
+  const fetchChannels = useCallback(
+    async (forceNetwork = false) => {
+      if (!forceNetwork) {
+        const cached = readCache<ChannelsPayload>(channelsCacheKey(profileId), CHANNELS_CACHE_TTL);
+        if (cached && cached.channels && cached.channels.length > 0) {
+          applyPayload(cached);
+          return;
+        }
+      } else {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(channelsCacheKey(profileId));
+          window.localStorage.removeItem(`megatv_web_iptv_cache_v2_${profileId}`);
+        }
       }
+      setIsRefreshing(true);
       try {
-        const res = await fetch(`/api/web/iptv/channels?profile=${encodeURIComponent(profileId)}`);
+        const res = await fetch(`/api/web/iptv/channels?profile=${encodeURIComponent(profileId)}&_t=${Date.now()}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as ChannelsPayload;
-        if (cancelled) return;
         applyPayload(data);
-        if (data.configured) writeCache(channelsCacheKey(profileId), data);
+        if (data.configured && data.channels && data.channels.length > 0 && (!data.errors || data.errors.length === 0)) {
+          writeCache(channelsCacheKey(profileId), data);
+        }
       } catch {
-        if (cancelled) return;
         setErrorMsg("Impossible de charger les chaînes.");
         setStatus("error");
+      } finally {
+        setIsRefreshing(false);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [profileId, applyPayload]);
+    },
+    [profileId, applyPayload]
+  );
+
+  useEffect(() => {
+    void fetchChannels(false);
+  }, [fetchChannels]);
 
   // ---- EPG lazy load (only if a playlist exposes an EPG url) -----------------
   useEffect(() => {
@@ -325,6 +357,11 @@ export function WebTv({ profileId }: { profileId: string }) {
     payload?.channels.forEach((c) => {
       map.set(c.id, c);
       if (c.legacyId) map.set(c.legacyId, c);
+      const colon = c.id.indexOf(":");
+      if (colon > 0) {
+        const bare = c.id.slice(colon + 1);
+        if (!map.has(bare)) map.set(bare, c);
+      }
     });
     return map;
   }, [payload]);
@@ -357,7 +394,17 @@ export function WebTv({ profileId }: { profileId: string }) {
     if (!payload) return [] as IptvChannel[];
     let list: IptvChannel[];
     if (activeCat === "fav") {
-      list = favorites.map((id) => channelById.get(id)).filter((c): c is IptvChannel => Boolean(c));
+      list = favorites
+        .map((id) => {
+          if (channelById.has(id)) return channelById.get(id);
+          const colon = id.indexOf(":");
+          if (colon > 0) {
+            const bare = id.slice(colon + 1);
+            return channelById.get(bare);
+          }
+          return undefined;
+        })
+        .filter((c): c is IptvChannel => Boolean(c));
     } else if (activeCat === "all") {
       list = payload.channels;
     } else {
@@ -519,9 +566,18 @@ export function WebTv({ profileId }: { profileId: string }) {
             </p>
           ) : null}
           {payload.errors.length > 0 ? (
-            <p className="rounded-xl border border-[var(--mega-red)]/30 bg-[var(--mega-red)]/10 px-3 py-2 text-xs text-[var(--mega-red)]">
-              {payload.errors.map((e) => `${e.name || "Liste"} : ${e.message}`).join(" · ")}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--mega-red)]/30 bg-[var(--mega-red)]/10 px-3 py-2 text-xs text-[var(--mega-red)]">
+              <span>{payload.errors.map((e) => `${e.name || "Liste"} : ${e.message}`).join(" · ")}</span>
+              <button
+                type="button"
+                onClick={() => void fetchChannels(true)}
+                disabled={isRefreshing}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--mega-red)]/20 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[var(--mega-red)]/30"
+              >
+                <RefreshCw className={clsx("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+                Actualiser
+              </button>
+            </div>
           ) : null}
 
           {/* Enhanced Quick Search Toolbar */}
@@ -558,6 +614,16 @@ export function WebTv({ profileId }: { profileId: string }) {
                 )}
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => void fetchChannels(true)}
+              disabled={isRefreshing}
+              className="focus-ring flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-[var(--mega-border)] bg-[var(--mega-input-bg)] px-3 text-xs font-semibold text-[var(--mega-text-muted)] transition hover:border-[var(--mega-border-strong)] hover:text-white"
+              title="Actualiser la liste des chaînes"
+            >
+              <RefreshCw className={clsx("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+              <span className="hidden sm:inline">Actualiser</span>
+            </button>
             {isFav && favorites.length > 1 ? (
               <button
                 type="button"
@@ -579,7 +645,18 @@ export function WebTv({ profileId }: { profileId: string }) {
             <EmptyState
               inline
               title={isFav ? "Aucun favori" : "Aucune chaîne"}
-              message={isFav ? "Marquez des chaînes avec l'étoile pour les retrouver ici." : "Aucune chaîne dans cette catégorie."}
+              message={
+                isFav
+                  ? payload?.channels?.length
+                    ? "Aucun de vos favoris n'est présent dans cette playlist active. Découvrez toutes les chaînes disponibles."
+                    : "Marquez des chaînes avec l'étoile pour les retrouver ici."
+                  : "Aucune chaîne dans cette catégorie."
+              }
+              cta={
+                isFav && payload?.channels?.length
+                  ? { label: "Voir toutes les chaînes", onClick: () => selectCategory("all") }
+                  : undefined
+              }
             />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -724,7 +801,7 @@ function EmptyState({
 }: {
   title: string;
   message: string;
-  cta?: { href: string; label: string };
+  cta?: { href?: string; label: string; onClick?: () => void };
   inline?: boolean;
 }) {
   return (
@@ -742,12 +819,22 @@ function EmptyState({
         <p className="text-sm text-[var(--mega-text-muted)]">{message}</p>
       </div>
       {cta ? (
-        <Link
-          href={cta.href}
-          className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border-strong)] bg-[var(--mega-card-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--mega-text)] transition hover:bg-[var(--mega-surface-raised)]"
-        >
-          {cta.label}
-        </Link>
+        cta.onClick ? (
+          <button
+            type="button"
+            onClick={cta.onClick}
+            className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border-strong)] bg-[var(--mega-card-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--mega-text)] transition hover:bg-[var(--mega-surface-raised)]"
+          >
+            {cta.label}
+          </button>
+        ) : cta.href ? (
+          <Link
+            href={cta.href}
+            className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--mega-border-strong)] bg-[var(--mega-card-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--mega-text)] transition hover:bg-[var(--mega-surface-raised)]"
+          >
+            {cta.label}
+          </Link>
+        ) : null
       ) : null}
     </div>
   );

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { normalizePlaylistEntry, type IptvPlaylistEntry, type IptvProfileState } from "@/lib/iptv/types";
+import { cleanUrl, normalizePlaylistEntry, type IptvPlaylistEntry, type IptvProfileState } from "@/lib/iptv/types";
 
 function parsePayload(value: unknown): Record<string, unknown> {
   if (!value) return {};
@@ -18,6 +18,17 @@ function asIptvMap(value: unknown): Record<string, IptvProfileState> {
   return value as Record<string, IptvProfileState>;
 }
 
+function isValidUrl(val?: string | null): boolean {
+  if (!val) return false;
+  const s = val.trim();
+  return s.length > 0 && s !== "null" && s !== "undefined";
+}
+
+function hasPlaylistData(state: IptvProfileState) {
+  if (!Array.isArray(state?.playlists) || state.playlists.length === 0) return false;
+  return state.playlists.some((p) => isValidUrl(p?.m3uUrl));
+}
+
 function resolveProfileState(
   iptvByProfile: Record<string, IptvProfileState>,
   profileId: string,
@@ -25,31 +36,27 @@ function resolveProfileState(
   accountEpg?: string | null
 ) {
   const direct = iptvByProfile[profileId];
-  if (direct && (hasPlaylistData(direct) || direct.m3uUrl)) return direct;
+  if (direct && (hasPlaylistData(direct) || isValidUrl(direct.m3uUrl))) return direct;
 
   const lowered = profileId.toLowerCase();
   const match = Object.entries(iptvByProfile).find(([key]) => key.toLowerCase() === lowered);
-  if (match?.[1] && (hasPlaylistData(match[1]) || match[1].m3uUrl)) return match[1];
+  if (match?.[1] && (hasPlaylistData(match[1]) || isValidUrl(match[1].m3uUrl))) return match[1];
 
   const withPlaylists = Object.values(iptvByProfile).find((state) => hasPlaylistData(state));
   if (withPlaylists) return withPlaylists;
 
-  const withM3u = Object.values(iptvByProfile).find((state) => Boolean(state?.m3uUrl));
+  const withM3u = Object.values(iptvByProfile).find((state) => isValidUrl(state?.m3uUrl));
   if (withM3u) return withM3u;
 
-  if (accountM3u) {
+  if (isValidUrl(accountM3u)) {
     return {
-      m3uUrl: accountM3u,
-      epgUrl: accountEpg || "",
+      m3uUrl: accountM3u!,
+      epgUrl: isValidUrl(accountEpg) ? accountEpg! : "",
       playlists: []
     };
   }
 
   return {};
-}
-
-function hasPlaylistData(state: IptvProfileState) {
-  return Array.isArray(state.playlists) && state.playlists.length > 0;
 }
 
 function favoriteChannelsFromState(state: IptvProfileState): string[] {
@@ -127,13 +134,22 @@ function collectAccountPlaylists(iptvByProfile: Record<string, IptvProfileState>
 
   Object.values(iptvByProfile).forEach((state) => {
     playlistsFromState(state).forEach((playlist) => {
-      const key = `${playlist.id}|${playlist.m3uUrl}`;
-      if (!merged.has(key) && playlist.m3uUrl) merged.set(key, playlist);
+      const u = cleanUrl(playlist.m3uUrl);
+      if (u) {
+        const key = `${playlist.id}|${u}`;
+        if (!merged.has(key)) merged.set(key, { ...playlist, m3uUrl: u });
+      }
     });
   });
 
-  if (merged.size === 0 && accountM3u) {
-    merged.set("account_legacy", normalizePlaylistEntry({ id: "list_1", name: "Liste principale", m3uUrl: accountM3u, epgUrl: accountEpg || "", enabled: true }, 0));
+  if (merged.size === 0 && isValidUrl(accountM3u)) {
+    merged.set(
+      "account_legacy",
+      normalizePlaylistEntry(
+        { id: "list_1", name: "Liste principale", m3uUrl: accountM3u!, epgUrl: accountEpg || "", enabled: true },
+        0
+      )
+    );
   }
 
   return [...merged.values()];
@@ -157,14 +173,17 @@ export async function getIptvPlaylistsForProfile(profileId: string) {
   const sliceIptv = asIptvMap(sliceResult.data?.iptv_by_profile);
   const iptvByProfile = { ...payloadIptv, ...sliceIptv };
 
-  const accountM3u =
+  const rawAccountM3u =
     (sliceResult.data?.iptv_m3u_url as string | null) ||
     (typeof payload.iptvM3uUrl === "string" ? payload.iptvM3uUrl : null) ||
     (typeof payload.iptv_m3u_url === "string" ? payload.iptv_m3u_url : null);
-  const accountEpg =
+  const accountM3u = cleanUrl(rawAccountM3u) || null;
+
+  const rawAccountEpg =
     (sliceResult.data?.iptv_epg_url as string | null) ||
     (typeof payload.iptvEpgUrl === "string" ? payload.iptvEpgUrl : null) ||
     (typeof payload.iptv_epg_url === "string" ? payload.iptv_epg_url : null);
+  const accountEpg = cleanUrl(rawAccountEpg) || null;
 
   const profileState = resolveProfileState(iptvByProfile, normalizedProfileId, accountM3u, accountEpg);
   let playlists = playlistsFromState(profileState);

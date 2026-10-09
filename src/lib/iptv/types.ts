@@ -52,14 +52,21 @@ function optionalString(raw: unknown): string | null {
   return value ? value : null;
 }
 
+export function cleanUrl(raw: unknown): string {
+  if (raw === null || raw === undefined) return "";
+  const trimmed = String(raw).trim();
+  if (trimmed === "null" || trimmed === "undefined") return "";
+  return trimmed;
+}
+
 export function normalizePlaylistEntry(raw: Record<string, unknown>, index: number): IptvPlaylistEntry {
   const id = String(raw.id || `list_${index + 1}`);
   const name = String(raw.name || `Liste ${index + 1}`);
   // Android / Companion may use m3uUrl; tolerate url / sourceUrl aliases.
   const rawUrl = raw.m3uUrl ?? raw.m3u_url ?? raw.url ?? raw.sourceUrl ?? "";
-  const m3uUrl = String(rawUrl === null || rawUrl === undefined ? "" : rawUrl).trim();
+  const m3uUrl = cleanUrl(rawUrl);
   const rawEpg = raw.epgUrl ?? raw.epg_url ?? "";
-  const epgUrl = String(rawEpg === null || rawEpg === undefined ? "" : rawEpg).trim();
+  const epgUrl = cleanUrl(rawEpg);
   const enabled = raw.enabled === undefined ? true : Boolean(raw.enabled);
   const hiddenRaw = raw.hiddenCategories ?? raw.hidden_categories;
   const hiddenCategories = Array.isArray(hiddenRaw)
