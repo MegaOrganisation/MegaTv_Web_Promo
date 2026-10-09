@@ -45,7 +45,12 @@ export function WebPlayerExperience({
   addonsHref
 }: Props) {
   const router = useRouter();
-  const [selected, setSelected] = useState(0);
+  // Prefer ≤1080p for autoplay — 4K (often HEVC) frequently paints a black frame in Chrome.
+  const initialIndex = useMemo(() => {
+    const idx = sources.findIndex((s) => (s.resolution || 0) > 0 && (s.resolution || 0) <= 1080);
+    return idx >= 0 ? idx : 0;
+  }, [sources]);
+  const [selected, setSelected] = useState(initialIndex);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [exhausted, setExhausted] = useState(false);
   const sheetItems = useMemo(() => toSheetItems(sources), [sources]);
@@ -89,9 +94,12 @@ export function WebPlayerExperience({
   const stream = sources[Math.min(selected, sources.length - 1)];
 
   const tryNextOrExhaust = () => {
-    if (selected + 1 < sources.length) {
+    let next = selected + 1;
+    // Skip 4K on auto-advance (HEVC black screen); still available via picker.
+    while (next < sources.length && (sources[next].resolution || 0) >= 2160) next += 1;
+    if (next < sources.length) {
       setExhausted(false);
-      setSelected((current) => current + 1);
+      setSelected(next);
       return;
     }
     setExhausted(true);
@@ -101,11 +109,10 @@ export function WebPlayerExperience({
     return (
       <div className="grid h-screen w-screen place-items-center bg-black p-6 text-center">
         <div className="max-w-lg space-y-4">
-          <p className="text-xl font-bold text-white">Aucune de ces sources n’est lisible dans le navigateur</p>
+          <p className="text-xl font-bold text-white">Lecture automatique impossible</p>
           <p className="text-sm leading-relaxed text-white/60">
-            Les liens AllDebrid / Debrid testés sont probablement en conteneur MKV (ou codec incompatible HTML5).
-            L’app Android les lit via ExoPlayer ; Chrome/Safari exigent du <span className="text-white/80">MP4</span> ou{" "}
-            <span className="text-white/80">HLS</span>.
+            Aucune source n’a démarré toute seule. Choisissez-en une manuellement — le 1080p est en général plus fiable
+            que le 4K (souvent HEVC = écran noir dans Chrome).
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {sources.length > 1 ? (

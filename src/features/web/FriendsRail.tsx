@@ -13,7 +13,7 @@ function friendAsProfile(friend: FriendRailEntry): ProfileRow {
     profile_id: friend.friendProfileId || friend.friendUserId,
     user_id: friend.friendUserId,
     name: friend.displayName,
-    avatar_id: friend.avatarId || 0,
+    avatar_id: Number.isFinite(friend.avatarId) ? friend.avatarId : 0,
     avatar_image_storage_path: friend.avatarImageStoragePath,
     avatar_image_version: friend.avatarImageVersion || 0,
     avatar_color: null,
@@ -68,8 +68,8 @@ export function FriendsRail({ friends }: { friends: FriendRailEntry[] }) {
               <span
                 className={
                   friend.ring === "active"
-                    ? "rounded-full p-[3px] ring-2 ring-[var(--mega-green)] ring-offset-2 ring-offset-[var(--mega-background)]"
-                    : "rounded-full p-[3px] ring-2 ring-white/25 ring-offset-2 ring-offset-[var(--mega-background)]"
+                    ? "mega-profile-ring !border-[var(--mega-green)] !border-2"
+                    : "mega-profile-ring"
                 }
               >
                 <ProfileAvatar

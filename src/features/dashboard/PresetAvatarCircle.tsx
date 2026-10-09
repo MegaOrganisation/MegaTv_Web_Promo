@@ -36,7 +36,7 @@ export function PresetAvatarCircle({
   return (
     <span
       className={clsx(
-        "relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border border-white/15 p-0.5",
+        "relative inline-block shrink-0 overflow-hidden rounded-full",
         sizeClasses[size],
         className
       )}
@@ -51,7 +51,7 @@ export function PresetAvatarCircle({
         width={pixelSizes[size]}
         height={pixelSizes[size]}
         unoptimized
-        className="h-full w-full rounded-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover"
       />
     </span>
   );

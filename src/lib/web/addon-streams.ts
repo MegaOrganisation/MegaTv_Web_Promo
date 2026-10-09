@@ -192,15 +192,11 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
 
     const filename = stream.behaviorHints?.filename || null;
     const text = `${stream.name || ""} ${stream.title || ""} ${stream.description || ""} ${filename || ""}`;
-    // Hard drop known hostile containers (Chrome/Safari cannot DirectPlay MKV/AVI/TS).
-    if (looksBrowserHostile(url, filename) || looksBrowserHostile(url, text)) continue;
+    // Drop only clearly non-video archives / raw TS — Chrome can DirectPlay some MKV now.
+    if (/\.(rar|zip|iso)(\?|$)/i.test(url) || /\.(rar|zip|iso)\b/i.test(text)) continue;
+    if (/\.(m2ts|mpg|mpeg)(\?|$)/i.test(url) && !looksBrowserFriendly(url, text)) continue;
 
     const notWebReady = Boolean(stream.behaviorHints?.notWebReady);
-    // `notWebReady` without a clear mp4/hls extension ≈ ExoPlayer-only debrid mirror.
-    if (notWebReady && !looksBrowserFriendly(url, filename) && !looksBrowserFriendly(url, text)) {
-      continue;
-    }
-
     const streamTitle = (stream.name || stream.title || filename || "").trim() || provider;
     const { resolution, label } = detectQuality(text);
     const kind: AddonStreamSource["kind"] = /\.m3u8(\?|$)/i.test(url) ? "hls" : "mp4";
@@ -224,8 +220,12 @@ function webReadyBonus(source: AddonStreamSource): number {
   if (source.probe === "playable") return 50;
   if (source.kind === "hls") return 40;
   if (looksBrowserFriendly(source.url, source.label)) return 35;
+  // 4K is often HEVC → black frame in Chrome; keep listed but never first.
+  if (source.resolution === 2160) return -40;
+  if (source.probe === "unplayable") return -30;
+  if (looksBrowserHostile(source.url, source.label)) return -25;
+  if (source.notWebReady) return -10;
   if (source.probe === "unknown") return 5;
-  if (source.notWebReady) return -20;
   return 0;
 }
 
@@ -245,7 +245,7 @@ function dedupeAndSort(sources: AddonStreamSource[]): AddonStreamSource[] {
   });
 }
 
-/** Drop sniffed-unplayable URLs; if every probe failed, keep filename-friendly only. */
+/** Annotate probe results and re-sort — keep all candidates (manual picker + Chrome MKV). */
 function applyProbeResults(
   sources: AddonStreamSource[],
   probes: Map<string, "playable" | "unplayable" | "unknown">
@@ -254,10 +254,7 @@ function applyProbeResults(
     ...source,
     probe: probes.get(source.url) || source.probe || "unknown"
   }));
-  const playable = annotated.filter((s) => s.probe === "playable");
-  if (playable.length) return dedupeAndSort(playable);
-  const maybe = annotated.filter((s) => s.probe !== "unplayable");
-  return dedupeAndSort(maybe);
+  return dedupeAndSort(annotated);
 }
 
 export type AddonStreamRequest = {

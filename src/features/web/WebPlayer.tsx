@@ -70,6 +70,9 @@ export function WebPlayer({
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failedNotified = useRef(false);
   const triedModes = useRef<Set<"direct" | "proxy">>(new Set());
+  /** Ignores spurious `<video>` errors from clear/load before a real URL is attached. */
+  const attachGeneration = useRef(0);
+  const mediaAttached = useRef(false);
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +125,16 @@ export function WebPlayer({
     [sourceMode, stream.proxiedUrl, stream.url, notifyFailed]
   );
 
+  const handleMediaError = useCallback(() => {
+    if (!mediaAttached.current) return;
+    const video = videoRef.current;
+    // Empty/cleared src fires MEDIA_ERR_SRC_NOT_SUPPORTED — ignore until attach finishes.
+    if (!video?.currentSrc && !video?.src) return;
+    switchPlaybackMode(
+      "Impossible de lire ce flux dans le navigateur (format ou CDN incompatible). Essayez une autre source."
+    );
+  }, [switchPlaybackMode]);
+
   const goBack = useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
@@ -137,39 +150,48 @@ export function WebPlayer({
     let destroyed = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let hls: any = null;
+    const generation = ++attachGeneration.current;
+    mediaAttached.current = false;
     setReady(false);
     setError(null);
     failedNotified.current = false;
     // Keep triedModes across direct↔proxy flips for the same stream; reset only when URL changes.
     if (!triedModes.current.size) triedModes.current.add(sourceMode);
 
-    const failToProxy = (message: string) => switchPlaybackMode(message);
+    const failToProxy = (message: string) => {
+      if (attachGeneration.current !== generation) return;
+      switchPlaybackMode(message);
+    };
 
     async function attach() {
       if (!video) return;
       const canNativeHls = video.canPlayType("application/vnd.apple.mpegurl") !== "";
       if (stream.type === "mp4" || canNativeHls) {
-        // Prefer progressive download; clear previous src to force reload on mode switch.
-        video.removeAttribute("src");
-        video.load();
+        // Set src first — never call load() on an empty src (spurious onError → auto-skip all sources).
+        video.pause();
         video.src = sourceUrl;
+        mediaAttached.current = true;
         setReady(true);
         return;
       }
       try {
         const mod = await import("hls.js");
         const Hls = mod.default;
-        if (destroyed) return;
+        if (destroyed || attachGeneration.current !== generation) return;
         if (Hls.isSupported()) {
           hls = new Hls({ enableWorker: true, maxBufferLength: 30 });
           hls.loadSource(sourceUrl);
           hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => setReady(true));
+          mediaAttached.current = true;
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (attachGeneration.current === generation) setReady(true);
+          });
           hls.on(Hls.Events.ERROR, (_event: unknown, data: { fatal?: boolean }) => {
             if (data?.fatal) failToProxy("Lecture impossible (flux indisponible ou bloqué).");
           });
         } else {
           video.src = sourceUrl;
+          mediaAttached.current = true;
           setReady(true);
         }
       } catch {
@@ -180,6 +202,7 @@ export function WebPlayer({
     attach();
     return () => {
       destroyed = true;
+      mediaAttached.current = false;
       if (hls) hls.destroy();
     };
   }, [sourceUrl, stream.type, stream.proxiedUrl, stream.url, sourceMode, notifyFailed, switchPlaybackMode]);
@@ -435,11 +458,7 @@ export function WebPlayer({
         }}
         onLoadedMetadata={onLoadedMetadata}
         onTimeUpdate={onTimeUpdate}
-        onError={() => {
-          switchPlaybackMode(
-            "Impossible de lire ce flux dans le navigateur (format ou CDN incompatible). Essayez une autre source."
-          );
-        }}
+        onError={handleMediaError}
         onVolumeChange={() => {
           const video = videoRef.current;
           if (video) {

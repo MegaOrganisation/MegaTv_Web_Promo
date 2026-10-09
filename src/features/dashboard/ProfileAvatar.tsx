@@ -48,9 +48,15 @@ export function ProfileAvatar({ profile, avatarUrl, size = "md", className, labe
 
   if (hasCustomImage && customSrc) {
     return (
-      <span className={clsx("relative inline-grid shrink-0 overflow-hidden rounded-full border border-white/15 bg-white/10", sizeClasses[size], className)}>
+      <span className={clsx("relative inline-block shrink-0 overflow-hidden rounded-full bg-white/10", sizeClasses[size], className)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={customSrc} alt={resolvedLabel} className="h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
+        <img
+          src={customSrc}
+          alt={resolvedLabel}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
       </span>
     );
   }

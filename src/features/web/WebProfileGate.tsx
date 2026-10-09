@@ -2,14 +2,23 @@
 
 import { clsx } from "clsx";
 import { Lock, PlayCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { MegaButton } from "@/components/ui/MegaButton";
-import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
+import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
 import { readStoredProfileId, withProfileQuery, writeStoredProfileId } from "@/lib/companion/profile-scope";
 import { formatPinInput } from "@/lib/profiles/pin";
 import type { ProfileRow } from "@/lib/supabase/types";
+
+function profileAvatarUrl(profile: ProfileRow): string | null {
+  const path = profile.avatar_image_storage_path?.trim();
+  if (path && (path.startsWith("http://") || path.startsWith("https://"))) return path;
+  if (path || (profile.avatar_image_version || 0) > 0 || profile.avatar_id === 0) {
+    return `/api/profiles/${encodeURIComponent(profile.profile_id)}/avatar?v=${profile.avatar_image_version || 1}`;
+  }
+  return null;
+}
 
 export function WebProfileGate({ profiles }: { profiles: ProfileRow[] }) {
   const router = useRouter();
@@ -67,14 +76,23 @@ export function WebProfileGate({ profiles }: { profiles: ProfileRow[] }) {
       enter(pinProfile.profile_id);
     } catch {
       setError("Connexion impossible");
+    } finally {
       setBusy(false);
     }
   };
 
+  const pinAvatarUrl = useMemo(() => (pinProfile ? profileAvatarUrl(pinProfile) : null), [pinProfile]);
+
   if (pinProfile) {
     return (
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-6">
-        <PresetAvatarCircle avatarId={pinProfile.avatar_id || 1} size="xl" label={pinProfile.name || "Profil"} />
+        <ProfileAvatar
+          profile={pinProfile}
+          avatarUrl={pinAvatarUrl}
+          size="xl"
+          label={pinProfile.name || "Profil"}
+          preferPreset={(pinProfile.avatar_id || 0) > 0 && !pinProfile.avatar_image_storage_path}
+        />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[var(--mega-text)]">{pinProfile.name || "Profil verrouillé"}</h1>
           <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-[var(--mega-text-faint)]">
@@ -115,33 +133,43 @@ export function WebProfileGate({ profiles }: { profiles: ProfileRow[] }) {
         <p className="text-[var(--mega-text-faint)]">Aucun profil MegaTv. Créez-en un depuis MegaCompagnon.</p>
       ) : (
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4">
-          {profiles.map((profile) => (
-            <button
-              key={profile.profile_id}
-              type="button"
-              onClick={() => choose(profile)}
-              className={clsx(
-                "focus-ring group flex flex-col items-center gap-3 rounded-3xl p-3 transition hover:bg-[var(--mega-card-bg)]"
-              )}
-            >
-              <span className="relative transition duration-300 group-hover:scale-105">
-                <PresetAvatarCircle avatarId={profile.avatar_id || 1} size="xl" label={profile.name || "Profil"} />
-                {profile.is_locked ? (
-                  <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-shell-nav)] text-[var(--mega-text)] backdrop-blur">
-                    <Lock className="h-3.5 w-3.5" />
+          {profiles.map((profile) => {
+            const customUrl = profileAvatarUrl(profile);
+            const preferPreset = (profile.avatar_id || 0) > 0 && !profile.avatar_image_storage_path;
+            return (
+              <button
+                key={profile.profile_id}
+                type="button"
+                onClick={() => choose(profile)}
+                className={clsx(
+                  "focus-ring group flex flex-col items-center gap-3 rounded-3xl p-3 transition hover:bg-[var(--mega-card-bg)]"
+                )}
+              >
+                <span className="mega-profile-ring relative transition duration-300 group-hover:scale-105">
+                  <ProfileAvatar
+                    profile={profile}
+                    avatarUrl={customUrl}
+                    size="xl"
+                    label={profile.name || "Profil"}
+                    preferPreset={preferPreset}
+                  />
+                  {profile.is_locked ? (
+                    <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border border-[var(--mega-border)] bg-[var(--mega-shell-nav)] text-[var(--mega-text)] backdrop-blur">
+                      <Lock className="h-3.5 w-3.5" />
+                    </span>
+                  ) : null}
+                </span>
+                <span className="max-w-[8rem] truncate text-sm font-semibold text-[var(--mega-text-muted)] group-hover:text-[var(--mega-text)]">
+                  {profile.name || "Profil MegaTv"}
+                </span>
+                {profile.is_kids_profile ? (
+                  <span className="rounded-full bg-[var(--mega-card-bg)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--brand-green)]">
+                    Enfant
                   </span>
                 ) : null}
-              </span>
-              <span className="max-w-[8rem] truncate text-sm font-semibold text-[var(--mega-text-muted)] group-hover:text-[var(--mega-text)]">
-                {profile.name || "Profil MegaTv"}
-              </span>
-              {profile.is_kids_profile ? (
-                <span className="rounded-full bg-[var(--mega-card-bg)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--brand-green)]">
-                  Enfant
-                </span>
-              ) : null}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
