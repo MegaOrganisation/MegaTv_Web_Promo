@@ -39,6 +39,14 @@ export function WebMobileHeader() {
             <Search className="h-5 w-5" />
           </Link>
           <Link
+            href={withProfile("/web/social")}
+            prefetch
+            aria-label="Social"
+            className="focus-ring pointer-events-auto mega-pro-icon-btn grid h-11 w-11 place-items-center rounded-full"
+          >
+            <MegaTvIcon name="users" className="h-5 w-5" />
+          </Link>
+          <Link
             href={withProfile("/web/settings")}
             prefetch
             aria-label="Réglages"

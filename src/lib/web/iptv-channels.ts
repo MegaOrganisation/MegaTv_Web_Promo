@@ -384,8 +384,26 @@ async function loadXtreamViaApi(entry: IptvPlaylistEntry): Promise<CacheEntry> {
   return { at: Date.now(), channels, epgUrl, capped };
 }
 
+/** Android Keystore ciphertext (`encv1:…`) cannot be decrypted on the web. */
+function assertPlayablePlaylistUrl(raw: string): string {
+  const trimmed = raw?.trim() || "";
+  if (!trimmed || trimmed === "null" || trimmed === "undefined") {
+    throw new Error("URL playlist manquante dans MegaCloud. Ré-enregistrez la liste dans MegaCompagnon.");
+  }
+  if (/^encv1:/i.test(trimmed)) {
+    throw new Error(
+      "URL chiffrée appareil (encv1) — le navigateur ne peut pas la déchiffrer. Ouvrez MegaCompagnon → IPTV et ré-enregistrez la playlist (URL en clair sync MegaCloud)."
+    );
+  }
+  if (!/^https?:\/\//i.test(trimmed)) {
+    throw new Error("URL playlist invalide (http/https requis).");
+  }
+  return trimmed;
+}
+
 async function loadPlaylist(entry: IptvPlaylistEntry): Promise<CacheEntry> {
-  const type = detectPlaylistType(entry.m3uUrl);
+  const playableUrl = assertPlayablePlaylistUrl(entry.m3uUrl);
+  const type = detectPlaylistType(playableUrl);
   if (type === "Stalker") {
     throw new Error("Portails Stalker non supportés dans le viewer web (P3).");
   }
@@ -393,7 +411,7 @@ async function loadPlaylist(entry: IptvPlaylistEntry): Promise<CacheEntry> {
   // Prefer the same get.php M3U Android uses so favorite channel ids match.
   // Fall back to player_api JSON when the M3U export is blocked/gated.
   if (type === "Xtream") {
-    const m3uUrl = normalizeToM3uUrl(entry.m3uUrl);
+    const m3uUrl = normalizeToM3uUrl(playableUrl);
     const m3uKey = `m3u:${m3uUrl}`;
     const cachedM3u = cache.get(m3uKey);
     if (cachedM3u && Date.now() - cachedM3u.at < CACHE_TTL_MS) return cachedM3u;
@@ -415,15 +433,15 @@ async function loadPlaylist(entry: IptvPlaylistEntry): Promise<CacheEntry> {
       /* fall through to player_api */
     }
 
-    const apiKey = `xtream:${entry.m3uUrl.trim()}`;
+    const apiKey = `xtream:${playableUrl}`;
     const cachedApi = cache.get(apiKey);
     if (cachedApi && Date.now() - cachedApi.at < CACHE_TTL_MS) return cachedApi;
-    const result = await loadXtreamViaApi(entry);
+    const result = await loadXtreamViaApi({ ...entry, m3uUrl: playableUrl });
     cache.set(apiKey, result);
     return result;
   }
 
-  const url = normalizeToM3uUrl(entry.m3uUrl);
+  const url = normalizeToM3uUrl(playableUrl);
   const cached = cache.get(url);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached;
 

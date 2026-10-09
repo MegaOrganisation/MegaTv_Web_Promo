@@ -150,7 +150,11 @@ export function WebSettings({ accountEmail, integrations }: { accountEmail: stri
     <div className="mx-auto max-w-2xl space-y-6">
       <section className="mega-glass rounded-[24px] p-4 sm:p-6">
         <h2 className="mb-1 px-1 text-sm font-bold uppercase tracking-wide text-[var(--mega-text-faint)]">Affichage</h2>
-        <Row icon={<LayoutGrid className="h-4 w-4" />} title="Disposition des rails" description="Appliquée à l'accueil (affiche 2:3 ou paysage 16:9).">
+        <Row
+          icon={<LayoutGrid className="h-4 w-4" />}
+          title="Disposition des rails"
+          description="Appliquée à l'accueil (affiche 2:3 ou paysage 16:9). Synchronisée MegaCloud avec l'app."
+        >
           <div className="flex rounded-full border border-[var(--mega-border)] bg-[var(--mega-input-bg)] p-1">
             {layouts.map((option) => (
               <button
@@ -193,10 +197,18 @@ export function WebSettings({ accountEmail, integrations }: { accountEmail: stri
 
       <section className="mega-glass rounded-[24px] p-4 sm:p-6">
         <h2 className="mb-1 px-1 text-sm font-bold uppercase tracking-wide text-[var(--mega-text-faint)]">Bandes-annonces</h2>
-        <Row icon={<Volume2 className="h-4 w-4" />} title="Lecture auto au survol" description="Pré-charge et joue la bande-annonce du hero au survol stable.">
+        <Row
+          icon={<Volume2 className="h-4 w-4" />}
+          title="Lecture auto au survol"
+          description="Pré-charge et joue la bande-annonce du hero au survol stable. Sync MegaCloud (app / Companion)."
+        >
           <LottieToggle checked={prefs.trailerAutoplay} onChange={(v) => update({ trailerAutoplay: v })} label="Lecture auto des bandes-annonces" />
         </Row>
-        <Row icon={<Volume2 className="h-4 w-4" />} title="Son des bandes-annonces" description="Active le son par défaut lors de la lecture du hero.">
+        <Row
+          icon={<Volume2 className="h-4 w-4" />}
+          title="Son des bandes-annonces"
+          description="Active le son par défaut lors de la lecture du hero. Sync MegaCloud."
+        >
           <LottieToggle checked={prefs.trailerSound} onChange={(v) => update({ trailerSound: v })} label="Son des bandes-annonces" />
         </Row>
       </section>

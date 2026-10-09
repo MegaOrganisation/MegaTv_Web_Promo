@@ -15,6 +15,7 @@ import { WebMobileHeader } from "@/features/web/WebMobileHeader";
 import { MEGA_SPRING_SNAPPY } from "@/features/web/motion/mega-motion";
 import { MegaTvIcon, type MegaTvIconName } from "@/features/web/icons/MegaTvIcon";
 import { useWebProfile } from "@/features/web/WebProfileProvider";
+import { WebPrefsCloudSync } from "@/features/web/WebPrefsCloudSync";
 import { useWebPrefs, type WebNavLayout } from "@/lib/web/prefs";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,12 +28,13 @@ type NavItem = {
   settingsSlot?: boolean;
 };
 
-/** Horizontal top bar order mirrors Android [AppTopBar] (Search → Home → Watchlist → TV). */
+/** Horizontal top bar order mirrors Android [AppTopBar] (Search → Home → Watchlist → TV → Social). */
 const MAIN_NAV: NavItem[] = [
   { href: "/web/search", label: "Recherche", icon: "search" },
   { href: "/web/home", label: "Accueil", icon: "home", exact: true },
   { href: "/web/watchlist", label: "Watchlist", icon: "bookmark" },
-  { href: "/web/tv", label: "TV en direct", icon: "tv" }
+  { href: "/web/tv", label: "TV en direct", icon: "tv" },
+  { href: "/web/social", label: "Social", icon: "users" }
 ];
 
 const SETTINGS_NAV: NavItem = {
@@ -42,7 +44,7 @@ const SETTINGS_NAV: NavItem = {
   settingsSlot: true
 };
 
-/** Mobile bottom bar order (Home first). */
+/** Mobile bottom bar order (Home first). Social lives in header / desktop nav to keep 5 slots. */
 const MOBILE_NAV: NavItem[] = [
   { href: "/web/home", label: "Accueil", icon: "home", exact: true },
   { href: "/web/search", label: "Recherche", icon: "search" },
@@ -316,6 +318,7 @@ export function WebAppChrome({ children }: { children: ReactNode }) {
   return (
     <WebMotionProvider>
       <div className="min-h-screen mega-web-app bg-[var(--mega-background)]">
+        <WebPrefsCloudSync />
         <ProfileAccentSync />
         <WebMobileHeader />
         <WebShellNav layout={prefs.navLayout} />

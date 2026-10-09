@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
 
 import { CatalogRail } from "@/features/web/CatalogRail";
+import { FriendsRail } from "@/features/web/FriendsRail";
 import { MediaRail } from "@/features/web/MediaRail";
 import { WebHero } from "@/features/web/WebHero";
 import { catalogsForSettingsPanel } from "@/lib/catalogs/visibility";
 import { getCatalogsSlice } from "@/lib/companion/sync-queries";
 import { getDashboardData } from "@/lib/dashboard/queries";
 import { fetchTmdbImages, fetchTmdbMediaFull, pickTitleLogo, pickTrailerKey, tmdbImageUrl } from "@/lib/tmdb";
+import { fetchFriendsRail } from "@/lib/web/friends-rail";
 import { continueWatchingToItem, decodeMediaId, topContentToItem, type WebMediaItem } from "@/lib/web/media";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +19,12 @@ export default async function WebHomePage({ searchParams }: { searchParams: Prom
   if (!profileId) redirect("/web");
 
   const [dashboard, catalogsSlice] = await Promise.all([getDashboardData(profileId), getCatalogsSlice(profileId)]);
+
+  const activeProfile = dashboard.activeProfile;
+  const isKids = Boolean(activeProfile?.is_kids_profile);
+  const friendsRail = isKids
+    ? []
+    : await fetchFriendsRail(profileId, activeProfile?.name || null);
 
   const continueItems = dashboard.continueWatching
     .map(continueWatchingToItem)
@@ -63,6 +71,7 @@ export default async function WebHomePage({ searchParams }: { searchParams: Prom
     <div className="space-y-6 sm:space-y-8">
       {heroItems.length ? <WebHero items={heroItems} initialTrailerKey={heroTrailerKey} initialLogo={heroLogo} /> : null}
       <MediaRail title="Reprendre" items={continueItems} layout="landscape" variant="continue" />
+      {!isKids && friendsRail.length > 0 ? <FriendsRail friends={friendsRail} /> : null}
       {catalogRails.map((catalog) => (
         <CatalogRail
           key={catalog.id}

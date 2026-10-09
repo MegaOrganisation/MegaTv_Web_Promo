@@ -11,7 +11,8 @@ export type MegaTvIconName =
   | "logout"
   | "play"
   | "info"
-  | "back";
+  | "back"
+  | "users";
 
 type Props = {
   name: MegaTvIconName;
@@ -176,6 +177,40 @@ export function MegaTvIcon({ name, filled = false, className }: Props) {
       return (
         <Svg className={className}>
           <path d="M14.5 6.5L9 12L14.5 17.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      );
+
+    case "users":
+      return (
+        <Svg className={className}>
+          <path
+            d="M8.2 11.2C9.86 11.2 11.2 9.86 11.2 8.2C11.2 6.54 9.86 5.2 8.2 5.2C6.54 5.2 5.2 6.54 5.2 8.2C5.2 9.86 6.54 11.2 8.2 11.2Z"
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M15.4 11.6C16.73 11.6 17.8 10.53 17.8 9.2C17.8 7.87 16.73 6.8 15.4 6.8C14.07 6.8 13 7.87 13 9.2C13 10.53 14.07 11.6 15.4 11.6Z"
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M3.6 18.6C3.6 15.9 5.5 14 8.2 14C10.9 14 12.8 15.9 12.8 18.6"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M13.4 18.6C13.4 16.7 14.5 15.3 16.2 14.8"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </Svg>
       );
 

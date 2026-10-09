@@ -3,12 +3,15 @@
 import { useCallback, useSyncExternalStore } from "react";
 
 /**
- * MegaTv Web client preferences (P1).
+ * MegaTv Web client preferences.
  *
  * Free Tier rule: prefs live in `localStorage` first (zero network). Profile
  * isolation rule: every key is scoped by the *emitted* profile id, never a
- * shared mutable singleton. Cloud batch push is deferred to P2/P3 (see
- * `megatv_web_client.md`); this module is the single source of truth locally.
+ * shared mutable singleton.
+ *
+ * Cloud sync (layout / trailer*) is handled by `WebPrefsCloudSync` via
+ * `/api/companion/settings` — local remains authoritative for instant UI;
+ * MegaCloud keeps Android / Companion / Web aligned. `navLayout` stays web-local.
  */
 export type WebLayout = "poster" | "landscape";
 /** Desktop shell: vertical hover-expand rail vs horizontal top-left pill dock (AppTopBar parity). */

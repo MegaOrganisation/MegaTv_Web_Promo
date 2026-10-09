@@ -41,6 +41,8 @@ type StremioStream = {
   title?: string;
   description?: string;
   url?: string;
+  /** Some debrid addons put the HTTP mirror here instead of `url`. */
+  externalUrl?: string;
   infoHash?: string;
   behaviorHints?: { notWebReady?: boolean; filename?: string; videoSize?: number };
   subtitles?: Array<{ id?: string; url?: string; lang?: string }>;
@@ -122,10 +124,26 @@ function detectDetail(text: string): string | null {
   return bits.length ? bits.join(" · ") : null;
 }
 
+/** Prefer a browser-playable HTTP(S) URL when present (even if `infoHash` is also set). */
+function pickHttpUrl(stream: StremioStream): string | null {
+  for (const candidate of [stream.url, stream.externalUrl]) {
+    const url = candidate?.trim();
+    if (url && /^https?:\/\//i.test(url)) return url;
+  }
+  return null;
+}
+
+/**
+ * True when the stream is torrent-only (magnet / infoHash without HTTP mirror).
+ * Debrid addons often attach BOTH `infoHash` and a cached HTTPS `url` — that
+ * pair must stay playable in the browser (regression: dropping on infoHash alone).
+ */
 function looksLikeTorrent(stream: StremioStream): boolean {
+  if (pickHttpUrl(stream)) return false;
   if (stream.infoHash) return true;
-  if (!stream.url) return true;
-  return /^magnet:/i.test(stream.url);
+  const raw = stream.url?.trim() || stream.externalUrl?.trim();
+  if (!raw) return true;
+  return /^magnet:/i.test(raw);
 }
 
 /**
@@ -160,9 +178,9 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
 
   for (const stream of streams.slice(0, MAX_STREAMS_PER_ADDON)) {
     if (looksLikeTorrent(stream)) continue;
-    if (stream.behaviorHints?.notWebReady) continue;
-    const url = stream.url?.trim();
-    if (!url || !/^https?:\/\//i.test(url)) continue;
+    // Prefer HTTPS even when `notWebReady` is set — debrid mirrors are browser-playable.
+    const url = pickHttpUrl(stream);
+    if (!url) continue;
 
     const text = `${stream.name || ""} ${stream.title || ""} ${stream.description || ""} ${
       stream.behaviorHints?.filename || ""

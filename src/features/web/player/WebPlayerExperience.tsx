@@ -55,7 +55,10 @@ export function WebPlayerExperience({
         ? { title: "Aucun addon de sources configuré", hint: "Ajoutez un addon Stremio depuis MegaCompagnon." }
         : emptyReason === "no-imdb"
           ? { title: "Identifiant IMDb introuvable", hint: "Les addons Stremio ne peuvent pas résoudre ce titre." }
-          : { title: "Aucune source disponible", hint: "Aucun flux lisible en navigateur." };
+          : {
+              title: "Aucune source disponible",
+              hint: "Aucun flux HTTP lisible en navigateur (les torrents seuls sont exclus). Activez un addon Debrid / HTTP dans MegaCompagnon, ou une playlist IPTV Xtream avec VOD."
+            };
 
     return (
       <div className="grid h-screen w-screen place-items-center bg-black p-6 text-center">
