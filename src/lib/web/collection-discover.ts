@@ -11,6 +11,7 @@ type DiscoverRow = {
   media_type?: string;
   release_date?: string;
   first_air_date?: string;
+  vote_average?: number;
 };
 
 async function discover(
@@ -38,7 +39,8 @@ async function discover(
         title,
         subtitle: year,
         posterUrl: tmdbImageUrl(row.poster_path, "w342"),
-        backdropUrl: tmdbImageUrl(row.backdrop_path, "w780")
+        backdropUrl: tmdbImageUrl(row.backdrop_path, "w780"),
+        rating: typeof row.vote_average === "number" && row.vote_average > 0 ? Math.round(row.vote_average * 10) / 10 : null
       } satisfies WebMediaItem;
     });
 }

@@ -46,6 +46,7 @@ export function PosterCard({
 
   const [backdropUrl, setBackdropUrl] = useState<string | null>(item.backdropUrl ?? null);
   const [resolvedTitle, setResolvedTitle] = useState(displayTitle);
+  const [cardRating, setCardRating] = useState<number | null>(item.rating ?? item.voteAverage ?? null);
   const [logo, setLogo] = useState<string | null>(item.logoUrl ?? null);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [phase, setPhase] = useState<"idle" | "playing">("idle");
@@ -59,6 +60,7 @@ export function PosterCard({
   const widthClass = fullWidth ? "w-full" : landscape ? "mega-poster-landscape-w shrink-0" : "mega-poster-w shrink-0";
   const rawProgress = typeof item.progress === "number" ? item.progress : 0;
   const progress = Math.min(100, Math.max(0, rawProgress <= 1 ? rawProgress * 100 : rawProgress));
+  const qualityBadge = item.quality || (item.mediaType === "movie" ? "4K UHD" : item.mediaType === "tv" ? "HD" : null);
 
   const expanded = phase === "playing" && !landscape && Boolean(trailerKey);
   const showVideo = phase === "playing" && Boolean(trailerKey);
@@ -78,8 +80,9 @@ export function PosterCard({
     void fetchCardEnrich(item.mediaId).then((enrich) => {
       if (enrich.backdropUrl) setBackdropUrl(enrich.backdropUrl);
       if (!displayTitle && enrich.title) setResolvedTitle(enrich.title);
+      if (typeof enrich.rating === "number" && !cardRating) setCardRating(enrich.rating);
     });
-  }, [videoLandscape, item.mediaId, item.backdropUrl, backdropUrl, displayTitle]);
+  }, [videoLandscape, item.mediaId, item.backdropUrl, backdropUrl, displayTitle, cardRating]);
 
   useEffect(() => {
     if (!videoLandscape || logo || logoAsked.current) return;
@@ -93,6 +96,11 @@ export function PosterCard({
   }, []);
 
   const onEnter = useCallback(() => {
+    if (!cardRating && item.tmdbId) {
+      void fetchCardEnrich(item.mediaId).then((enrich) => {
+        if (typeof enrich.rating === "number") setCardRating(enrich.rating);
+      });
+    }
     if (!prefs.trailerAutoplay) return;
     clearHover();
     hoverTimer.current = setTimeout(async () => {
@@ -101,7 +109,7 @@ export function PosterCard({
       setTrailerKey(key);
       setPhase("playing");
     }, HOVER_STABLE_MS);
-  }, [prefs.trailerAutoplay, item.mediaId, trailerKey, clearHover]);
+  }, [prefs.trailerAutoplay, item.mediaId, item.tmdbId, trailerKey, clearHover, cardRating]);
 
   const onLeave = useCallback(() => {
     clearHover();
@@ -160,9 +168,30 @@ export function PosterCard({
               </div>
             )}
 
+            {qualityBadge && !showVideo ? (
+              <div className="absolute left-2.5 top-2.5 z-20 flex items-center rounded-md border border-white/20 bg-black/60 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white/90 shadow-md backdrop-blur-md">
+                {qualityBadge}
+              </div>
+            ) : null}
+
+            {cardRating && cardRating > 0 && !showVideo ? (
+              <div
+                className={clsx(
+                  "absolute right-2.5 top-2.5 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/60 px-2 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md transition-opacity duration-200",
+                  showPlay && "group-hover/poster:opacity-0"
+                )}
+              >
+                <span className="text-amber-400 text-xs">★</span>
+                <span>{cardRating.toFixed(1)}</span>
+              </div>
+            ) : null}
+
             {videoLandscape ? (
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(6,7,10,0.72)_0%,transparent_58%)]" />
             ) : null}
+
+            {/* Specular sheen sweep on hover (Android / Apple TV parity) */}
+            <div className="mega-poster-sheen" aria-hidden />
 
             {showVideo ? (
               <div className="web-logo-in absolute inset-0 overflow-hidden opacity-100 transition-opacity duration-500 ease-out">
@@ -195,9 +224,13 @@ export function PosterCard({
               </div>
             ) : null}
 
+            {/* Glowing progress indicator */}
             {progress > 0 ? (
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-black/50">
-                <div className="h-full bg-[var(--mega-red)]" style={{ width: `${progress}%` }} />
+              <div className="absolute inset-x-0 bottom-0 z-20 h-1.5 overflow-hidden bg-black/60 backdrop-blur-sm">
+                <div
+                  className="h-full rounded-r-full bg-gradient-to-r from-red-600 via-[var(--mega-red)] to-rose-400 shadow-[0_0_12px_rgba(229,57,53,0.85)]"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
             ) : null}
             </div>

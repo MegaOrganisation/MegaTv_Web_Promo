@@ -7,6 +7,8 @@ import { useMemo, useState } from "react";
 import { SourceSheet, type SourceSheetItem } from "@/features/web/details/SourceSheet";
 import { WebPlayer, type PlayerSubtitle, type PlayerTrackMeta } from "@/features/web/WebPlayer";
 import type { ResolvedStream } from "@/lib/web/stream-resolver";
+import { encodeMediaId } from "@/lib/web/media";
+import { withProfileQuery } from "@/lib/companion/profile-scope";
 
 type Props = {
   sources: ResolvedStream[];
@@ -160,6 +162,18 @@ export function WebPlayerExperience({
     );
   }
 
+  const handleNextEpisode = () => {
+    if (
+      track?.mediaType === "tv" &&
+      typeof track.season === "number" &&
+      typeof track.episode === "number" &&
+      track.profileId
+    ) {
+      const nextMediaId = encodeMediaId("tv", track.tmdbId, track.season, track.episode + 1);
+      router.push(withProfileQuery(`/web/player/${nextMediaId}`, track.profileId));
+    }
+  };
+
   return (
     <>
       <WebPlayer
@@ -170,16 +184,18 @@ export function WebPlayerExperience({
         resumeKey={resumeKey}
         subtitles={subtitles}
         track={track}
+        logoUrl={logoUrl}
+        onNextEpisode={handleNextEpisode}
         onPlaybackFailed={tryNextOrExhaust}
         topRightSlot={
           sources.length > 1 ? (
             <button
               type="button"
               onClick={() => setPickerOpen(true)}
-              className="focus-ring inline-flex items-center gap-2 rounded-full bg-black/40 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/60"
+              className="focus-ring inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 active:scale-95"
             >
-              <Layers className="h-4 w-4" />
-              {sources.length} sources · #{selected + 1}
+              <Layers className="h-3.5 w-3.5 text-[var(--mega-red)]" />
+              <span>{sources.length} sources · #{selected + 1}</span>
             </button>
           ) : null
         }

@@ -1,8 +1,9 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ChevronDown, ChevronUp, ImageOff, LayoutGrid, ListVideo, Search, SquarePen, Star, Tv } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronUp, ImageOff, LayoutGrid, ListVideo, Search, SquarePen, Star, Tv, X } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Spinner, SpinnerOverlay } from "@/features/web/Spinner";
@@ -77,15 +78,22 @@ export function WebTv({ profileId }: { profileId: string }) {
   const { withProfile } = useWebProfile();
   const { favorites, toggle, reorder, setAll } = useIptvFavorites(profileId);
 
+  const searchParams = useSearchParams();
+  const urlChannelId = searchParams?.get("channel");
+
   const [payload, setPayload] = useState<ChannelsPayload | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "empty">("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<IptvChannel | null>(null);
+  const [isPiP, setIsPiP] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [epg, setEpg] = useState<EpgMap>({});
+
+  const playerSentinelRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // ---- Favorites batch push (Free Tier: never per toggle) --------------------
   const dirtyRef = useRef(false);
@@ -200,6 +208,65 @@ export function WebTv({ profileId }: { profileId: string }) {
     },
     [profileId]
   );
+
+  // Auto-select channel from URL if navigated with ?channel=...
+  useEffect(() => {
+    if (!urlChannelId || !payload?.channels?.length || selected) return;
+    const target = payload.channels.find(
+      (c) => c.id === urlChannelId || c.legacyId === urlChannelId
+    );
+    if (target) {
+      setSelected(target);
+      if (activeCat === "fav" && !favorites.includes(target.id) && !(target.legacyId && favorites.includes(target.legacyId))) {
+        setActiveCat("all");
+      }
+    }
+  }, [urlChannelId, payload, selected, activeCat, favorites]);
+
+  // PiP IntersectionObserver: detaches player to bottom-right floating dock when user scrolls down
+  useEffect(() => {
+    if (!selected) {
+      setIsPiP(false);
+      return;
+    }
+
+    const sentinel = playerSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+          setIsPiP(true);
+        } else if (entry.isIntersecting) {
+          setIsPiP(false);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [selected]);
+
+  // Quick search keyboard shortcut (/ or Ctrl+K)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
+        setSearch("");
+        searchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   // ---- Channel load (localStorage-first, then network) -----------------------
   useEffect(() => {
@@ -388,12 +455,62 @@ export function WebTv({ profileId }: { profileId: string }) {
         {/* Main area */}
         <div className="min-w-0 flex-1 space-y-4">
           {selected ? (
-            <TvLivePlayer
-              key={selected.id}
-              channel={selected}
-              subtitle={formatSlot(selected.tvgId ? epg[selected.tvgId]?.now : null) || selected.group}
-              onClose={() => setSelected(null)}
-            />
+            <>
+              {/* Sentinel to observe scroll position */}
+              <div ref={playerSentinelRef} className="h-0 w-full pointer-events-none" />
+
+              {/* In-flow placeholder when detached to PiP so scroll height is preserved */}
+              {isPiP ? (
+                <div className="flex aspect-video w-full flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/25 p-4 text-center">
+                  <div className="flex items-center gap-2">
+                    <Tv className="h-4 w-4 text-[var(--mega-accent)]" />
+                    <span className="text-sm font-bold text-white">{selected.name}</span>
+                    <span className="rounded bg-[var(--mega-red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      LIVE
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--mega-text-faint)]">
+                    En cours de lecture dans le mini-lecteur PiP en bas à droite
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      setIsPiP(false);
+                    }}
+                    className="focus-ring mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                  >
+                    <ArrowUpRight className="h-3.5 w-3.5" /> Agrandir le lecteur
+                  </button>
+                </div>
+              ) : null}
+
+              {/* The Persistent Player Container (Docked or PiP) */}
+              <div
+                className={clsx(
+                  "transition-all duration-300 ease-out",
+                  isPiP
+                    ? "fixed bottom-6 right-6 z-50 w-80 sm:w-96 overflow-hidden rounded-2xl border border-[var(--mega-border-strong)] bg-black/95 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4"
+                    : "relative w-full"
+                )}
+              >
+                <TvLivePlayer
+                  key={selected.id}
+                  channel={selected}
+                  subtitle={formatSlot(selected.tvgId ? epg[selected.tvgId]?.now : null) || selected.group}
+                  isPiP={isPiP}
+                  onClose={() => {
+                    setSelected(null);
+                    setIsPiP(false);
+                  }}
+                  onTogglePiP={() => setIsPiP((v) => !v)}
+                  onExpand={() => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    setIsPiP(false);
+                  }}
+                />
+              </div>
+            </>
           ) : null}
 
           {payload.capped ? (
@@ -407,17 +524,39 @@ export function WebTv({ profileId }: { profileId: string }) {
             </p>
           ) : null}
 
-          {/* Toolbar */}
+          {/* Enhanced Quick Search Toolbar */}
           <div className="flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mega-text-faint)]" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mega-text-faint)]" />
               <input
+                ref={searchInputRef}
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Filtrer les chaînes…"
-                className="focus-ring h-11 w-full rounded-full border border-[var(--mega-border)] bg-[var(--mega-input-bg)] pl-10 pr-4 text-sm text-[var(--mega-text)] outline-none transition focus:border-[var(--mega-border-strong)]"
-                aria-label="Filtrer les chaînes"
+                placeholder="Recherche rapide de chaînes… (raccourci : /)"
+                className="focus-ring h-11 w-full rounded-full border border-[var(--mega-border)] bg-[var(--mega-input-bg)] pl-10 pr-24 text-sm text-[var(--mega-text)] outline-none transition placeholder:text-[var(--mega-text-faint)] focus:border-[var(--mega-border-strong)]"
+                aria-label="Recherche rapide de chaînes"
               />
+              <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                {search ? (
+                  <>
+                    <span className="hidden text-[11px] tabular-nums text-[var(--mega-text-faint)] sm:inline">
+                      {filtered.length} chaîne{filtered.length > 1 ? "s" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onSearchChange("")}
+                      className="grid h-5 w-5 place-items-center rounded-full text-[var(--mega-text-faint)] hover:text-white"
+                      aria-label="Effacer la recherche"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <kbd className="hidden rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-[var(--mega-text-faint)] sm:inline-block">
+                    /
+                  </kbd>
+                )}
+              </div>
             </div>
             {isFav && favorites.length > 1 ? (
               <button

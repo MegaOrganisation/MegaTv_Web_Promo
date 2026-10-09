@@ -275,32 +275,39 @@ a {
 }
 
 .mega-glass {
-  border: 1px solid var(--mega-border);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--mega-surface) 82%, transparent), color-mix(in srgb, var(--mega-background) 62%, transparent));
-  box-shadow: 0 26px 80px -36px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(var(--mega-glass-blur)) saturate(var(--mega-glass-saturate));
-  -webkit-backdrop-filter: blur(var(--mega-glass-blur)) saturate(var(--mega-glass-saturate));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(20, 30, 34, 0.72) 0%, rgba(16, 25, 28, 0.65) 100%);
+  box-shadow:
+    0 26px 80px -36px rgba(0, 0, 0, 0.95),
+    0 8px 30px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
 }
 
 /* Unified dialog system (MegaDialog) — glass panel + frosted scrim. */
 .mega-dialog-scrim {
   border: 0;
-  background: var(--mega-scrim);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  background: rgba(4, 6, 9, 0.68);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
   cursor: default;
 }
 
 .mega-dialog-panel {
-  border: 1px solid var(--mega-border-strong);
-  background: var(--mega-background-deep);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(63, 154, 230, 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(216, 73, 127, 0.06), transparent),
-    linear-gradient(180deg, color-mix(in srgb, var(--mega-background) 88%, transparent) 0%, var(--mega-background-deep) 100%);
-  box-shadow: 0 32px 100px -24px rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(calc(var(--mega-glass-blur) + 4px)) saturate(var(--mega-glass-saturate));
-  -webkit-backdrop-filter: blur(calc(var(--mega-glass-blur) + 4px)) saturate(var(--mega-glass-saturate));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(63, 154, 230, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(216, 73, 127, 0.08), transparent),
+    linear-gradient(180deg, rgba(20, 30, 34, 0.88) 0%, rgba(16, 25, 28, 0.92) 100%);
+  box-shadow:
+    0 32px 100px -24px rgba(0, 0, 0, 0.9),
+    0 12px 40px -16px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(32px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%) contrast(105%);
 }
 
 .mega-dialog-close {
@@ -335,14 +342,42 @@ a {
   background: var(--mega-card-bg);
 }
 
-/* Glass navigation pill — opaque (demande produit : plus de transparence nav). */
+/* Glass navigation pill — Frosted Glass réfraction Android Kotlin Compose (parité MobileGlassBar / NuvioStyleFloatingNav) */
 .mega-nav-glass {
-  border: 1px solid var(--mega-border);
-  background: var(--mega-shell-nav, var(--mega-background, #0c1215));
-  box-shadow: 0 24px 80px -40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(20, 30, 34, 0.72) 0%, rgba(16, 25, 28, 0.65) 100%);
+  box-shadow:
+    0 24px 80px -36px rgba(0, 0, 0, 0.85),
+    0 8px 32px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
 }
+
+html[data-theme="light"] .mega-nav-glass {
+  border: 1px solid rgba(16, 25, 28, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(240, 244, 246, 0.78) 100%);
+  box-shadow:
+    0 20px 60px -30px rgba(16, 25, 28, 0.18),
+    0 4px 16px -6px rgba(16, 25, 28, 0.1),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px 0 rgba(16, 25, 28, 0.08);
+}
+
+/* Ambient glow token — halo Android parité (MegaTvSkin halo) */
+.mega-glow-accent {
+  box-shadow:
+    0 0 28px -6px var(--mega-accent-ring, rgba(63, 154, 230, 0.45)),
+    var(--mega-accent-glow, 0 10px 36px -10px rgba(63, 154, 230, 0.5));
+}
+
+/* Squircle shape token — continuous curvature (Android MegaTvSquircleShape parité) */
+.mega-squircle {
+  border-radius: var(--mega-poster-radius, 28px);
+  corner-smoothing: 60%;
+}
+
 
 .mega-nav-chip {
   display: inline-flex;
@@ -575,11 +610,38 @@ a {
 
 /* Stable clip shell — radius stays on this layer while inner frame animates aspect/width. */
 .mega-poster-shell {
+  position: relative;
   border-radius: var(--mega-poster-radius);
   overflow: hidden;
   isolation: isolate;
-  background: var(--mega-surface);
-  border: 1px solid var(--mega-border);
+  background: linear-gradient(180deg, rgba(23, 35, 39, 0.85) 0%, rgba(16, 25, 28, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 24px -12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* Poster specular shine sweep (Apple TV / Android native parity) */
+.mega-poster-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 15;
+}
+
+.group\/poster:hover .mega-poster-sheen,
+.group\/poster:focus-within .mega-poster-sheen {
+  transform: translateX(100%);
 }
 
 .mega-poster-frame {
@@ -819,20 +881,25 @@ a {
 
 /* Rail « Voir tout » — portal body, panneau inset, scroll interne. */
 .mega-rail-modal {
-  background: rgba(4, 6, 9, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(4, 6, 9, 0.68);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
 }
 
 .mega-rail-modal-panel {
-  border: 1px solid var(--mega-border-strong);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 28px;
-  background: var(--mega-background-deep);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(63, 154, 230, 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(216, 73, 127, 0.06), transparent),
-    linear-gradient(180deg, var(--mega-background) 0%, var(--mega-background-deep) 100%);
-  box-shadow: 0 32px 100px -24px rgba(0, 0, 0, 0.85);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(63, 154, 230, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(216, 73, 127, 0.08), transparent),
+    linear-gradient(180deg, rgba(20, 30, 34, 0.88) 0%, rgba(16, 25, 28, 0.92) 100%);
+  box-shadow:
+    0 32px 100px -24px rgba(0, 0, 0, 0.9),
+    0 12px 40px -16px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(32px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%) contrast(105%);
   max-height: 100%;
 }
 
@@ -1029,11 +1096,14 @@ a {
 }
 
 .mega-cw-shell {
-  border-color: color-mix(in srgb, var(--mega-accent-bright) 12%, var(--mega-border)) !important;
-  background: linear-gradient(135deg, rgba(21, 28, 32, 0.95) 0%, rgba(12, 18, 22, 0.88) 100%) !important;
-  box-shadow: 0 20px 48px -28px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: linear-gradient(135deg, rgba(20, 30, 34, 0.82) 0%, rgba(16, 25, 28, 0.74) 100%) !important;
+  box-shadow:
+    0 20px 48px -28px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
 }
 
 .mega-pro-poster-glow {
@@ -1042,18 +1112,20 @@ a {
 
 .group\/poster:hover .mega-poster-hover-glow,
 .group\/poster:focus-within .mega-poster-hover-glow {
-  border-color: color-mix(in srgb, var(--mega-accent-bright) 42%, white);
+  border-color: rgba(255, 255, 255, 0.45);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--mega-accent-bright) 16%, transparent),
-    0 22px 56px -24px color-mix(in srgb, var(--mega-accent) 35%, transparent);
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 22px 56px -24px color-mix(in srgb, var(--mega-accent) 35%, transparent),
+    var(--mega-accent-glow);
 }
 
 .mega-bottomnav-shell .mega-nav-glass {
-  border-color: color-mix(in srgb, var(--mega-accent-bright) 16%, var(--mega-border));
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 24px 64px -28px rgba(0, 0, 0, 0.85),
-    0 0 0 1px color-mix(in srgb, var(--mega-accent-bright) 8%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 24px 64px -28px rgba(0, 0, 0, 0.9),
+    0 0 0 1px color-mix(in srgb, var(--mega-accent-bright) 12%, transparent),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .mega-bottomnav-shell [aria-current="page"] {

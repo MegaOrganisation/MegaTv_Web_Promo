@@ -1,5 +1,4 @@
 import { clsx } from "clsx";
-import type { ReactNode } from "react";
 
 /** Nav + common UI icons ported from the Android `ic_mega_*` vector drawables. */
 export type MegaTvIconName =
@@ -12,7 +11,9 @@ export type MegaTvIconName =
   | "play"
   | "info"
   | "back"
-  | "users";
+  | "users"
+  | "trophy"
+  | "sports";
 
 type Props = {
   name: MegaTvIconName;
@@ -211,6 +212,31 @@ export function MegaTvIcon({ name, filled = false, className }: Props) {
             strokeWidth="2"
             strokeLinecap="round"
           />
+        </Svg>
+      );
+    case "sports":
+    case "trophy":
+      return filled ? (
+        <Svg className={className}>
+          <path
+            fill="currentColor"
+            fillRule="evenodd"
+            d="M5.5 4h13a.5.5 0 0 1 .5.5v2a5.5 5.5 0 0 1-5 5.477V15h2a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1h2v-3.023A5.5 5.5 0 0 1 5 6.5v-2a.5.5 0 0 1 .5-.5ZM4 6h1.05A5.5 5.5 0 0 0 8 11.238V12a3 3 0 0 1-3-3V7a1 1 0 0 1-1-1Zm16 0h-1.05A5.5 5.5 0 0 1 16 11.238V12a3 3 0 0 0 3-3V7a1 1 0 0 0 1-1Z"
+          />
+        </Svg>
+      ) : (
+        <Svg className={className}>
+          <path
+            d="M6 5h12v4a6 6 0 0 1-12 0V5Z"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M6 7H4a2 2 0 0 0-2 2v1a3 3 0 0 0 3 3h1" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M18 7h2a2 2 0 0 1 2 2v1a3 3 0 0 1-3 3h-1" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M12 15v3.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M8 20.5h8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         </Svg>
       );
 

@@ -207,15 +207,18 @@ export type TmdbSearchResult = {
   name?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
+  profile_path?: string | null;
+  known_for_department?: string;
   overview?: string;
   vote_average?: number;
   popularity?: number;
   release_date?: string;
   first_air_date?: string;
+  genre_ids?: number[];
 };
 
-/** Global multi search (movies + shows), used by `/web/search`. Cached 1h. */
-export async function searchTmdbMulti(query: string, page = 1) {
+/** Global multi search (movies, shows, and persons), used by `/web/search`. Cached 1h. */
+export async function searchTmdbMulti(query: string, page = 1, includePersons = true) {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [] as TmdbSearchResult[];
   const data = (await fetchTmdbProxy(
@@ -224,7 +227,20 @@ export async function searchTmdbMulti(query: string, page = 1) {
     { query: trimmed, page: String(page), include_adult: "false" },
     60 * 60
   )) as { results?: TmdbSearchResult[] } | null;
-  return (data?.results || []).filter((item) => item.media_type === "movie" || item.media_type === "tv");
+  return (data?.results || []).filter(
+    (item) => item.media_type === "movie" || item.media_type === "tv" || (includePersons && item.media_type === "person")
+  );
+}
+
+/** Trending movies & shows on TMDB (day/week). Cached 6h. */
+export async function fetchTmdbTrending(timeWindow: "day" | "week" = "day", limit = 20) {
+  const data = (await fetchTmdbProxy(
+    `/trending/all/${timeWindow}`,
+    "",
+    undefined,
+    60 * 60 * 6
+  )) as { results?: TmdbSearchResult[] } | null;
+  return (data?.results || []).slice(0, limit);
 }
 
 export async function fetchTmdbDetails(mediaType: TmdbMediaType, tmdbId: number) {

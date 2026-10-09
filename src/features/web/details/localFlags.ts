@@ -62,7 +62,7 @@ function subscribe(callback: () => void) {
   };
 }
 
-function setFlag(kind: LocalFlagKind, profileId: string, mediaId: string, active: boolean) {
+export function setLocalFlag(kind: LocalFlagKind, profileId: string, mediaId: string, active: boolean) {
   if (typeof window === "undefined" || !profileId) return;
   const set = new Set(read(kind, profileId));
   if (active) set.add(mediaId);
@@ -75,6 +75,21 @@ function setFlag(kind: LocalFlagKind, profileId: string, mediaId: string, active
   notify();
 }
 
+/** Reactive list of all flagged mediaIds for a profile. */
+export function useLocalFlagsList(kind: LocalFlagKind, profileId: string): string[] {
+  return useSyncExternalStore(
+    subscribe,
+    () => getSnapshot(kind, profileId),
+    () => EMPTY
+  );
+}
+
+/** Reactive set of all flagged mediaIds for a profile (O(1) lookups). */
+export function useLocalFlagsSet(kind: LocalFlagKind, profileId: string): Set<string> {
+  const flags = useLocalFlagsList(kind, profileId);
+  return new Set(flags);
+}
+
 /** Reactive optimistic flag hook → `[active, toggle]`, localStorage-backed. */
 export function useLocalFlag(kind: LocalFlagKind, profileId: string, mediaId: string): [boolean, () => void] {
   const flags = useSyncExternalStore(
@@ -83,6 +98,6 @@ export function useLocalFlag(kind: LocalFlagKind, profileId: string, mediaId: st
     () => EMPTY
   );
   const active = flags.includes(mediaId);
-  const toggle = useCallback(() => setFlag(kind, profileId, mediaId, !active), [kind, profileId, mediaId, active]);
+  const toggle = useCallback(() => setLocalFlag(kind, profileId, mediaId, !active), [kind, profileId, mediaId, active]);
   return [active, toggle];
 }

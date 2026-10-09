@@ -115,12 +115,12 @@ export function seedTrailerKey(mediaId: string, trailerKey: string | null) {
   }
 }
 
-type CardEnrich = { title: string | null; backdropUrl: string | null };
+type CardEnrich = { title: string | null; backdropUrl: string | null; rating?: number | null };
 
-/** TMDB title + backdrop for landscape cards (cached, one network read per title). */
+/** TMDB title + backdrop + rating for cards (cached, one network read per title). */
 export async function fetchCardEnrich(mediaId: string): Promise<CardEnrich> {
   const ref = decodeMediaId(mediaId);
-  if (!ref) return { title: null, backdropUrl: null };
+  if (!ref) return { title: null, backdropUrl: null, rating: null };
   const key = `${ref.mediaType}-${ref.tmdbId}`;
   if (enrichMem.has(key)) return enrichMem.get(key)!;
 
@@ -138,14 +138,15 @@ export async function fetchCardEnrich(mediaId: string): Promise<CardEnrich> {
   try {
     const res = await fetch(`/api/web/card-enrich?type=${ref.mediaType}&id=${ref.tmdbId}`);
     if (!res.ok) {
-      return { title: null, backdropUrl: null };
+      return { title: null, backdropUrl: null, rating: null };
     }
-    const json = (await res.json()) as { title?: string; backdropUrl?: string | null };
-    const value = {
+    const json = (await res.json()) as { title?: string; backdropUrl?: string | null; rating?: number | null };
+    const value: CardEnrich = {
       title: json.title?.trim() || null,
-      backdropUrl: json.backdropUrl || null
+      backdropUrl: json.backdropUrl || null,
+      rating: typeof json.rating === "number" ? json.rating : null
     };
-    if (value.backdropUrl || value.title) {
+    if (value.backdropUrl || value.title || value.rating != null) {
       enrichMem.set(key, value);
       if (typeof window !== "undefined") {
         try {
@@ -157,6 +158,6 @@ export async function fetchCardEnrich(mediaId: string): Promise<CardEnrich> {
     }
     return value;
   } catch {
-    return { title: null, backdropUrl: null };
+    return { title: null, backdropUrl: null, rating: null };
   }
 }

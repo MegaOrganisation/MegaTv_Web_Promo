@@ -7,7 +7,6 @@ import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { PresetAvatarCircle } from "@/features/dashboard/PresetAvatarCircle";
 import { ProfileAvatar } from "@/features/dashboard/ProfileAvatar";
 import { ProfileAccentSync } from "@/features/web/ProfileAccentSync";
 import { RouteTransition, WebMotionProvider } from "@/features/web/RouteTransition";
@@ -34,6 +33,7 @@ const MAIN_NAV: NavItem[] = [
   { href: "/web/home", label: "Accueil", icon: "home", exact: true },
   { href: "/web/watchlist", label: "Watchlist", icon: "bookmark" },
   { href: "/web/tv", label: "TV en direct", icon: "tv" },
+  { href: "/web/sports", label: "Sports", icon: "trophy" },
   { href: "/web/social", label: "Social", icon: "users" }
 ];
 
@@ -44,12 +44,13 @@ const SETTINGS_NAV: NavItem = {
   settingsSlot: true
 };
 
-/** Mobile bottom bar order (Home first). Social lives in header / desktop nav to keep 5 slots. */
+/** Mobile bottom bar order (Home first, TV, Sports, Search, Watchlist, Settings). */
 const MOBILE_NAV: NavItem[] = [
   { href: "/web/home", label: "Accueil", icon: "home", exact: true },
   { href: "/web/search", label: "Recherche", icon: "search" },
-  { href: "/web/watchlist", label: "Watchlist", icon: "bookmark" },
   { href: "/web/tv", label: "TV en direct", icon: "tv" },
+  { href: "/web/sports", label: "Sports", icon: "trophy" },
+  { href: "/web/watchlist", label: "Watchlist", icon: "bookmark" },
   SETTINGS_NAV
 ];
 
@@ -118,8 +119,13 @@ function NavChip({
       {active && !reduceMotion ? (
         <motion.span
           layoutId="web-nav-active-pill"
-          className="absolute inset-0 rounded-full bg-[var(--mega-card-bg)]"
+          className="absolute inset-0 rounded-full bg-white/10 shadow-[0_0_20px_var(--mega-accent-ring),var(--mega-accent-glow)] ring-1 ring-white/15"
           transition={MEGA_SPRING_SNAPPY}
+          aria-hidden
+        />
+      ) : active ? (
+        <span
+          className="absolute inset-0 rounded-full bg-white/10 shadow-[var(--mega-accent-glow)] ring-1 ring-white/15"
           aria-hidden
         />
       ) : null}
@@ -154,20 +160,31 @@ function HorizontalTopNav() {
   }
 
   return (
-    <header className={clsx("mega-topnav-bar fixed left-0 right-0 top-0 z-40 hidden lg:block", scrolled && "mega-topnav-scrolled")}>
+    <header
+      className={clsx(
+        "mega-topnav-bar fixed left-0 right-0 top-0 z-40 hidden lg:block transition-all duration-300",
+        scrolled ? "pt-2" : "pt-3"
+      )}
+    >
       <div className="mega-topnav-scrim" aria-hidden />
-      <div className="mega-topnav-row relative">
+      <div className="mega-topnav-row relative mx-auto max-w-7xl px-6">
         <ProfileAvatarLink size="md" className="pointer-events-auto" />
 
         <div className="pointer-events-auto flex flex-1 items-center gap-2">
           <LayoutGroup id="web-top-nav">
-            <nav aria-label="Navigation principale" className="mega-nav-glass mega-topnav-glass flex items-center rounded-full">
+            <nav
+              aria-label="Navigation principale"
+              className="mega-nav-glass mega-topnav-glass flex items-center rounded-full shadow-[0_16px_40px_-16px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.12)]"
+            >
               {MAIN_NAV.map((item) => (
                 <NavChip key={item.href} item={item} active={isActive(pathname, item)} showLabel="hover" />
               ))}
             </nav>
 
-            <nav aria-label="Réglages" className="mega-nav-glass mega-topnav-glass flex items-center rounded-full">
+            <nav
+              aria-label="Réglages"
+              className="mega-nav-glass mega-topnav-glass flex items-center rounded-full shadow-[0_16px_40px_-16px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.12)]"
+            >
               <NavChip item={SETTINGS_NAV} active={isActive(pathname, SETTINGS_NAV)} showLabel="hover" />
             </nav>
           </LayoutGroup>
@@ -175,13 +192,15 @@ function HorizontalTopNav() {
 
         <div className="pointer-events-auto flex items-center gap-2">
           {activeProfile ? (
-            <span className="max-w-[8rem] truncate text-xs font-semibold text-[var(--mega-text-muted)]">{activeProfile.name}</span>
+            <span className="max-w-[8rem] truncate text-xs font-semibold text-[var(--mega-text-muted)]">
+              {activeProfile.name}
+            </span>
           ) : null}
           <button
             type="button"
             onClick={signOut}
             aria-label="Se déconnecter"
-            className="focus-ring mega-nav-glass mega-topnav-glass grid h-[var(--mega-nav-chip)] w-[var(--mega-nav-chip)] place-items-center rounded-full text-[var(--mega-text-muted)] transition hover:text-[var(--mega-text)]"
+            className="focus-ring mega-nav-glass mega-topnav-glass grid h-[var(--mega-nav-chip)] w-[var(--mega-nav-chip)] place-items-center rounded-full text-[var(--mega-text-muted)] shadow-[0_16px_40px_-16px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.12)] transition hover:text-[var(--mega-text)] hover:shadow-[0_0_20px_var(--mega-accent-ring)]"
           >
             <MegaTvIcon name="logout" className="mega-nav-chip-icon" />
           </button>
@@ -210,7 +229,7 @@ function VerticalSideNav() {
     >
       <aside
         aria-label="Navigation MegaTv Web"
-        className="mega-nav-glass mega-vertical-nav m-3 flex h-[calc(100vh-1.5rem)] min-h-0 w-[calc(100%-0.5rem)] flex-col overflow-hidden rounded-[30px] p-3 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.65)]"
+        className="mega-nav-glass mega-vertical-nav mega-squircle m-3 flex h-[calc(100vh-1.5rem)] min-h-0 w-[calc(100%-0.5rem)] flex-col overflow-hidden rounded-[32px] p-3 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-[0_28px_90px_-30px_rgba(0,0,0,0.9),0_0_36px_-12px_var(--mega-accent-ring)]"
       >
         <div className="mb-3 flex shrink-0 justify-center px-1 py-1 group-hover/nav:justify-start group-focus-within/nav:justify-start">
           <ProfileAvatarLink size="xl" />
@@ -247,53 +266,58 @@ function MobileBottomNav() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="mega-bottomnav-shell pointer-events-none fixed inset-x-0 bottom-0 z-[85] lg:hidden">
+    <div className="mega-bottomnav-shell pointer-events-none fixed inset-x-0 bottom-0 z-[85] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
       <div className="mega-bottomnav-scrim" aria-hidden />
-      <div className="relative px-2">
-        <nav className="pointer-events-auto mega-nav-glass mx-auto grid w-full max-w-md grid-cols-5 gap-0.5 rounded-[24px] p-1.5">
-          {MOBILE_NAV.map((item) => {
-          const active = isActive(pathname, item);
-          return (
-            <Link
-              key={`${item.href}-m`}
-              href={withProfile(item.href)}
-              prefetch
-              aria-current={active ? "page" : undefined}
-              className={clsx(
-                "focus-ring relative flex min-w-0 flex-col items-center justify-center rounded-[18px] px-1 py-2 text-[10px] font-semibold",
-                active ? "text-[var(--mega-text)]" : "text-[var(--mega-text-faint)] hover:text-[var(--mega-text)]"
-              )}
-            >
-              {active && !reduceMotion ? (
-                <motion.span
-                  layoutId="mobile-nav-pill"
-                  className="absolute inset-0 rounded-[18px] bg-[var(--mega-card-bg)]"
-                  transition={MEGA_SPRING_SNAPPY}
-                  aria-hidden
-                />
-              ) : active ? (
-                <span className="absolute inset-0 rounded-[18px] bg-[var(--mega-card-bg)]" aria-hidden />
-              ) : null}
-              <MegaTvIcon
-                name={item.icon}
-                filled={active}
-                className={clsx(
-                  "relative z-[1] h-6 w-6 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                  active ? "-translate-y-0.5 scale-[0.8]" : "scale-100"
-                )}
-              />
-              <span
-                className={clsx(
-                  "relative z-[1] block w-full overflow-hidden truncate text-center leading-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                  active ? "mt-0.5 max-h-4 opacity-100" : "max-h-0 opacity-0"
-                )}
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
-          })}
-        </nav>
+      <div className="relative mx-auto flex max-w-lg justify-center">
+        <LayoutGroup id="web-mobile-dock">
+          <nav className="pointer-events-auto mega-nav-glass relative grid grid-cols-6 w-full items-center gap-0.5 rounded-full p-1.5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.12)]">
+            {MOBILE_NAV.map((item) => {
+              const active = isActive(pathname, item);
+              return (
+                <Link
+                  key={`${item.href}-m`}
+                  href={withProfile(item.href)}
+                  prefetch
+                  aria-current={active ? "page" : undefined}
+                  className={clsx(
+                    "focus-ring relative flex min-w-0 flex-1 flex-col items-center justify-center rounded-full px-1 py-1.5 text-[10px] font-semibold transition-colors duration-200",
+                    active ? "text-[var(--mega-text)]" : "text-[var(--mega-text-faint)] hover:text-[var(--mega-text)]"
+                  )}
+                >
+                  {active && !reduceMotion ? (
+                    <motion.span
+                      layoutId="web-nav-active-pill"
+                      className="absolute inset-0 rounded-full bg-white/10 shadow-[0_0_20px_var(--mega-accent-ring),var(--mega-accent-glow)] ring-1 ring-white/15"
+                      transition={MEGA_SPRING_SNAPPY}
+                      aria-hidden
+                    />
+                  ) : active ? (
+                    <span
+                      className="absolute inset-0 rounded-full bg-white/10 shadow-[var(--mega-accent-glow)] ring-1 ring-white/15"
+                      aria-hidden
+                    />
+                  ) : null}
+                  <MegaTvIcon
+                    name={item.icon}
+                    filled={active}
+                    className={clsx(
+                      "relative z-[1] h-5 w-5 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      active ? "-translate-y-0.5 scale-[0.9]" : "scale-100"
+                    )}
+                  />
+                  <span
+                    className={clsx(
+                      "relative z-[1] block w-full overflow-hidden truncate text-center leading-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      active ? "mt-0.5 max-h-4 opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </LayoutGroup>
       </div>
     </div>
   );

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark" data-lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MegaTv — Films, Séries, Live TV &amp; IPTV</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=2026t">
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=2026t">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2026t">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="styles.css?v=2026m">
+</head>
+<body data-theme="dark">
+
+<!-- ambient backdrop -->
+<div class="backdrop" aria-hidden="true">
+  <div class="aurora a1" data-par="0.06"></div>
+  <div class="aurora a2" data-par="-0.05"></div>
+  <div class="aurora a3" data-par="0.04"></div>
+  <div class="aurora a4" data-par="-0.04"></div>
+</div>
+<div class="grid-veil" aria-hidden="true"></div>
+
+<!-- ===== FLOATING PILL NAVBAR (ISO MEGAFLOATINGNAV) ===== -->
+<div class="floating-nav-wrap">
+  <header class="floating-nav">
+    <!-- Brand Logo: Exact same transparent triangle as MegaFloatingNav.tsx -->
+    <a href="/" class="floating-brand">
+      <img src="assets/companion/triangle-mark-clear.png" alt="MegaTv" width="28" height="28">
+      <span>MegaTv</span>
+    </a>
+    <!-- Center Links -->
+    <nav class="floating-links">
+      <a href="/" class="floating-link active">Home</a>
+      <a href="/premium" class="floating-link link-premium">Premium</a>
+      <a href="/companion" class="floating-link">Compagnon</a>
+    </nav>
+    <!-- Right Actions: Language Selector + Sun/Moon Theme Toggle + Connexion / Profile Button with Dropdown -->
+    <div class="floating-right">
+      <div class="lang-selector-wrap">
+        <select id="promo-lang-select" class="floating-lang-select" onchange="changeLanguage(this.value)" aria-label="Langue">
+          <option value="fr" selected>FR (€)</option>
+          <option value="en">EN ($)</option>
+          <option value="es">ES (€)</option>
+        </select>
+      </div>
+
+      <button type="button" class="floating-theme-btn" onclick="toggleTheme()" aria-label="Changer de thème">
+        <svg id="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/>
+          <line x1="12" y1="2" x2="12" y2="4"/>
+          <line x1="12" y1="20" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/>
+          <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="4" y2="12"/>
+          <line x1="20" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/>
+          <line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>
+        </svg>
+      </button>
+
+      <div class="profile-btn-container" style="position:relative;">
+        <a href="/login" id="promo-auth-btn" class="floating-profile-btn" onclick="handleProfileClick(event)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="profile-name-text">Connexion</span>
+        </a>
+
+        <!-- Rich Glass Dropdown Popup when Authenticated -->
+        <div id="promo-profile-dropdown" class="promo-profile-dropdown" aria-hidden="true">
+          <div class="dropdown-header">
+            <div id="dropdown-avatar-wrap" class="dropdown-avatar-slot"></div>
+            <div class="dropdown-user-info">
+              <div id="dropdown-user-name" class="dropdown-name">Utilisateur</div>
+              <div id="dropdown-user-email" class="dropdown-email">user@megatv.app</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-menu">
+            <a href="/companion" class="dropdown-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              <span>Accéder à Compagnon</span>
+            </a>
+            <a href="/companion#profils" class="dropdown-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Changer de profil</span>
+            </a>
+            <a href="/web" class="dropdown-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Lancer l'app Web</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item dropdown-logout" onclick="logoutUser()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Se déconnecter</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+
+<!-- ===== STREMIO-INSPIRED FULL-SCREEN PROMO HERO (ISO MEDIA_1791236710074 & PJ 3) ===== -->
+<section class="stremio-hero" id="hero" data-screen-label="Hero">
+  <div class="stremio-hero-inner">
+    <!-- Left Hero Editorial & Actions -->
+    <div class="stremio-hero-content">
+      <h1 class="stremio-title" data-i18n="hero.title">
+        La Liberté De Streamer
+      </h1>
+      <p class="stremio-sub" data-i18n="hero.sub">
+        Découvrez tout le divertissement avec MegaTv
+      </p>
+
+      <div class="stremio-ctas">
+        <a href="/api/download/android" class="btn-megatv-spectrum">
+          <span data-i18n="hero.btnDownload">Télécharger MegaTv</span>
+        </a>
+        <a href="#telecharger" class="btn-stremio-outline">
+          <span data-i18n="hero.btnMore">Autres téléchargements</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Right 3D Perspective Fan-out Posters Cascade (Ultra HD 4K TMDB Posters) -->
+    <div class="stremio-fan-stage">
+      <div class="stremio-fan-cards">
+        <div class="fan-card fan-card-1" title="Interstellar">
+          <img src="assets/posters/poster-interstellar.jpg" alt="Interstellar 4K">
+        </div>
+        <div class="fan-card fan-card-2" title="Spider-Man Across the Spider-Verse">
+          <img src="assets/posters/poster-spiderverse.jpg" alt="Spider-Verse 4K">
+        </div>
+        <div class="fan-card fan-card-3" title="Oppenheimer">
+          <img src="assets/posters/poster-oppenheimer.jpg" alt="Oppenheimer 4K">
+        </div>
+        <div class="fan-card fan-card-phone" title="MegaTv App Mobile">
+          <img src="assets/posters/poster-phone-hero.png" alt="MegaTv Mobile App 4K">
+        </div>
+        <div class="fan-card fan-card-encanto" title="Encanto">
+          <img src="assets/posters/poster-encanto.jpg" alt="Encanto 4K">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STREMIO-MATCHING CHROMATIC AURORA BANNER (ISO PJ 1) ===== -->
+<section class="stremio-feature-banner">
+  <div class="stremio-banner-inner">
+    <!-- Left: Authentic Slanted 3D TV App UI crossing through the diagonal line -->
+    <div class="stremio-banner-mockup">
+      <div class="chromatic-tv-wrapper">
+        <img src="assets/stremio_matched_tv.png" alt="MegaTv Android TV 4K Grand Écran" class="chromatic-tv-img">
+      </div>
+    </div>
+    <!-- Right: Editorial & Supported Platforms Matrix -->
+    <div class="stremio-banner-text">
+      <p class="stremio-banner-editorial">
+        MegaTv offre une expérience de divertissement sécurisée, moderne et transparente. Grâce à son interface conviviale et à sa bibliothèque de contenus variés, dont la prise en charge du 4K HDR, les utilisateurs peuvent profiter de leurs films et émissions de télévision préférés sur tous leurs appareils. Grâce à son engagement en matière de sécurité, MegaTv est le meilleur choix pour une expérience de streaming de haute qualité en toute sérénité.
+      </p>
+      <div class="stremio-banner-platforms-matrix">
+        <div class="stremio-platform-row">
+          <span class="stremio-platform-item">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/></svg>
+            Android
+          </span>
+          <span class="stremio-platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 20h8"/><path d="M12 18v2"/></svg>
+            Android TV
+          </span>
+          <span class="stremio-platform-item">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+            Windows
+          </span>
+          <span class="stremio-platform-item">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.76 1.05-1.82.93-2.88-.91.04-2.01.61-2.65 1.37-.57.65-1.07 1.73-.93 2.76 1.01.08 2.02-.51 2.65-1.25z"/></svg>
+            MacOS
+          </span>
+          <span class="stremio-platform-item">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12.002 0c-3.13 0-5.698 2.443-5.698 5.438 0 1.206.425 2.327 1.156 3.235C6.073 9.426 5.006 10.74 5.006 12.247c0 1.107.579 2.083 1.458 2.656-.632.748-1.026 1.696-1.026 2.735 0 2.447 2.215 4.438 4.954 4.438.309 0 .611-.027.906-.076.621.579 1.452.932 2.368.932 1.93 0 3.518-1.564 3.553-3.512 1.354-.537 2.321-1.83 2.321-3.364 0-1.19-.586-2.25-1.498-2.918.736-.706 1.2-1.688 1.2-2.776 0-1.693-1.127-3.132-2.695-3.568.513-.767.82-1.682.82-2.668C17.367 2.443 14.896 0 12.002 0z"/></svg>
+            Linux
+          </span>
+        </div>
+        <div class="stremio-platform-row">
+          <span class="stremio-platform-item">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+            LG TV
+          </span>
+          <span class="stremio-brand-name">SAMSUNG</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slanted Diagonal Divider -->
+<div class="slanted-divider" aria-hidden="true"></div>
+
+<!-- ===== PICK YOUR SCREEN SECTION ===== -->
+<section class="screen-picker-wrap center reveal" id="telecharger">
+  <div class="eyebrow"><span>Expérience Multi-Écrans</span></div>
+  <h2 class="section-title">Choisissez votre écran.</h2>
+  <p class="section-sub">
+    Chaque version est pensée pour l'écran sur lequel elle tourne, pas une simple interface étirée pour tout le monde. Sélectionnez le vôtre et accédez directement au téléchargement.
+  </p>
+
+  <!-- Tabs Switcher -->
+  <div class="screen-picker-tabs">
+    <button type="button" class="screen-tab-btn active" onclick="switchScreen('mobile', this)">📱 Phone</button>
+    <button type="button" class="screen-tab-btn" onclick="switchScreen('tv', this)">📺 TV</button>
+    <button type="button" class="screen-tab-btn" onclick="switchScreen('web', this)">💻 Desktop &amp; Web</button>
+  </div>
+
+  <!-- Selected Tab Showcase Card -->
+  <div class="screen-card text-left" style="text-align:left;">
+    <div>
+      <h3 class="screen-card__title" id="screen-card-title">MegaTv pour Smartphones et Tablettes Android</h3>
+      <p class="screen-card__sub" id="screen-card-sub">
+        Parcourez, découvrez et lancez vos contenus en mobilité. Connectez votre compte cloud pour synchroniser votre bibliothèque et vos reprises entre tous vos écrans.
+      </p>
+
+      <div class="screen-card__logos" id="screen-card-logos">
+        <span class="platform-brand-badge" title="Android Mobile">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="#3DDC84"><path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/></svg>
+          <span>Android</span>
+        </span>
+        <span class="platform-brand-badge" title="Google Play Store">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg>
+          <span>Google Play</span>
+        </span>
+      </div>
+
+      <div class="screen-card__ctas" id="screen-card-ctas">
+        <a href="/api/download/android" class="btn-spectrum">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 5 3.5z"/></svg>
+          <span>Android APK</span>
+        </a>
+        <a href="#features" class="btn-ghost"><span>Google Play (Bientôt)</span></a>
+        <a href="/web" class="btn-ghost"><span>Web PWA</span></a>
+      </div>
+    </div>
+
+    <!-- Preview Media Right -->
+    <div class="screen-card__preview">
+      <div class="screen-mockup-frame mode-phone" id="screen-card-frame">
+        <img id="screen-card-img" src="assets/screen-home-mobile.jpg" alt="Aperçu écran">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slanted Diagonal Divider -->
+<div class="slanted-divider" aria-hidden="true"></div>
+
+<!-- ===== FLAGSHIP FEATURES ===== -->
+<section id="features" data-screen-label="Features">
+  <div class="reveal center" style="margin-bottom:48px;">
+    <div class="eyebrow"><span>Fonctionnalités Phares</span></div>
+    <h2 class="section-title">Une expérience complète. Sans compromis.</h2>
+    <p class="section-sub">
+      Du social au multi-sources en passant par la personnalisation graphique extrême, découvrez les fonctionnalités qui font la différence.
+    </p>
+  </div>
+
+  <div class="flagship-grid reveal" data-stagger>
+    <!-- Feature 1: Social & Match entre amis -->
+    <div class="flagship-card">
+      <span class="flagship-badge" style="background:rgba(242,180,60,0.15);color:#f2b43c;">⚽ Social &amp; Match</span>
+      <h3 class="flagship-title">Match entre amis &amp; Visionnage Social</h3>
+      <p class="flagship-desc">
+        Partagez vos soirées séries en simultané, comparez vos progressions et défiez vos amis sur leurs statistiques de visionnage. Échangez vos recommandations d'un geste.
+      </p>
+    </div>
+
+    <!-- Feature 2: Cast instantané & Multi-écrans -->
+    <div class="flagship-card">
+      <span class="flagship-badge" style="background:rgba(63,154,230,0.15);color:#3f9ae6;">📡 Cast Ultra-Fluide</span>
+      <h3 class="flagship-title">Castez vers votre TV en un clic</h3>
+      <p class="flagship-desc">
+        Passez instantanément de votre smartphone à votre Android TV ou Fire TV. Vos flux et vos réglages audio sont transmis avec une reprise exacte à la seconde près.
+      </p>
+    </div>
+
+    <!-- Feature 3: IPTV + Addons + Serveurs -->
+    <div class="flagship-card">
+      <span class="flagship-badge" style="background:rgba(31,168,160,0.15);color:#1fa8a0;">📺 Multi-Sources</span>
+      <h3 class="flagship-title">IPTV + Addons + Serveurs Personnels</h3>
+      <p class="flagship-desc">
+        Centralisez vos playlists Xtream/M3U avec EPG en direct, connectez vos bibliothèques Plex, Jellyfin et Emby, et chargez vos addons Stremio dans un seul hub fluide.
+      </p>
+    </div>
+
+    <!-- Feature 4: Personnalisation Thème & Profils -->
+    <div class="flagship-card">
+      <span class="flagship-badge" style="background:rgba(216,73,127,0.15);color:#d8497f;">🎨 Thèmes &amp; Style</span>
+      <h3 class="flagship-title">Personnalisation Thème &amp; Avatars</h3>
+      <p class="flagship-desc">
+        Habillez votre interface avec des thèmes gradients Aurora, Sunset ou OLED pur. Créez jusqu'à 5 profils familiaux avec code PIN de sécurité et mode Enfants protégé.
+      </p>
+    </div>
+
+    <!-- Feature 5: Lecteur ExoPlayer 4K & Sous-titres IA -->
+    <div class="flagship-card">
+      <span class="flagship-badge" style="background:rgba(95,191,90,0.15);color:#5fbf5a;">⚡ Moteur Vidéo Pro</span>
+      <h3 class="flagship-title">4K HDR, Dolby Vision &amp; Sous-titres IA</h3>
+      <p class="flagship-desc">
+        Moteur ExoPlayer Media3 avec matching automatique du framerate. Génération de sous-titres IA multilingues en temps réel via Gemini et Groq pour ne manquer aucun dialogue.
+      </p>
+    </div>
+
+    <!-- Feature 6: Sync Cloud Temps Réel -->
+    <div class="flagship-card">
+      <span class="flagship-badge" style="background:rgba(91,99,214,0.15);color:#5b63d6;">☁️ MegaCloud Sync</span>
+      <h3 class="flagship-title">Continuité Cloud multi-appareils</h3>
+      <p class="flagship-desc">
+        Vos favoris, votre historique de lecture et vos listes de suivi sont synchronisés en temps réel et sécurisés par chiffrement RLS sur tous vos appareils.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TV SHOWCASE (GRAND ÉCRAN ANDROID TV) ===== -->
+<section data-screen-label="TV Showcase" style="padding-top:40px;">
+  <div class="reveal center" style="margin-bottom:12px;">
+    <div class="eyebrow"><span>Optimisé pour Android TV</span></div>
+    <h2 class="section-title">Grand écran, grande expérience.</h2>
+    <p class="section-sub">Interface 100% pensée pour la télécommande, zapping instantané, Hero immersif et guide EPG en direct.</p>
+  </div>
+  <div class="tv-wrap reveal">
+    <div class="tv-monitor">
+      <div class="tv-glow"></div>
+      <div class="tv-screen"><img id="tv-main-img" src="assets/tv-home-new.png" alt="MegaTv sur Android TV"></div>
+    </div>
+    <div class="tv-stand"></div>
+    <div class="tv-foot"></div>
+    <div class="tv-thumbs">
+      <div class="tv-thumb active" onclick="switchTV(this,0)"><img src="assets/tv-home-new.png" alt=""><span data-i18n="sc.home">Accueil TV</span></div>
+      <div class="tv-thumb" onclick="switchTV(this,1)"><img src="assets/tv-live.png" alt=""><span data-i18n="sc.live">TV en Direct</span></div>
+      <div class="tv-thumb" onclick="switchTV(this,2)"><img src="assets/tv-detail.png" alt=""><span data-i18n="sc.detail">Fiche Détail</span></div>
+      <div class="tv-thumb" onclick="switchTV(this,3)"><img src="assets/tv-person.png" alt=""><span data-i18n="tv.episodes">Acteurs</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Slanted Diagonal Divider -->
+<div class="slanted-divider" aria-hidden="true"></div>
+
+<!-- ===== PREMIUM & PLANS (OFFICIAL FREEMIUM: FREE · MONTHLY · ANNUAL · LIFETIME) ===== -->
+<section id="pricing" class="center reveal">
+  <div class="eyebrow"><span data-i18n="price.eyebrow">Formules &amp; Tarifs</span></div>
+  <h2 class="section-title" data-i18n="price.title">Choisissez votre formule</h2>
+  <p class="section-sub" data-i18n="price.sub">
+    Le lecteur de base reste 100% gratuit. Passez Pro quand vous le souhaitez pour synchroniser tous vos appareils et débloquer les bonus.
+  </p>
+
+  <div style="max-width:1160px;margin:0 auto;text-align:left;">
+    <div class="pricing-grid reveal" data-stagger style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
+      <!-- Plan 1: Gratuit -->
+      <div class="price-card">
+        <div class="price-plan" data-i18n="plan.free.name">Gratuit</div>
+        <div class="price-amount" id="price-free">
+          0<sup class="currency-symbol">€</sup>
+        </div>
+        <div class="price-sub" data-i18n="plan.free.sub">Pour toujours</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li data-i18n="plan.free.f1">Accès à toutes vos sources</li>
+          <li data-i18n="plan.free.f2">IPTV M3U &amp; Xtream</li>
+          <li data-i18n="plan.free.f3">Plex, Jellyfin, Emby</li>
+          <li data-i18n="plan.free.f4">1 profil utilisateur</li>
+        </ul>
+        <a href="/api/download/android" class="btn-price btn-price-outline" style="display:block;text-align:center;text-decoration:none;" data-i18n="plan.free.cta">Télécharger gratuitement</a>
+      </div>
+
+      <!-- Plan 2: Pro Mensuel -->
+      <div class="price-card">
+        <div class="price-plan">Pro Mensuel</div>
+        <div class="price-amount" id="price-monthly">
+          1,99<sup class="currency-symbol">€</sup><span> / mois</span>
+        </div>
+        <div class="price-sub" data-i18n="plan.monthly.sub">Sans engagement</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li data-i18n="plan.pro.f1">Tout le plan Gratuit</li>
+          <li data-i18n="plan.pro.f2">Jusqu'à 5 profils familiaux</li>
+          <li data-i18n="plan.pro.f3">Sous-titres IA en direct</li>
+          <li data-i18n="plan.pro.f4">Sync Cloud multi-appareils</li>
+        </ul>
+        <a href="/premium" class="btn-price btn-price-outline" style="display:block;text-align:center;text-decoration:none;" data-i18n="plan.monthly.cta">Commencer</a>
+      </div>
+
+      <!-- Plan 3: Pro Annuel (Featured) -->
+      <div class="price-card featured">
+        <div class="price-badge" data-i18n="plan.annual.badge">Plus Populaire</div>
+        <div class="price-plan spectrum-text">Pro Annuel</div>
+        <div class="price-amount" id="price-annual">
+          11,99<sup class="currency-symbol">€</sup><span> / an</span>
+        </div>
+        <div class="price-sub" data-i18n="plan.annual.sub">≈ 1 € / mois · 6 mois offerts</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li data-i18n="plan.pro.f1">Tout le plan Pro Mensuel</li>
+          <li data-i18n="plan.pro.f4">Synchronisation instantanée</li>
+          <li data-i18n="plan.annual.f6">Accès anticipé aux fonctionnalités</li>
+          <li data-i18n="plan.pro.f6">Support prioritaire Discord</li>
+        </ul>
+        <a href="/premium" class="btn-price btn-price-gradient" style="display:block;text-align:center;text-decoration:none;" data-i18n="plan.annual.cta">Économiser maintenant</a>
+      </div>
+
+      <!-- Plan 4: Pro À Vie -->
+      <div class="price-card">
+        <div class="price-badge" style="background:linear-gradient(135deg,#10b981,#0284c7);">À Vie</div>
+        <div class="price-plan" data-i18n="plan.lifetime.name">Pro À Vie</div>
+        <div class="price-amount" id="price-lifetime">
+          29,99<sup class="currency-symbol">€</sup><span> unique</span>
+        </div>
+        <div class="price-sub" data-i18n="plan.lifetime.sub">Payez une fois, profitez à vie</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li data-i18n="plan.lifetime.f5">Toutes les futures fonctionnalités</li>
+          <li data-i18n="plan.lifetime.f6">Support prioritaire à vie</li>
+          <li data-i18n="plan.pro.f2">Profils familiaux illimités</li>
+          <li data-i18n="plan.pro.f4">Badge Membre Fondateur</li>
+        </ul>
+        <a href="/premium" class="btn-price btn-price-outline" style="display:block;text-align:center;text-decoration:none;" data-i18n="plan.lifetime.cta">Posséder à vie</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STREMIO-MATCHING SLANTED REVIEW & JOIN BANNER (ISO PJ 2) ===== -->
+<section class="stremio-review-banner">
+  <div class="stremio-review-inner">
+    <!-- Left: Store Rating -->
+    <div class="review-score-col">
+      <span class="review-store-label">Google Play Store</span>
+      <div class="review-score-number">4.8</div>
+      <div class="review-stars">
+        <svg viewBox="0 0 24 24" fill="#fbbf24" width="22" height="22"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        <svg viewBox="0 0 24 24" fill="#fbbf24" width="22" height="22"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        <svg viewBox="0 0 24 24" fill="#fbbf24" width="22" height="22"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        <svg viewBox="0 0 24 24" fill="#fbbf24" width="22" height="22"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        <svg viewBox="0 0 24 24" fill="#fbbf24" width="22" height="22"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      </div>
+      <span class="review-count">12,400+ Avis communautaires</span>
+    </div>
+
+    <!-- Center: User Testimonial -->
+    <div class="review-quote-col">
+      <div class="review-author">Marc D. <span class="review-date">Membre Cloud</span></div>
+      <p class="review-text">
+        « Probablement la meilleure et la plus fluide des applications média. L'interface 4K HDR sur Android TV est un bonheur au quotidien, et la synchronisation avec le téléphone et Compagnon fonctionne à la seconde près. Un travail remarquable. »
+      </p>
+    </div>
+
+    <!-- Right: Join MegaTv CTA -->
+    <div class="review-cta-col">
+      <h3 class="review-join-title">Rejoignez l'univers MegaTv</h3>
+      <a href="/api/download/android" class="btn-review-white">
+        <span>Obtenir MegaTv gratuitement</span>
+      </a>
+      <a href="/api/download/android" class="btn-review-playstore">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3.6 1.4A1.6 1.6 0 0 0 3 2.6v18.8c0 .5.2.9.6 1.2l9.9-10.3L3.6 1.4z" fill="#00E5FF"/><path d="M16.9 15.7l-3.4-3.4 3.4-3.4.1.1 4 2.3c1.1.6 1.1 1.7 0 2.3l-4.1 2.1z" fill="#FFC107"/><path d="M13.5 12.3L3.6 22.6c.4.4 1 .4 1.7 0l11.6-6.9-3.4-3.4z" fill="#FF3D00"/><path d="M13.5 12.3L16.9 8.9 5.3 2.1c-.7-.4-1.3-.4-1.7 0l9.9 10.2z" fill="#4CAF50"/></svg>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;">
+          <span style="font-size:9.5px;text-transform:uppercase;opacity:0.8;">Disponible sur</span>
+          <span style="font-size:13px;font-weight:700;">Google Play</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== LEGAL ===== -->
+<div class="legal reveal" id="legal">
+  <p data-i18n="legal.text">MegaTv est un lecteur et navigateur média. Aucun film, série, chaîne ou flux n'est fourni par l'application. L'utilisateur configure ses propres services et playlists et reste responsable de leur utilisation conformément à la loi en vigueur dans son pays.</p>
+</div>
+
+<!-- ===== STREMIO-INSPIRED FOOTER WITH SOCIAL LINKS (ISO PJ 2) ===== -->
+<footer class="stremio-footer">
+  <div class="stremio-footer-top">
+    <div class="footer-col">
+      <h4 class="footer-col-title">ENTREPRISE</h4>
+      <ul>
+        <li><a href="#features">Technologie</a></li>
+        <li><a href="/api/download/android">Téléchargement</a></li>
+        <li><a href="#features">Addon SDK</a></li>
+        <li><a href="/premium">Partenaires</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4 class="footer-col-title">COMMUNAUTÉ</h4>
+      <ul>
+        <li><a href="https://discord.gg/4TGnmRsTwa" target="_blank" rel="noopener">Communauté Discord</a></li>
+        <li><a href="/companion">Galerie de fanarts</a></li>
+        <li><a href="/companion">Blog &amp; Mises à jour</a></li>
+        <li><a href="/companion">Suggestions &amp; Votes</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4 class="footer-col-title">CONTACTS</h4>
+      <ul>
+        <li><a href="https://discord.gg/4TGnmRsTwa" target="_blank" rel="noopener">Centre d'aide</a></li>
+        <li><a href="mailto:contact@megatv.app">Contactez-nous</a></li>
+        <li><a href="/companion">Statut des services</a></li>
+      </ul>
+    </div>
+    <div class="footer-social-wrap">
+      <div class="footer-socials">
+        <!-- Discord -->
+        <a href="https://discord.gg/4TGnmRsTwa" target="_blank" rel="noopener" aria-label="Discord">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        </a>
+        <!-- X (Twitter) -->
+        <a href="https://x.com/megatv" target="_blank" rel="noopener" aria-label="X">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <!-- Telegram -->
+        <a href="https://t.me/megatv" target="_blank" rel="noopener" aria-label="Telegram">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z"/></svg>
+        </a>
+        <!-- Reddit -->
+        <a href="https://reddit.com/r/megatv" target="_blank" rel="noopener" aria-label="Reddit">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+        </a>
+      </div>
+      <div class="footer-badges">
+        <span class="footer-badge-item">ExoPlayer Media3</span>
+        <span class="footer-badge-item">Dolby Vision &amp; Atmos</span>
+      </div>
+    </div>
+  </div>
+  <div class="stremio-footer-bottom">
+    <span>Copyright &copy; 2026 MegaTv. Tous droits r&eacute;serv&eacute;s.</span>
+    <span>Fait avec <span class="footer-heart">&hearts;</span> pour la communaut&eacute;</span>
+  </div>
+</footer>
+
+<!-- ===== FLOATING COOKIE CONSENT BANNER (ISO PJ 3) ===== -->
+<div id="cookie-consent-banner" class="cookie-consent-bar" style="display:none;">
+  <div class="cookie-consent-content">
+    <div class="cookie-icon-wrap">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="#2563eb">
+        <path d="M21.598 11.064a1.006 1.006 0 0 0-.854-.172A3.993 3.993 0 0 1 15.5 7.5c0-.85.27-1.638.728-2.28a1.002 1.002 0 0 0-.417-1.58A10.005 10.005 0 0 0 2 12c0 5.514 4.486 10 10 10 5.185 0 9.449-3.977 9.96-9.102a1.004 1.004 0 0 0-.362-.834zM12 20c-4.411 0-8-3.589-8-8a7.962 7.962 0 0 1 6.006-7.75A5.992 5.992 0 0 0 17.5 9.5c1.472 0 2.798-.535 3.824-1.42A8.02 8.02 0 0 1 20 12c0 4.411-3.589 8-8 8z"/>
+        <circle cx="8.5" cy="14.5" r="1.5" fill="#2563eb"/>
+        <circle cx="14.5" cy="15.5" r="1.5" fill="#2563eb"/>
+        <circle cx="10.5" cy="9.5" r="1.5" fill="#2563eb"/>
+      </svg>
+    </div>
+    <span class="cookie-text">
+      Ce site utilise des cookies pour vous garantir la meilleure expérience sur notre site. <a href="#legal" class="cookie-link">En savoir plus</a>
+    </span>
+    <button type="button" class="btn-cookie-accept" onclick="acceptCookies()">Got it!</button>
+  </div>
+</div>
+
+<!-- ===== STICKY "OBTENIR MEGATV" BUTTON (ISO PJ 3) ===== -->
+<div class="sticky-download-bar">
+  <a href="/api/download/android" class="btn-sticky-get">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+      <path d="M17.6 9.48 19.1 6.9a.5.5 0 1 0-.87-.5l-1.55 2.68A7.3 7.3 0 0 0 12 8.2a7.3 7.3 0 0 0-4.68.88L5.77 6.4a.5.5 0 1 0-.87.5l1.5 2.58A6.9 6.9 0 0 0 5 13.5v.7h14v-.7a6.9 6.9 0 0 0-1.4-4.02ZM9.2 12.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Zm5.6 0a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4ZM7.2 15.5v3.2a1.1 1.1 0 0 0 1.1 1.1h1.1V15.5H7.2Zm7.4 0v4.3h1.1a1.1 1.1 0 0 0 1.1-1.1v-3.2h-2.2Z"/>
+    </svg>
+    <span>Obtenir MegaTv maintenant</span>
+  </a>
+</div>
+
+<script src="app.js?v=2026m"></script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

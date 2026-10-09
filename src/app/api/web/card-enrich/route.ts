@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { fetchTmdbDetails, tmdbBackdropUrl, tmdbImageUrl } from "@/lib/tmdb";
+import { fetchTmdbDetails, tmdbBackdropUrl } from "@/lib/tmdb";
 
 /**
  * Lightweight TMDB card enrich for landscape `PosterCard` (backdrop + title).
@@ -16,13 +16,14 @@ export async function GET(request: Request) {
 
   const details = await fetchTmdbDetails(type, id);
   if (!details) {
-    return NextResponse.json({ title: null, backdropUrl: null });
+    return NextResponse.json({ title: null, backdropUrl: null, rating: null });
   }
 
   return NextResponse.json(
     {
       title: details.title || details.name || null,
-      backdropUrl: tmdbBackdropUrl(details.backdrop_path)
+      backdropUrl: tmdbBackdropUrl(details.backdrop_path),
+      rating: typeof details.vote_average === "number" ? Math.round(details.vote_average * 10) / 10 : null
     },
     {
       headers: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Maximize, Minimize, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowUpRight, Maximize, Minimize, PictureInPicture2, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Spinner } from "@/features/web/Spinner";
@@ -11,6 +11,9 @@ type Props = {
   channel: IptvChannel;
   subtitle?: string | null;
   onClose: () => void;
+  isPiP?: boolean;
+  onTogglePiP?: () => void;
+  onExpand?: () => void;
 };
 
 function streamType(url: string): "hls" | "file" | "other" {
@@ -27,7 +30,7 @@ function streamType(url: string): "hls" | "file" | "other" {
  * CORS: plays streams the browser can reach directly. MPEG-TS (`.ts`) live
  * feeds and CORS-blocked origins need the Edge remux/proxy — deferred to P3.
  */
-export function TvLivePlayer({ channel, subtitle, onClose }: Props) {
+export function TvLivePlayer({ channel, subtitle, onClose, isPiP = false, onTogglePiP, onExpand }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
 
@@ -136,67 +139,124 @@ export function TvLivePlayer({ channel, subtitle, onClose }: Props) {
   return (
     <div
       ref={shellRef}
-      className="group/player relative aspect-video w-full overflow-hidden rounded-2xl border border-[var(--mega-border)] bg-black"
+      className={clsx(
+        "group/player relative aspect-video w-full overflow-hidden bg-black",
+        isPiP ? "rounded-none" : "rounded-2xl border border-[var(--mega-border)]"
+      )}
     >
       <video ref={videoRef} className="h-full w-full bg-black object-contain" playsInline autoPlay />
 
       {!ready && !error && !unsupported ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <Spinner size="lg" />
+          <Spinner size={isPiP ? "sm" : "lg"} />
         </div>
       ) : null}
 
       {error || unsupported ? (
-        <div className="absolute inset-0 grid place-items-center bg-black/75 p-6 text-center">
-          <p className="max-w-sm text-sm font-medium text-white/90">
-            {error || "Ce flux MPEG-TS brut n'est pas lisible en navigateur (remux hors périmètre). Les flux HLS/mp4 sont supportés."}
+        <div className="absolute inset-0 grid place-items-center bg-black/75 p-4 text-center">
+          <p className="max-w-sm text-xs font-medium text-white/90">
+            {error || "Ce flux MPEG-TS brut n'est pas lisible en navigateur. Les flux HLS/mp4 sont supportés."}
           </p>
         </div>
       ) : null}
 
-      {/* Top gradient: channel identity + close */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-[linear-gradient(180deg,rgba(0,0,0,0.65),transparent)] p-3">
+      {/* Top gradient: channel identity + PiP actions */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-[linear-gradient(180deg,rgba(0,0,0,0.7),transparent)] p-2.5 sm:p-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--mega-red)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--mega-red)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
               Live
             </span>
-            <p className="truncate text-sm font-semibold text-white">{channel.name}</p>
+            <p className={clsx("truncate font-semibold text-white", isPiP ? "text-xs" : "text-sm")}>
+              {channel.name}
+            </p>
           </div>
-          {subtitle ? <p className="mt-0.5 truncate text-[11px] text-white/60">{subtitle}</p> : null}
+          {subtitle && !isPiP ? (
+            <p className="mt-0.5 truncate text-[11px] text-white/60">{subtitle}</p>
+          ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer le lecteur"
-          className="focus-ring pointer-events-auto grid h-8 w-8 shrink-0 place-items-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-black/60"
-        >
-          <X className="h-4 w-4" />
-        </button>
+
+        <div className="pointer-events-auto flex items-center gap-1.5">
+          {isPiP && onExpand ? (
+            <button
+              type="button"
+              onClick={onExpand}
+              aria-label="Agrandir le lecteur"
+              title="Agrandir le lecteur"
+              className="focus-ring grid h-7 w-7 place-items-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/80"
+            >
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer le lecteur"
+            title="Fermer"
+            className={clsx(
+              "focus-ring grid place-items-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/80",
+              isPiP ? "h-7 w-7" : "h-8 w-8"
+            )}
+          >
+            <X className={isPiP ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          </button>
+        </div>
       </div>
 
-      {/* Bottom gradient: mute + fullscreen */}
+      {/* Bottom gradient: quick controls */}
       <div
         className={clsx(
-          "absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 bg-[linear-gradient(0deg,rgba(0,0,0,0.6),transparent)] p-3 transition-opacity",
-          "opacity-0 group-hover/player:opacity-100 focus-within:opacity-100"
+          "absolute inset-x-0 bottom-0 flex items-center justify-end gap-1.5 bg-[linear-gradient(0deg,rgba(0,0,0,0.65),transparent)] p-2.5 transition-opacity",
+          isPiP
+            ? "opacity-90 group-hover/player:opacity-100"
+            : "opacity-0 group-hover/player:opacity-100 focus-within:opacity-100"
         )}
       >
+        {!isPiP && onTogglePiP ? (
+          <button
+            type="button"
+            onClick={onTogglePiP}
+            aria-label="Basculer en mini-lecteur PiP"
+            title="Mode mini-lecteur (PiP)"
+            className="focus-ring grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+          >
+            <PictureInPicture2 className="h-4 w-4" />
+          </button>
+        ) : null}
+
         <button
           type="button"
           onClick={toggleMute}
           aria-label={muted ? "Activer le son" : "Couper le son"}
-          className="focus-ring grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+          title={muted ? "Activer le son" : "Couper le son"}
+          className={clsx(
+            "focus-ring grid place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20",
+            isPiP ? "h-7 w-7" : "h-8 w-8"
+          )}
         >
-          {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {muted ? (
+            <VolumeX className={isPiP ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          ) : (
+            <Volume2 className={isPiP ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          )}
         </button>
+
         <button
           type="button"
           onClick={toggleFullscreen}
           aria-label="Plein écran"
-          className="focus-ring grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+          title="Plein écran"
+          className={clsx(
+            "focus-ring grid place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20",
+            isPiP ? "h-7 w-7" : "h-8 w-8"
+          )}
         >
-          {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          {fullscreen ? (
+            <Minimize className={isPiP ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          ) : (
+            <Maximize className={isPiP ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          )}
         </button>
       </div>
     </div>

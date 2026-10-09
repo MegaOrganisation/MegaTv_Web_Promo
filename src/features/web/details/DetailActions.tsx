@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
-import { Check, Eye, Film, Plus, Server } from "lucide-react";
+import { Check, Eye, Film, Heart, Plus, Server, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState, type ComponentType } from "react";
 
 import { Modal } from "@/features/web/details/Modal";
@@ -19,6 +20,22 @@ type Props = {
   /** YouTube key from pickTrailerKey (null → no trailer button). */
   trailerKey: string | null;
 };
+
+// Particles radiating in 360 degrees inspired by WatchlistPosterCelebration.kt
+const CELEBRATION_PARTICLES = [
+  { id: 1, angle: 0, distance: 50, color: "#EC268F", size: 7, shape: "star" },
+  { id: 2, angle: 30, distance: 64, color: "#E50914", size: 6, shape: "dot" },
+  { id: 3, angle: 60, distance: 54, color: "#F59E0B", size: 8, shape: "sparkle" },
+  { id: 4, angle: 90, distance: 70, color: "#EC268F", size: 7, shape: "heart" },
+  { id: 5, angle: 120, distance: 58, color: "#8B5CF6", size: 6, shape: "dot" },
+  { id: 6, angle: 150, distance: 66, color: "#E50914", size: 8, shape: "star" },
+  { id: 7, angle: 180, distance: 50, color: "#10B981", size: 6, shape: "sparkle" },
+  { id: 8, angle: 210, distance: 62, color: "#EC268F", size: 7, shape: "dot" },
+  { id: 9, angle: 240, distance: 56, color: "#F59E0B", size: 8, shape: "heart" },
+  { id: 10, angle: 270, distance: 68, color: "#E50914", size: 7, shape: "star" },
+  { id: 11, angle: 300, distance: 52, color: "#8B5CF6", size: 6, shape: "sparkle" },
+  { id: 12, angle: 330, distance: 64, color: "#EC268F", size: 7, shape: "dot" }
+];
 
 function ActionButton({
   icon: Icon,
@@ -87,6 +104,17 @@ export function DetailActionBar({ mediaId, profileId, title, logoUrl, trailerKey
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
+  // Celebration state on adding to watchlist (parity with WatchlistPosterCelebration.kt)
+  const [celebrationToken, setCelebrationToken] = useState(0);
+
+  const handleWatchlistClick = () => {
+    if (!inWatchlist) {
+      // Trigger festive celebration burst when adding
+      setCelebrationToken((t) => t + 1);
+    }
+    toggleWatchlist();
+  };
+
   const playHref = withProfileQuery(`/web/player/${mediaId}`, profileId);
 
   return (
@@ -100,12 +128,118 @@ export function DetailActionBar({ mediaId, profileId, title, logoUrl, trailerKey
           <MegaTvIcon name="play" filled className="h-4 w-4" />
           <span>Lire</span>
         </button>
+
         <ActionButton icon={Server} label="Sources" onClick={() => setSourcesOpen(true)} />
+
         {trailerKey ? (
           <ActionButton icon={Film} label="Bande-annonce" onClick={() => setTrailerOpen(true)} primary={false} />
         ) : null}
-        <ActionButton icon={watched ? Check : Eye} label={watched ? "Vu" : "Marquer vu"} active={watched} onClick={toggleWatched} />
-        <ActionButton icon={inWatchlist ? Check : Plus} label={inWatchlist ? "Dans ma liste" : "Ma liste"} active={inWatchlist} onClick={toggleWatchlist} />
+
+        <ActionButton
+          icon={watched ? Check : Eye}
+          label={watched ? "Vu" : "Marquer vu"}
+          active={watched}
+          onClick={toggleWatched}
+        />
+
+        {/* Watchlist button with celebration particles and micro-bounce */}
+        <div className="relative inline-flex items-center">
+          <motion.button
+            type="button"
+            key={`btn-${celebrationToken}`}
+            onClick={handleWatchlistClick}
+            animate={
+              celebrationToken > 0
+                ? {
+                    scale: [1, 0.9, 1.16, 0.96, 1.04, 1],
+                    transition: { duration: 0.52, ease: "easeOut" }
+                  }
+                : { scale: 1 }
+            }
+            whileTap={{ scale: 0.92 }}
+            className={clsx(
+              "focus-ring inline-flex items-center gap-2 rounded-full transition min-h-11 px-5 py-2.5 text-sm",
+              inWatchlist
+                ? "border border-[#EC268F]/60 bg-[#EC268F]/20 text-white font-bold shadow-[0_0_18px_rgba(236,38,143,0.35)]"
+                : "mega-btn-ghost hover:border-[#EC268F]/40"
+            )}
+          >
+            {inWatchlist ? (
+              <Check className="h-4 w-4 text-[#EC268F]" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            <span>{inWatchlist ? "Dans ma liste" : "Ma liste"}</span>
+          </motion.button>
+
+          {/* Celebration Burst Overlay */}
+          <AnimatePresence>
+            {celebrationToken > 0 && (
+              <div
+                key={`burst-${celebrationToken}`}
+                className="pointer-events-none absolute inset-0 -m-8 flex items-center justify-center z-30"
+              >
+                {/* Expanding Glowing Shockwave Ring */}
+                <motion.div
+                  initial={{ scale: 0.4, opacity: 0.9 }}
+                  animate={{ scale: 2.2, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.65, ease: "easeOut" }}
+                  className="absolute h-16 w-16 rounded-full border-2 border-[#EC268F] bg-[radial-gradient(circle,rgba(236,38,143,0.35)_0%,transparent_70%)]"
+                />
+
+                {/* Floating Heart in the center */}
+                <motion.div
+                  initial={{ scale: 0.5, y: 0, opacity: 1 }}
+                  animate={{ scale: 1.35, y: -26, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="absolute text-[#EC268F]"
+                >
+                  <Heart className="h-6 w-6" fill="currentColor" />
+                </motion.div>
+
+                {/* Radiating Confetti Particles */}
+                {CELEBRATION_PARTICLES.map((p) => {
+                  const rad = (p.angle * Math.PI) / 180;
+                  const targetX = Math.cos(rad) * p.distance;
+                  const targetY = Math.sin(rad) * p.distance;
+
+                  return (
+                    <motion.div
+                      key={p.id}
+                      initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                      animate={{
+                        x: targetX,
+                        y: targetY,
+                        scale: [0, 1.4, 0.8, 0],
+                        opacity: [1, 1, 0.8, 0]
+                      }}
+                      transition={{ duration: 0.65, ease: "easeOut" }}
+                      className="absolute"
+                      style={{ color: p.color }}
+                    >
+                      {p.shape === "heart" ? (
+                        <Heart className="h-3 w-3" fill="currentColor" />
+                      ) : p.shape === "sparkle" ? (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      ) : (
+                        <div
+                          className="rounded-full shadow-sm"
+                          style={{
+                            width: p.size,
+                            height: p.size,
+                            backgroundColor: p.color
+                          }}
+                        />
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <SourcePicker

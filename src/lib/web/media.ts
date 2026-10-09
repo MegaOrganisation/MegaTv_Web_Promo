@@ -24,6 +24,11 @@ export type WebMediaItem = {
   episodeTitle?: string | null;
   season?: number | null;
   episode?: number | null;
+  /** TMDB/IMDb score rating (e.g. 7.8 out of 10). */
+  rating?: number | null;
+  voteAverage?: number | null;
+  /** Resolution/format badge: 4K UHD, 4K, HD */
+  quality?: string | null;
 };
 
 /** Encodes a media reference into the `/web/details/[mediaId]` param. */
