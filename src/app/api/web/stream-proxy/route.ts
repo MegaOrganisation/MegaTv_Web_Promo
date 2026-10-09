@@ -35,16 +35,35 @@ export async function GET(request: Request) {
 
   try {
     const range = request.headers.get("range");
-    const upstream = await safeFetch(target, {
+    // IPTV panels often want VLC; AllDebrid / CDN hosts prefer a browser UA.
+    const isDebridHost = /alldebrid|real-debrid|premiumize|torbox|debrid/i.test(target);
+    const userAgent = isDebridHost
+      ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+      : "VLC/3.0.20 LibVLC/3.0.20";
+
+    let upstream = await safeFetch(target, {
       signal: controller.signal,
       headers: {
-        // Present as VLC: many IPTV/Xtream panels reject non-player UAs (HTTP 884).
-        "user-agent": "VLC/3.0.20 LibVLC/3.0.20",
+        "user-agent": userAgent,
         accept: "*/*",
         ...(range ? { range } : {})
       },
       cache: "no-store"
     });
+
+    // Retry once with the alternate UA when the host rejects the first choice.
+    if (!upstream.ok && upstream.status !== 206 && (upstream.status === 403 || upstream.status === 401 || upstream.status === 884)) {
+      const altUa = isDebridHost ? "VLC/3.0.20 LibVLC/3.0.20" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+      upstream = await safeFetch(target, {
+        signal: controller.signal,
+        headers: {
+          "user-agent": altUa,
+          accept: "*/*",
+          ...(range ? { range } : {})
+        },
+        cache: "no-store"
+      });
+    }
 
     if (!upstream.ok && upstream.status !== 206) {
       return new Response(`Upstream ${upstream.status}`, { status: 502 });

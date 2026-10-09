@@ -185,6 +185,9 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
     const text = `${stream.name || ""} ${stream.title || ""} ${stream.description || ""} ${
       stream.behaviorHints?.filename || ""
     }`;
+    // Browsers cannot decode MKV/AVI — drop so the picker only offers playable HTTP.
+    if (/\.(mkv|avi|wmv|flv)(\?|$)/i.test(url) || /\.(mkv|avi)\b/i.test(text)) continue;
+
     const streamTitle = (stream.name || stream.title || stream.behaviorHints?.filename || "").trim() || provider;
     const { resolution, label } = detectQuality(text);
     const kind: AddonStreamSource["kind"] = /\.m3u8(\?|$)/i.test(url) ? "hls" : "mp4";

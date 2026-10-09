@@ -79,6 +79,13 @@ export function WebPlayerExperience({
 
   const stream = sources[Math.min(selected, sources.length - 1)];
 
+  const hasNextSource = selected + 1 < sources.length;
+  const tryNextSource = () => {
+    if (hasNextSource) {
+      setSelected((current) => current + 1);
+    }
+  };
+
   return (
     <>
       <WebPlayer
@@ -89,6 +96,7 @@ export function WebPlayerExperience({
         resumeKey={resumeKey}
         subtitles={subtitles}
         track={track}
+        onPlaybackFailed={hasNextSource ? tryNextSource : undefined}
         topRightSlot={
           sources.length > 1 ? (
             <button
@@ -97,7 +105,7 @@ export function WebPlayerExperience({
               className="focus-ring inline-flex items-center gap-2 rounded-full bg-black/40 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/60"
             >
               <Layers className="h-4 w-4" />
-              {sources.length} sources
+              {sources.length} sources · #{selected + 1}
             </button>
           ) : null
         }

@@ -28,17 +28,22 @@ export async function fetchFriendsRail(
     });
     if (error || !data) return [];
     const rows = Array.isArray(data) ? data : [];
-    return rows.map((row: Record<string, unknown>) => ({
-      friendUserId: String(row.friend_user_id || ""),
-      friendProfileId: (row.friend_profile_id as string) || null,
-      displayName: String(row.display_name || row.friend_code || "Ami"),
-      avatarId: Number(row.avatar_id) || 1,
-      avatarImageStoragePath: (row.avatar_image_storage_path as string) || null,
-      avatarImageVersion: Number(row.avatar_image_version) || 0,
-      ring: row.ring === "active" ? "active" : "dim",
-      nowPlayingTitle: (row.now_playing_title as string) || null,
-      nowPlayingPoster: (row.now_playing_poster as string) || null
-    }));
+    return rows.map((row: Record<string, unknown>) => {
+      // avatar_id === 0 means custom photo — must NOT coerce via `|| 1`.
+      const rawAvatarId = Number(row.avatar_id);
+      const avatarId = Number.isFinite(rawAvatarId) ? rawAvatarId : 1;
+      return {
+        friendUserId: String(row.friend_user_id || ""),
+        friendProfileId: (row.friend_profile_id as string) || null,
+        displayName: String(row.display_name || row.friend_code || "Ami"),
+        avatarId,
+        avatarImageStoragePath: (row.avatar_image_storage_path as string) || null,
+        avatarImageVersion: Number(row.avatar_image_version) || 0,
+        ring: row.ring === "active" ? "active" : "dim",
+        nowPlayingTitle: (row.now_playing_title as string) || null,
+        nowPlayingPoster: (row.now_playing_poster as string) || null
+      };
+    });
   } catch {
     return [];
   }

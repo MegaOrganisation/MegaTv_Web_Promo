@@ -39,6 +39,8 @@ type Props = {
   track?: PlayerTrackMeta | null;
   /** Optional overlay control (e.g. a "Sources" button) rendered top-right. */
   topRightSlot?: ReactNode;
+  /** Called after direct + proxy both fail — parent can try the next source. */
+  onPlaybackFailed?: () => void;
 };
 
 const CLOUD_SAVE_INTERVAL_MS = 20000;
@@ -52,11 +54,22 @@ function formatTime(seconds: number) {
   return `${h > 0 ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
 }
 
-export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], track, topRightSlot }: Props) {
+export function WebPlayer({
+  stream,
+  title,
+  backHref,
+  resumeKey,
+  subtitles = [],
+  track,
+  topRightSlot,
+  onPlaybackFailed
+}: Props) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failedNotified = useRef(false);
+  const triedModes = useRef<Set<"direct" | "proxy">>(new Set());
 
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,11 +82,45 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
   const [controlsVisible, setControlsVisible] = useState(true);
   const [subMenuOpen, setSubMenuOpen] = useState(false);
   const [activeSub, setActiveSub] = useState<string | null>(null);
-  const [sourceMode, setSourceMode] = useState<"direct" | "proxy">("direct");
+  // Debrid CDNs usually block browser CORS on the direct URL — start proxied.
+  const preferProxyFirst = Boolean(
+    stream.proxiedUrl && /alldebrid|real-debrid|premiumize|torbox|debrid/i.test(stream.url)
+  );
+  const [sourceMode, setSourceMode] = useState<"direct" | "proxy">(preferProxyFirst ? "proxy" : "direct");
   const [needsGesture, setNeedsGesture] = useState(false);
 
   const sourceUrl =
     sourceMode === "proxy" && stream.proxiedUrl ? stream.proxiedUrl : stream.url;
+
+  const notifyFailed = useCallback(
+    (message: string) => {
+      if (!failedNotified.current && onPlaybackFailed) {
+        failedNotified.current = true;
+        onPlaybackFailed();
+        return;
+      }
+      setError(message);
+    },
+    [onPlaybackFailed]
+  );
+
+  const switchPlaybackMode = useCallback(
+    (message: string) => {
+      triedModes.current.add(sourceMode);
+      const alt: "direct" | "proxy" = sourceMode === "direct" ? "proxy" : "direct";
+      const canProxy = Boolean(stream.proxiedUrl && stream.url !== stream.proxiedUrl);
+      if (alt === "proxy" && canProxy && !triedModes.current.has("proxy")) {
+        setSourceMode("proxy");
+        return;
+      }
+      if (alt === "direct" && !triedModes.current.has("direct")) {
+        setSourceMode("direct");
+        return;
+      }
+      notifyFailed(message);
+    },
+    [sourceMode, stream.proxiedUrl, stream.url, notifyFailed]
+  );
 
   const goBack = useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -92,19 +139,19 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
     let hls: any = null;
     setReady(false);
     setError(null);
+    failedNotified.current = false;
+    // Keep triedModes across direct↔proxy flips for the same stream; reset only when URL changes.
+    if (!triedModes.current.size) triedModes.current.add(sourceMode);
 
-    const failToProxy = (message: string) => {
-      if (sourceMode === "direct" && stream.proxiedUrl && stream.url !== stream.proxiedUrl) {
-        setSourceMode("proxy");
-        return;
-      }
-      setError(message);
-    };
+    const failToProxy = (message: string) => switchPlaybackMode(message);
 
     async function attach() {
       if (!video) return;
       const canNativeHls = video.canPlayType("application/vnd.apple.mpegurl") !== "";
       if (stream.type === "mp4" || canNativeHls) {
+        // Prefer progressive download; clear previous src to force reload on mode switch.
+        video.removeAttribute("src");
+        video.load();
         video.src = sourceUrl;
         setReady(true);
         return;
@@ -114,7 +161,7 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         const Hls = mod.default;
         if (destroyed) return;
         if (Hls.isSupported()) {
-          hls = new Hls({ enableWorker: true });
+          hls = new Hls({ enableWorker: true, maxBufferLength: 30 });
           hls.loadSource(sourceUrl);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => setReady(true));
@@ -126,7 +173,7 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
           setReady(true);
         }
       } catch {
-        setError("Moteur de lecture indisponible.");
+        notifyFailed("Moteur de lecture indisponible.");
       }
     }
 
@@ -135,7 +182,7 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
       destroyed = true;
       if (hls) hls.destroy();
     };
-  }, [sourceUrl, stream.type, stream.proxiedUrl, stream.url, sourceMode]);
+  }, [sourceUrl, stream.type, stream.proxiedUrl, stream.url, sourceMode, notifyFailed, switchPlaybackMode]);
 
   useEffect(() => {
     if (!ready) return;
@@ -389,11 +436,9 @@ export function WebPlayer({ stream, title, backHref, resumeKey, subtitles = [], 
         onLoadedMetadata={onLoadedMetadata}
         onTimeUpdate={onTimeUpdate}
         onError={() => {
-          if (sourceMode === "direct" && stream.proxiedUrl) {
-            setSourceMode("proxy");
-            return;
-          }
-          setError("Impossible de lire ce flux dans le navigateur.");
+          switchPlaybackMode(
+            "Impossible de lire ce flux dans le navigateur (format ou CDN incompatible). Essayez une autre source."
+          );
         }}
         onVolumeChange={() => {
           const video = videoRef.current;

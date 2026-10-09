@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { CatalogRail } from "@/features/web/CatalogRail";
+import { CollectionPosterRail } from "@/features/web/CollectionPosterRail";
 import { FriendsRail } from "@/features/web/FriendsRail";
 import { MediaRail } from "@/features/web/MediaRail";
 import { WebHero } from "@/features/web/WebHero";
@@ -63,16 +64,32 @@ export default async function WebHomePage({ searchParams }: { searchParams: Prom
     }
   }
 
+  // Media rails (MDBList / Trakt / …) — keep collection rails separate (no sourceUrl).
   const catalogRails = catalogsForSettingsPanel(catalogsSlice.catalogs)
-    .filter((catalog) => Boolean(catalog.sourceUrl))
+    .filter((catalog) => Boolean(catalog.sourceUrl) && catalog.kind !== "COLLECTION_RAIL")
     .slice(0, 10);
+
+  // Insert Services / Genres / Studios after the first two media rails (Android Home order).
+  const headRails = catalogRails.slice(0, 2);
+  const tailRails = catalogRails.slice(2);
 
   return (
     <div className="space-y-6 sm:space-y-8">
       {heroItems.length ? <WebHero items={heroItems} initialTrailerKey={heroTrailerKey} initialLogo={heroLogo} /> : null}
       <MediaRail title="Reprendre" items={continueItems} layout="landscape" variant="continue" />
       {!isKids && friendsRail.length > 0 ? <FriendsRail friends={friendsRail} /> : null}
-      {catalogRails.map((catalog) => (
+      {headRails.map((catalog) => (
+        <CatalogRail
+          key={catalog.id}
+          catalogId={catalog.id}
+          title={catalog.title}
+          sourceUrl={catalog.sourceUrl as string}
+        />
+      ))}
+      <CollectionPosterRail group="SERVICE" />
+      <CollectionPosterRail group="GENRE" />
+      <CollectionPosterRail group="FRANCHISE" />
+      {tailRails.map((catalog) => (
         <CatalogRail
           key={catalog.id}
           catalogId={catalog.id}
