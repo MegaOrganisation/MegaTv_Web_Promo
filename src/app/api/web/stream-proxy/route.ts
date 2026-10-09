@@ -81,6 +81,12 @@ export async function GET(request: Request) {
       });
     }
 
+    const upstreamType = (upstream.headers.get("content-type") || "").toLowerCase();
+    // HTML5 video cannot DirectPlay Matroska/AVI — fail fast so the player skips.
+    if (/matroska|video\/x-msvideo|video\/avi|video\/x-ms-wmv|video\/x-flv/i.test(upstreamType)) {
+      return new Response("Unsupported media type for browser playback", { status: 415 });
+    }
+
     const headers = new Headers();
     const passthrough = ["content-type", "content-length", "content-range", "accept-ranges", "etag"];
     for (const name of passthrough) {

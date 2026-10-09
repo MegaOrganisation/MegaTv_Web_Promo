@@ -1,5 +1,10 @@
 import type { CompanionAddon } from "@/lib/companion/sync-types";
 import type { WebMediaType } from "@/lib/web/media";
+import {
+  looksBrowserFriendly,
+  looksBrowserHostile,
+  probeBrowserPlayableMany
+} from "@/lib/web/stream-probe";
 
 /**
  * Stremio addon stream/subtitle resolution for the web player.
@@ -27,6 +32,10 @@ export type AddonStreamSource = {
   /** Extra hints extracted from the title (HDR, cache status, size). */
   detail: string | null;
   addonId: string;
+  /** Stremio `behaviorHints.notWebReady` — usually MKV progressive / torrent mirror. */
+  notWebReady?: boolean;
+  /** Result of byte/Content-Type sniff when available. */
+  probe?: "playable" | "unplayable" | "unknown";
 };
 
 export type AddonSubtitleTrack = {
@@ -178,17 +187,21 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
 
   for (const stream of streams.slice(0, MAX_STREAMS_PER_ADDON)) {
     if (looksLikeTorrent(stream)) continue;
-    // Prefer HTTPS even when `notWebReady` is set — debrid mirrors are browser-playable.
     const url = pickHttpUrl(stream);
     if (!url) continue;
 
-    const text = `${stream.name || ""} ${stream.title || ""} ${stream.description || ""} ${
-      stream.behaviorHints?.filename || ""
-    }`;
-    // Browsers cannot decode MKV/AVI — drop so the picker only offers playable HTTP.
-    if (/\.(mkv|avi|wmv|flv)(\?|$)/i.test(url) || /\.(mkv|avi)\b/i.test(text)) continue;
+    const filename = stream.behaviorHints?.filename || null;
+    const text = `${stream.name || ""} ${stream.title || ""} ${stream.description || ""} ${filename || ""}`;
+    // Hard drop known hostile containers (Chrome/Safari cannot DirectPlay MKV/AVI/TS).
+    if (looksBrowserHostile(url, filename) || looksBrowserHostile(url, text)) continue;
 
-    const streamTitle = (stream.name || stream.title || stream.behaviorHints?.filename || "").trim() || provider;
+    const notWebReady = Boolean(stream.behaviorHints?.notWebReady);
+    // `notWebReady` without a clear mp4/hls extension ≈ ExoPlayer-only debrid mirror.
+    if (notWebReady && !looksBrowserFriendly(url, filename) && !looksBrowserFriendly(url, text)) {
+      continue;
+    }
+
+    const streamTitle = (stream.name || stream.title || filename || "").trim() || provider;
     const { resolution, label } = detectQuality(text);
     const kind: AddonStreamSource["kind"] = /\.m3u8(\?|$)/i.test(url) ? "hls" : "mp4";
     const detail = detectDetail(text);
@@ -200,10 +213,20 @@ function parseStreams(raw: unknown, addon: CompanionAddon): AddonStreamSource[] 
       qualityLabel: label,
       detail,
       label: streamTitle,
-      addonId: addon.id
+      addonId: addon.id,
+      notWebReady
     });
   }
   return out;
+}
+
+function webReadyBonus(source: AddonStreamSource): number {
+  if (source.probe === "playable") return 50;
+  if (source.kind === "hls") return 40;
+  if (looksBrowserFriendly(source.url, source.label)) return 35;
+  if (source.probe === "unknown") return 5;
+  if (source.notWebReady) return -20;
+  return 0;
 }
 
 function dedupeAndSort(sources: AddonStreamSource[]): AddonStreamSource[] {
@@ -214,10 +237,27 @@ function dedupeAndSort(sources: AddonStreamSource[]): AddonStreamSource[] {
     return true;
   });
   return unique.sort((a, b) => {
+    const ready = webReadyBonus(b) - webReadyBonus(a);
+    if (ready !== 0) return ready;
     const diff = priorityScore(b.resolution) - priorityScore(a.resolution);
     if (diff !== 0) return diff;
     return (b.resolution || 0) - (a.resolution || 0);
   });
+}
+
+/** Drop sniffed-unplayable URLs; if every probe failed, keep filename-friendly only. */
+function applyProbeResults(
+  sources: AddonStreamSource[],
+  probes: Map<string, "playable" | "unplayable" | "unknown">
+): AddonStreamSource[] {
+  const annotated = sources.map((source) => ({
+    ...source,
+    probe: probes.get(source.url) || source.probe || "unknown"
+  }));
+  const playable = annotated.filter((s) => s.probe === "playable");
+  if (playable.length) return dedupeAndSort(playable);
+  const maybe = annotated.filter((s) => s.probe !== "unplayable");
+  return dedupeAndSort(maybe);
 }
 
 export type AddonStreamRequest = {
@@ -247,7 +287,15 @@ export async function resolveAddonStreams(
     })
   );
 
-  return dedupeAndSort(results.flat());
+  const ranked = dedupeAndSort(results.flat());
+  if (!ranked.length) return [];
+
+  // Sniff top candidates — AllDebrid links rarely include `.mkv` in the path.
+  const probes = await probeBrowserPlayableMany(
+    ranked.map((s) => s.url),
+    { concurrency: 5, limit: 16 }
+  );
+  return applyProbeResults(ranked, probes);
 }
 
 const SUB_LANG_LABELS: Record<string, string> = {
