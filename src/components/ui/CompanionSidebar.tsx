@@ -69,7 +69,7 @@ export function CompanionSidebar({ userEmail, counts, isAdmin }: CompanionSideba
       </div>
 
       {/* Navigation Sections (ISO PJ 3 & PJ 4) */}
-      <nav className="flex-1 space-y-5 overflow-y-auto pr-1">
+      <nav className="flex-1 space-y-5 overflow-y-auto pr-1 pb-28 lg:pb-6">
         {/* Section: GENERAL */}
         <div>
           <p className="px-2 mb-1.5 text-[10px] font-bold tracking-wider uppercase text-white/35">

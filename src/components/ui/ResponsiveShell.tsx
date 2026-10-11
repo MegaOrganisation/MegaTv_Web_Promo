@@ -85,7 +85,7 @@ export function ResponsiveShell({
                   <X size={18} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto pb-[max(6.5rem,calc(env(safe-area-inset-bottom)+5rem))]">
                 <CompanionSidebar isAdmin={isAdmin} />
               </div>
             </div>
@@ -93,7 +93,7 @@ export function ResponsiveShell({
         )}
 
         {/* Main Content Area (Clean matte background, ISO PJ 3 & PJ 4) */}
-        <main className="flex-1 min-w-0 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 min-w-0 px-4 sm:px-8 lg:px-12 pt-4 pb-[max(7.5rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:py-8 max-w-7xl mx-auto w-full">
           {/* Mobile Sidebar Toggle Button */}
           <div className="md:hidden flex items-center justify-between mb-4 pb-3 border-b border-white/5">
             <button
