@@ -1,75 +1,48 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, BarChart3, Cloud, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 
-import { GlassCard } from "@/components/ui/GlassCard";
-import { MegaLink } from "@/components/ui/MegaButton";
 import { LoginForm } from "@/features/auth/LoginForm";
-import { LoginHeroMotion } from "@/features/auth/LoginHeroMotion";
-
-const bullets = [
-  { icon: ShieldCheck, label: "Connexion ID MegaTv", text: "Utilisez le compte MegaTv Cloud déjà associé à vos appareils." },
-  { icon: Cloud, label: "Session synchronisée", text: "Après connexion, vous revenez automatiquement vers MegaCompagnon." },
-  { icon: LockKeyhole, label: "Données isolées", text: "Supabase RLS limite l'accès aux données autorisées par votre compte." }
-];
 
 export default function LoginPage() {
   return (
-    <main className="grid min-h-screen place-items-center px-4 py-10">
-      <div className="w-full max-w-6xl">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <MegaLink href="/" variant="ghost" className="inline-flex">
-            <ArrowLeft className="h-4 w-4" />
-            Site promo
-          </MegaLink>
-          <MegaLink href="/companion" variant="ghost" className="hidden sm:inline-flex">
-            <BarChart3 className="h-4 w-4" />
-            Companion
-          </MegaLink>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-[1fr_450px]">
-          <GlassCard className="relative min-h-[520px] overflow-hidden p-8 sm:p-10">
-            <div className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-[#d8497f]/18 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full bg-[#3f9ae6]/18 blur-3xl" />
-            <LoginHeroMotion>
-              <Image src="/assets/logo.png" alt="MegaTv" width={156} height={48} className="mb-10 h-auto w-40" priority />
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-[var(--mega-text-faint)]">MegaCompagnon sécurisé</p>
-              <h1 className="max-w-2xl text-4xl font-black tracking-tight text-[var(--mega-text)] sm:text-6xl">
-                Connectez votre <span className="spectrum-text">ID MegaTv</span>.
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-[var(--mega-text-muted)]">
-                Entrez l'adresse e-mail et le mot de passe de votre compte MegaTv Cloud. Une fois authentifié, le dashboard web Companion s'ouvre automatiquement.
-              </p>
-              <div className="mt-8 grid gap-3">
-                {bullets.map(({ icon: Icon, label, text }, index) => (
-                  <div
-                    key={label}
-                    className="mega-hover-lift flex items-start gap-3 rounded-2xl border border-[var(--mega-border)] bg-[var(--mega-card-bg)] p-4"
-                    style={{ animationDelay: `${0.12 + index * 0.06}s` }}
-                  >
-                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[var(--mega-text-muted)]" strokeWidth={2} />
-                    <div>
-                      <p className="text-sm font-bold text-[var(--mega-text)]">{label}</p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--mega-text-faint)]">{text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </LoginHeroMotion>
-          </GlassCard>
-          <GlassCard className="p-6 sm:p-7">
-            <div className="mb-6 flex items-center gap-3">
-              <Image src="/assets/mark.png" alt="MegaTv" width={42} height={42} className="rounded-xl" />
-              <div>
-                <h2 className="text-2xl font-bold text-[var(--mega-text)]">Connexion ID MegaTv</h2>
-                <p className="mt-1 text-sm leading-6 text-[var(--mega-text-muted)]">Accès au Companion web.</p>
-              </div>
-            </div>
-            <Suspense fallback={<div className="text-sm text-[var(--mega-text-faint)]">Chargement...</div>}>
-              <LoginForm />
-            </Suspense>
-          </GlassCard>
-        </div>
+    <main className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
+      {/* Top Navigation */}
+      <div className="mb-6 flex w-full max-w-[440px] items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/15 hover:text-white"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Site promo</span>
+        </Link>
+        <Link
+          href="/companion"
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md transition hover:bg-white/15 hover:text-white"
+        >
+          <BarChart3 className="h-3.5 w-3.5" />
+          <span>Companion</span>
+        </Link>
+      </div>
+
+      {/* Brand logo centered above card (parité TV & Mobile app - PJ 2) */}
+      <div className="mb-4 sm:mb-5 flex items-center justify-center">
+        <Image
+          src="/assets/logo.png"
+          alt="MegaTv"
+          width={150}
+          height={44}
+          className="h-9 sm:h-10 w-auto drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
+          priority
+        />
+      </div>
+
+      {/* White Auth Card matching TV and Mobile App */}
+      <div className="w-full max-w-[440px] rounded-[28px] sm:rounded-[32px] bg-white p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.65)] border border-slate-100/80">
+        <Suspense fallback={<div className="py-12 text-center text-sm font-medium text-slate-400">Chargement...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );
